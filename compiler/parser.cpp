@@ -177,12 +177,59 @@ StatmList * ZbPrikazu() {
 	return 0;
 }
 
+void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body){
+	Operator op = Error, op_c = Error;
+	if(Symb.type == kwTO){
+		op = LessOrEq;
+		op_c = Plus;
+	}
+	else if(Symb.type == kwDOWNTO){
+		op = GreaterOrEq;
+		op_c = Minus;
+	}
+
+	switch(Symb.type){
+	case kwTO:
+	case kwDOWNTO:
+	{
+		Symb = readLexem();
+		*cond = new Bop(op, VarOrConst(id, offset), Vyraz());
+		*counter = new Assign(new Var(adrProm(id), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
+		Srovnani(kwDO);
+		*body = Prikaz();
+		return;
+	}
+
+	default:
+		ChybaExpanze("ZbFor", Symb.type);
+		return;
+	}
+}
+
+Expr * ArrayOffset(char * id) {
+   if (Symb.type == LBRAC) {
+      int offset = prvniIdxProm(id);
+
+      Symb = readLexem();
+      Expr * e = Vyraz();
+      if (offset) {
+         e = new Bop(Minus, e, new Numb(offset));
+      }
+
+      Srovnani(RBRAC);
+      return e;
+   }
+
+   return NULL;
+}
+
 Statm * Prikaz() {
+	Var * var;
 	switch (Symb.type) {
 	case IDENT: {
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
-		Var *var = new Var(adrProm(id), false);
+		Var *var = new Var(adrProm(id), ArrayOffset(id), false);
 		Srovnani(ASSIGN);
 		return new Assign(var, Vyraz());
 	}
@@ -193,7 +240,8 @@ Statm * Prikaz() {
 		Symb = readLexem();
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
-		return new Read(adrProm(id));
+		var = new Var(adrProm(id), ArrayOffset(id), false);
+		return new Read(var);
 	case kwIF: {
 		Symb = readLexem();
 		Expr *cond = Podminka();
@@ -208,6 +256,23 @@ Statm * Prikaz() {
 		Srovnani(kwDO);
 		return new While(cond, Prikaz());
 	}
+	case kwFOR: {
+		Symb = readLexem();
+		char id[MAX_IDENT_LEN];
+		Srovnani_IDENT(id);
+
+		Expr * offset = ArrayOffset(id);
+		Var *var = new Var(adrProm(id), offset, false);
+		Srovnani(ASSIGN);
+		Statm * init = new Assign(var, Vyraz());
+		Expr * cond;
+		Statm * counter;
+		Statm * body;
+		ZbFor(id, offset, &cond, &counter, &body);
+		return new For(init, cond, counter, body);
+   }
+
+
 	case kwCASE: {
 
 		Srovnani(kwCASE);
@@ -316,15 +381,18 @@ Expr * RecordFaktor(char *id) {
 }
 
 Expr * Faktor() {
+	Expr * offset;
+
 	switch (Symb.type) {
 	case IDENT:
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
+		offset = ArrayOffset(id);
 		if (Symb.type == DOT) {
 			Srovnani(DOT);
 			return RecordFaktor(id);
 		}
-		return VarOrConst(id);
+		return VarOrConst(id, offset);
 	case NUMB:
 		int hodn;
 		Srovnani_NUMB(&hodn);
