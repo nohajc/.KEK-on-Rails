@@ -36,7 +36,6 @@ typedef enum {
 	kwREAD,
 	EOI,
 	ERR,
-	/* <nesro> */
 	kwCASE,
 	kwOF,
 	DOT,

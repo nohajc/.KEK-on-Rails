@@ -534,7 +534,7 @@ void Case::Translate() {
 		/* if we get here, we have not matched any scope! */
 		int jumpOver = Gener(JU);
 
-		/* if somethinkg matches, jump before the block */
+		/* if something matches, jump before the block */
 		for (int i = 0; i < jbbp; i = i + 1) {
 			PutIC(jumpBeforeBlock[i]);
 		}

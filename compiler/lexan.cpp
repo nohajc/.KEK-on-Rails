@@ -17,7 +17,7 @@ const char *symbTable[38] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD" }; //symbol names in the same order as in LexSymbolType
 
-static int character;   // vstupni znak
+static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
 
 void readInput(void) {
@@ -38,13 +38,25 @@ void readInput(void) {
 const struct {
 	char* slovo;
 	LexSymbolType symb;
-} keyWordTable[] = { { "var", kwVAR }, { "const", kwCONST },
-		{ "begin", kwBEGIN }, { "end", kwEND }, { "if", kwIF },
-		{ "then", kwTHEN }, { "else", kwELSE }, { "while", kwWHILE }, { "do",
-				kwDO }, { "write", kwWRITE }, { "read", kwREAD },
-		/* <nesro> */
-		{ "case", kwCASE }, { "of", kwOF }, { "Integer", kwINTEGER }, {
-				"Record", kwRECORD }, { NULL, (LexSymbolType) 0 } };
+} keyWordTable[] = {
+//
+		{ "var", kwVAR }, //
+		{ "const", kwCONST }, //
+		{ "begin", kwBEGIN }, //
+		{ "end", kwEND }, //
+		{ "if", kwIF }, //
+		{ "then", kwTHEN }, //
+		{ "else", kwELSE }, //
+		{ "while", kwWHILE }, //
+		{ "do", kwDO }, //
+		{ "write", kwWRITE }, //
+		{ "read", kwREAD }, //
+		{ "case", kwCASE }, //
+		{ "of", kwOF }, //
+		{ "Integer", kwINTEGER }, //
+		{ "Record", kwRECORD }, //
+		{ NULL, (LexSymbolType) 0 } //
+};
 
 LexSymbolType keyWord(char* id) {
 	int i = 0;
@@ -62,9 +74,6 @@ void error(char* text) {
 }
 
 LexicalSymbol readLexem(void) {
-
-//	debug_print("readLexem: character = '%c'", character);
-
 	LexicalSymbol data;
 	int delkaId;
 	q0: switch (character) {
@@ -118,7 +127,6 @@ LexicalSymbol readLexem(void) {
 
 		return data;
 	case '.':
-		/* <nesro> */
 		readInput();
 
 		if (character == '.') {
@@ -145,8 +153,6 @@ LexicalSymbol readLexem(void) {
 		readInput();
 		goto q2;
 	case NUMBER: {
-		/*<nesro>*/
-
 		data.number = character - '0';
 		data.type = NUMB;
 
@@ -168,7 +174,8 @@ LexicalSymbol readLexem(void) {
 		return data;
 	}
 
-	q1: switch (character) {
+	q1: //
+	switch (character) {
 	case '}':
 		readInput();
 		goto q0;
@@ -185,7 +192,8 @@ LexicalSymbol readLexem(void) {
 		goto q1;
 	}
 
-	q2: switch (input) {
+	q2: //
+	switch (input) {
 	case LETTER:
 	case NUMBER:
 		data.ident[delkaId] = character;
@@ -198,7 +206,8 @@ LexicalSymbol readLexem(void) {
 		return data;
 	}
 
-	q3: switch (input) {
+	q3: //
+	switch (input) {
 	case NUMBER:
 		data.number = 10 * data.number + (character - '0');
 		readInput();
@@ -207,7 +216,8 @@ LexicalSymbol readLexem(void) {
 		return data;
 	}
 
-	q4: switch (character) {
+	q4: //
+	switch (character) {
 	case '=':
 		data.type = LTE;
 		readInput();
@@ -225,7 +235,8 @@ LexicalSymbol readLexem(void) {
 		return data;
 	}
 
-	q5: switch (character) {
+	q5: //
+	switch (character) {
 	case '=':
 		data.type = GTE;
 		readInput();
@@ -239,13 +250,13 @@ LexicalSymbol readLexem(void) {
 		return data;
 	}
 
-	q6: switch (character) {
+	q6: //
+	switch (character) {
 	case '=':
 		readInput();
 		data.type = ASSIGN;
 		return data;
 	default:
-		/* <nesro> */
 		data.type = COLON;
 		return data;
 	}
@@ -256,9 +267,7 @@ LexicalSymbol readLexem(void) {
 		return data;
 	}
 
-	/* <nesro> */
-	q7:
-
+	q7: //
 	switch (input) {
 	case NUMBER:
 		data.number = 16 * data.number + (character - '0');

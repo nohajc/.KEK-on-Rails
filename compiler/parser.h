@@ -34,8 +34,6 @@ int initParser(char*);
 void Srovnani(LexSymbolType);
 void Srovnani_IDENT(char *);
 
-/* <nesro> */
-
 Expr * RecordFaktor(char *);
 CRecord * Record();
 CRecord * ZbRecord();
