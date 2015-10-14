@@ -1,0 +1,70 @@
+Synatkaticky analayzator
+Vstupni soubor e:\skripta\pj\mila1\gcd.txt
+1   {vypocet nejvetsiho spolecneho delitele}
+2   const a = 84, b = 36;
+3   var x, y;
+4   begin
+5      x := a; y := b;
+6      while x <> y do
+7         if x > y then 
+8   	 x:= x - y
+9         else
+10  	 y:= y - x;
+11     write a;
+12     write b;
+13     write x;
+14  end
+
+Vypis programu
+  0: TA  0
+  1: TC  84
+  2: ST
+  3: TA  1
+  4: TC  36
+  5: ST
+  6: TA  0
+  7: DR
+  8: TA  1
+  9: DR
+ 10: BOP 5
+ 11: IFJ 34
+ 12: TA  0
+ 13: DR
+ 14: TA  1
+ 15: DR
+ 16: BOP 7
+ 17: IFJ 26
+ 18: TA  0
+ 19: TA  0
+ 20: DR
+ 21: TA  1
+ 22: DR
+ 23: BOP 1
+ 24: ST
+ 25: JU  33
+ 26: TA  1
+ 27: TA  1
+ 28: DR
+ 29: TA  0
+ 30: DR
+ 31: BOP 1
+ 32: ST
+ 33: JU  6
+ 34: TC  84
+ 35: WRT
+ 36: TC  36
+ 37: WRT
+ 38: TA  0
+ 39: DR
+ 40: WRT
+ 41: STOP
+
+
+Interpretace programu
+84
+36
+12
+Konec interpretace
+
+Konec
+Press any key to continue

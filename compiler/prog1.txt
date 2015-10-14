@@ -1,0 +1,10 @@
+var a,b;
+const c = 2;
+begin
+   a := 1;
+   b := 3 + c;
+   write a+b;
+   if a<b then a:=1 else b:=1;
+   write a;
+   write b;
+end
