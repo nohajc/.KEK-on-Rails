@@ -131,4 +131,42 @@ public:
 
 Expr *VarOrConst(char*);
 
+/* <nesro> */
+
+/* this could/should be divided into three classes,
+ * but this is PJP, not PA2 */
+class CaseBlockScope {
+public:
+	Numb * lo;
+	Numb * eq;
+	Numb * hi;
+	int type; /* 0: number, 1: range, 2: else */
+	CaseBlockScope *next;
+	CaseBlockScope(CaseBlockScope *);
+	CaseBlockScope(CaseBlockScope *, Numb *);
+	CaseBlockScope(CaseBlockScope *, Numb *, Numb *);
+	~CaseBlockScope();
+};
+
+class CaseBlock: public Statm {
+public:
+	Statm *statmList;
+	CaseBlockScope *scope;
+	CaseBlock *next;
+	CaseBlock();
+	CaseBlock(Statm *, CaseBlock *, CaseBlockScope *);
+	~CaseBlock();
+	virtual void Translate();
+};
+
+class Case: public Statm {
+public:
+	Expr *expr;
+	CaseBlock *caseBlock;
+	Case(Expr *, CaseBlock *);
+	virtual ~Case();
+	virtual Node *Optimize();
+	virtual void Translate();
+};
+
 #endif

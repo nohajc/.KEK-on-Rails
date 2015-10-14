@@ -1,5 +1,10 @@
 /* lexan.h */
 
+#ifndef LEXAN_H
+#define LEXAN_H
+
+#include "vstup.h"
+
 typedef enum {
 	IDENT,
 	NUMB,
@@ -30,10 +35,19 @@ typedef enum {
 	kwWRITE,
 	kwREAD,
 	EOI,
-	ERR
+	ERR,
+	/* <nesro> */
+	kwCASE,
+	kwOF,
+	DOT,
+	DOUBLE_DOT,
+	COLON,
+	DASH,
+	kwINTEGER,
+	kwRECORD
 } LexSymbolType;
 
-extern const char *symbTable[30];
+extern const char *symbTable[38];
 
 #define MAX_IDENT_LEN 32
 
@@ -45,3 +59,5 @@ typedef struct LexicalSymbol {
 
 LexicalSymbol readLexem(void);
 int initLexan(char*);
+
+#endif
