@@ -6,7 +6,7 @@ Vstupni soubor e:\skripta\pj\mila1\gcd.txt
 4   begin
 5      x := a; y := b;
 6      while x <> y do
-7         if x > y then 
+7         if x > y then
 8   	 x:= x - y
 9         else
 10  	 y:= y - x;
