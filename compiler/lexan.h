@@ -43,10 +43,15 @@ typedef enum {
 	COLON,
 	DASH,
 	kwINTEGER,
-	kwRECORD
+	kwRECORD,
+	LBRAC,
+	RBRAC,
+	kwFOR,
+	kwTO,
+	kwDOWNTO
 } LexSymbolType;
 
-extern const char *symbTable[38];
+extern const char *symbTable[43];
 
 #define MAX_IDENT_LEN 32
 

@@ -10,12 +10,12 @@ typedef enum {
 	LETTER, NUMBER, WHITE_SPACE, END, NO_TYPE
 } InputCharType;
 
-const char *symbTable[38] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
+const char *symbTable[43] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"DIVIDE", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
 		"ASSIGN", "COMMA", "SEMICOLON", "kwVAR", "kwCONST", "kwBEGIN", "kwEND",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
-		"COLON", "DASH", "kwINTEGER", "kwRECORD" }; //symbol names in the same order as in LexSymbolType
+		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -55,6 +55,9 @@ const struct {
 		{ "of", kwOF }, //
 		{ "Integer", kwINTEGER }, //
 		{ "Record", kwRECORD }, //
+		{ "for", kwFOR },
+		{ "to", kwTO },
+		{ "downto", kwDOWNTO },
 		{ NULL, (LexSymbolType) 0 } //
 };
 
@@ -135,10 +138,16 @@ LexicalSymbol readLexem(void) {
 		} else {
 			data.type = DOT;
 		}
-
 		return data;
-	default:
-		break;
+	case '[':
+		data.type = LBRAC;
+		readInput();
+		return data;
+	case ']':
+		data.type = RBRAC;
+		readInput();
+		return data;
+	default:;
 	}
 	switch (input) {
 	case WHITE_SPACE:
