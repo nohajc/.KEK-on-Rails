@@ -22,6 +22,9 @@ struct PrvekTab {
 	char *ident;
 	DruhId druh;
 	int hodn;
+	bool pole;
+	int prvni, posledni;
+
 	CRecord *record;
 	PrvekTab *dalsi;
 	PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r);
@@ -37,6 +40,7 @@ void deklRecord(char *, CRecord *);
 PrvekTab *hledejId(char *);
 
 int adrProm(char*);
+int prvniIdxProm(char *id);
 DruhId idPromKonst(char*, int*);
 
 #endif

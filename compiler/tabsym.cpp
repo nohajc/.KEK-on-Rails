@@ -84,7 +84,7 @@ void deklRecord(char *id, CRecord *record) {
 	TabSym = new PrvekTab(id, IdRecord, 0, TabSym, record);
 }
 
-int adrProm(char *id) {
+/*int adrProm(char *id) {
 	PrvekTab *p = hledejId(id);
 	if (!p) {
 		Chyba(id, "neni deklarovan");
@@ -109,6 +109,37 @@ int adrProm(char *id) {
 		return 0;
 	} else
 		return p->hodn;
+}*/
+
+int adrProm(char *id) {
+	PrvekTab *p = hledejId(id);
+	if (!p) {
+		Chyba(id, "neni deklarovan");
+		return 0;
+	}
+	else if (p->druh != IdProm) {
+		Chyba(id, "neni identifikatorem promenne");
+		return 0;
+	}
+	else{
+		return p->hodn;
+	}
+}
+
+int prvniIdxProm(char *id)
+{
+	PrvekTab *p = hledejId(id);
+	if (!p) {
+		Chyba(id, "neni deklarovan");
+		return 0;
+	}
+	else if (p->druh != IdProm) {
+		Chyba(id, "neni identifikatorem promenne");
+		return 0;
+	}
+	else{
+		return p->prvni;
+	}
 }
 
 DruhId idPromKonst(char *id, int *v) {

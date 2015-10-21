@@ -23,10 +23,12 @@ class Statm: public Node {
 
 class Var: public Expr {
 	int addr;
+	Expr * offset;
 	bool rvalue;
 public:
-	Var(int, bool);
+	Var(int, Expr *, bool);
 	virtual void Translate();
+	virtual Node *Optimize();
 };
 
 class Numb: public Expr {
@@ -75,10 +77,10 @@ public:
 	virtual void Translate();
 };
 
-class Read: public Statm {
-	int addr;
+class Read : public Statm {
+   Var * var;
 public:
-	Read(int);
+	Read(Var *);
 	virtual ~Read();
 	virtual Node *Optimize();
 	virtual void Translate();
@@ -105,6 +107,18 @@ public:
 	virtual void Translate();
 };
 
+class For : public Statm {
+   Statm *init;
+   Expr *cond;
+   Statm *counter;
+   Statm *body;
+public:
+   For(Statm*, Expr*, Statm*, Statm*);
+   virtual ~For();
+   virtual Node *Optimize();
+   virtual void Translate();
+};
+
 class StatmList: public Statm {
 	Statm *statm;
 	StatmList *next;
@@ -129,7 +143,7 @@ public:
 	virtual void Translate();
 };
 
-Expr *VarOrConst(char*);
+Expr *VarOrConst(char*, Expr * offset);
 
 /* <nesro> */
 

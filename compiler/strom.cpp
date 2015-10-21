@@ -6,8 +6,9 @@
 
 // konstruktory a destruktory
 
-Var::Var(int a, bool rv) {
+Var::Var(int a, Expr * o, bool rv) {
 	addr = a;
+	offset = o;
 	rvalue = rv;
 }
 
@@ -57,8 +58,8 @@ Write::~Write() {
 	delete expr;
 }
 
-Read::Read(int a) {
-	addr = a;
+Read::Read(Var * a) {
+	var = a;
 }
 
 Read::~Read() {
@@ -85,6 +86,19 @@ While::~While() {
 	delete body;
 }
 
+For::For(Statm *i, Expr *c, Statm *cnt, Statm *b) {
+	init = i;
+	cond = c;
+	counter = cnt;
+	body = b;
+}
+
+For::~For(){
+	delete init;
+	delete cond;
+	delete body;
+}
+
 StatmList::StatmList(Statm *s, StatmList *n) {
 	statm = s;
 	next = n;
@@ -104,6 +118,14 @@ Prog::~Prog() {
 }
 
 // definice metody Optimize
+
+Node *Var::Optimize() {
+   if(offset){
+      offset = (Expr*)(offset->Optimize());
+   }
+   return this;
+}
+
 Node *Bop::Optimize() {
 	Numb *l = dynamic_cast<Numb*>(left->Optimize());
 	Numb *r = dynamic_cast<Numb*>(right->Optimize());
@@ -171,6 +193,7 @@ Node *Write::Optimize() {
 }
 
 Node *Read::Optimize() {
+	var->Optimize();
 	return this;
 }
 
@@ -199,6 +222,18 @@ Node *While::Optimize() {
 	Numb *c = dynamic_cast<Numb*>(cond);
 	if (!c)
 		return this;
+	if (!c->Value()) {
+		delete this;
+		return new Empty;
+	}
+	return this;
+}
+
+Node *For::Optimize() {
+	cond = (Expr*)(cond->Optimize());
+	body = (Statm*)(body->Optimize());
+	Numb *c = dynamic_cast<Numb*>(cond);
+	if (!c) return this;
 	if (!c->Value()) {
 		delete this;
 		return new Empty;
@@ -256,7 +291,8 @@ void Write::Translate() {
 }
 
 void Read::Translate() {
-	Gener(RD, addr);
+   var->Translate();
+   Gener(RD);
 }
 
 void If::Translate() {
@@ -281,6 +317,17 @@ void While::Translate() {
 	PutIC(a2);
 }
 
+void For::Translate() {
+	init->Translate();
+	int a1 = GetIC();
+	cond->Translate();
+	int a2 = Gener(IFJ);
+	body->Translate();
+	counter->Translate();
+	Gener(JU, a1);
+	PutIC(a2);
+}
+
 void StatmList::Translate() {
 	StatmList *s = this;
 	do {
@@ -294,17 +341,18 @@ void Prog::Translate() {
 	Gener(STOP);
 }
 
-Expr *VarOrConst(char *id) {
-	int v;
-	DruhId druh = idPromKonst(id, &v);
-	switch (druh) {
-	case IdProm:
-		return new Var(v, true);
-	case IdKonst:
-		return new Numb(v);
-	default:
-		return 0;
-	}
+Expr *VarOrConst(char *id, Expr * offset)
+{
+   int v;
+   DruhId druh = idPromKonst(id,&v);
+   switch (druh) {
+   case IdProm:
+      return new Var(v, offset, true);
+   case IdKonst:
+      return new Numb(v);
+   default:
+      return 0;
+   }
 }
 
 CaseBlockScope::CaseBlockScope(CaseBlockScope *next_) {

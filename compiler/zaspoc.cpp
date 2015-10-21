@@ -173,8 +173,8 @@ void Run() {
 			printf("%d\n", z[v--]);
 			break;
 		case RD: {
-			int res = scanf("%d", &m[instr.opd]);
-			if (res != 1) {
+			int res = scanf("%d", &m[z[v--]]);
+			if(res != 1) {
 				printf("I/O Error.\n\n");
 				return;
 			}

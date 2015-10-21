@@ -270,7 +270,7 @@ Statm * Prikaz() {
 		Statm * body;
 		ZbFor(id, offset, &cond, &counter, &body);
 		return new For(init, cond, counter, body);
-   }
+	}
 
 
 	case kwCASE: {
@@ -366,7 +366,7 @@ Expr * ZbTermu(Expr * du) {
 	}
 }
 
-Expr * RecordFaktor(char *id) {
+/*Expr * RecordFaktor(char *id) {
 	PrvekTab *prvek = hledejId(id);
 	char idMember[MAX_IDENT_LEN];
 	Srovnani_IDENT(idMember);
@@ -378,7 +378,7 @@ Expr * RecordFaktor(char *id) {
 	}
 	fprintf(stderr, "Unknown record member!\n");
 	exit(1);
-}
+}*/
 
 Expr * Faktor() {
 	Expr * offset;
@@ -390,7 +390,8 @@ Expr * Faktor() {
 		offset = ArrayOffset(id);
 		if (Symb.type == DOT) {
 			Srovnani(DOT);
-			return RecordFaktor(id);
+			//return RecordFaktor(id);
+			ChybaExpanze("Faktor", Symb.type);
 		}
 		return VarOrConst(id, offset);
 	case NUMB:
