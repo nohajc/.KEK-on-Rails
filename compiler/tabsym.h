@@ -25,9 +25,14 @@ struct PrvekTab {
 	bool pole;
 	int prvni, posledni;
 
-	CRecord *record;
+	//CRecord *record;
 	PrvekTab *dalsi;
-	PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r);
+	//PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r);
+
+	// Variable
+	PrvekTab(char *i, DruhId d, int h, PrvekTab *n);
+	// Static array
+	PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n);
 };
 
 static PrvekTab *TabSym;
@@ -35,6 +40,7 @@ static int volna_adr;
 
 void deklKonst(char *, int);
 void deklProm(char *);
+void deklProm(char *, int, int);
 void deklRecord(char *, CRecord *);
 
 PrvekTab *hledejId(char *);

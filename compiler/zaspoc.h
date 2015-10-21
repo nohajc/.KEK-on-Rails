@@ -11,6 +11,7 @@ enum Operator {
 	Minus,
 	Times,
 	Divide,
+	Modulo,
 	Eq,
 	NotEq,
 	Less,

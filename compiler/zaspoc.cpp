@@ -129,6 +129,9 @@ void Run() {
 			case Divide:
 				z[++v] = left / right;
 				break;
+			case Modulo:
+				z[++v] = left % right;
+				break;
 			case Eq:
 				z[++v] = left == right;
 				break;

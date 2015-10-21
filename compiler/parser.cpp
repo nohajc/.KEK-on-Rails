@@ -6,6 +6,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+void ChybaDekl(){
+   printf("Chyba pri deklaraci pole, ocekava se konstantni vyraz.\n");
+   exit(1);
+}
+
 void ChybaSrovnani(LexSymbolType s) {
 	printf("chyba pri srovnani, ocekava se %s.\n", symbTable[s]);
 	exit(1);
@@ -115,7 +120,7 @@ CRecord * Record() {
 	return record;
 }
 
-void TypVar(char *id) {
+/*void TypVar(char *id) {
 	switch (Symb.type) {
 	case kwINTEGER:
 		Srovnani(kwINTEGER);
@@ -129,16 +134,36 @@ void TypVar(char *id) {
 		ChybaExpanze("DeklProm", Symb.type);
 		break;
 	}
-}
+}*/
 
 void Typ(char *id) {
-	if (Symb.type == COLON) {
+	/*if (Symb.type == COLON) {
 		Srovnani(COLON);
 
 		TypVar(id);
 	} else {
 		deklProm(id);
-	}
+	}*/
+	if(Symb.type == LBRAC){
+      Numb *n_prvni, *n_posledni;
+
+      Symb = readLexem();
+      //Srovnani_NUMB(&prvni);
+      n_prvni = dynamic_cast<Numb*>(Vyraz()->Optimize());
+      if(!n_prvni) ChybaDekl();
+
+      Srovnani(DOUBLE_DOT);
+
+      //Srovnani_NUMB(&posledni);
+      n_posledni = dynamic_cast<Numb*>(Vyraz()->Optimize());
+      if(!n_posledni) ChybaDekl();
+      
+      Srovnani(RBRAC);
+      deklProm(id, n_prvni->Value(), n_posledni->Value());
+   }
+   else{
+      deklProm(id);
+   }
 }
 
 void DeklProm() {

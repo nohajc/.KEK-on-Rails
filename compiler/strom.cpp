@@ -27,9 +27,8 @@ Bop::Bop(Operator o, Expr *l, Expr *r) {
 }
 
 Bop::~Bop() {
-	/* becuase of invalid read. memleak is ok in this work */
-//	delete left;
-//	delete right;
+	delete left;
+	delete right;
 }
 
 UnMinus::UnMinus(Expr *e) {
@@ -83,6 +82,7 @@ While::While(Expr *c, Statm *b) {
 }
 
 While::~While() {
+	delete cond;
 	delete body;
 }
 
@@ -93,7 +93,7 @@ For::For(Statm *i, Expr *c, Statm *cnt, Statm *b) {
 	body = b;
 }
 
-For::~For(){
+For::~For() {
 	delete init;
 	delete cond;
 	delete body;
@@ -120,15 +120,17 @@ Prog::~Prog() {
 // definice metody Optimize
 
 Node *Var::Optimize() {
-   if(offset){
-      offset = (Expr*)(offset->Optimize());
-   }
-   return this;
+	if(offset){
+		offset = (Expr*)(offset->Optimize());
+	}
+	return this;
 }
 
 Node *Bop::Optimize() {
 	Numb *l = dynamic_cast<Numb*>(left->Optimize());
 	Numb *r = dynamic_cast<Numb*>(right->Optimize());
+	if (l) left = l;
+	if (r) right = r;
 	if (!l || !r)
 		return this;
 	int res;
@@ -146,6 +148,9 @@ Node *Bop::Optimize() {
 		break;
 	case Divide:
 		res = leftval / rightval;
+		break;
+	case Modulo:
+		res = leftval % rightval;
 		break;
 	case Eq:
 		res = leftval == rightval;
@@ -200,7 +205,9 @@ Node *Read::Optimize() {
 Node *If::Optimize() {
 	cond = (Expr*) (cond->Optimize());
 	thenstm = (Statm*) (thenstm->Optimize());
-	elsestm = (Statm*) (elsestm->Optimize());
+	if(elsestm){
+		elsestm = (Statm*)(elsestm->Optimize());
+	}
 	Numb *c = dynamic_cast<Numb*>(cond);
 	if (!c)
 		return this;
@@ -260,6 +267,11 @@ Node *Prog::Optimize() {
 
 void Var::Translate() {
 	Gener(TA, addr);
+	if(offset){
+		offset->Translate();
+		Gener(BOP, Plus);
+	}
+
 	if (rvalue)
 		Gener(DR);
 }
@@ -291,8 +303,8 @@ void Write::Translate() {
 }
 
 void Read::Translate() {
-   var->Translate();
-   Gener(RD);
+	var->Translate();
+	Gener(RD);
 }
 
 void If::Translate() {

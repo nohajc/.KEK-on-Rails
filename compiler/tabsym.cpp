@@ -20,8 +20,8 @@ CRecord::CRecord(char *ident, CRecord *next) {
 	this->m_Next = next;
 }
 
-PrvekTab::PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r) {
-	ident = strdup(i);
+PrvekTab::PrvekTab(char *i, DruhId d, int h, PrvekTab *n) {
+	/*ident = strdup(i);
 
 	druh = d;
 	dalsi = n;
@@ -38,7 +38,23 @@ PrvekTab::PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r) {
 		break;
 	default:
 		break;
-	}
+	}*/
+	ident = new char[strlen(i)+1];
+	strcpy(ident, i);
+	druh = d; hodn = h; dalsi = n;
+
+	prvni = 0;
+	pole = false;
+}
+
+PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
+   ident = new char[strlen(i)+1];
+   strcpy(ident, i);
+   druh = d; hodn = h; dalsi = n;
+
+   prvni = f;
+   posledni = l;
+   pole = true;
 }
 
 static void Chyba(char *id, char *txt) {
@@ -61,7 +77,7 @@ void deklKonst(char *id, int val) {
 		Chyba(id, "druha deklarace");
 		return;
 	}
-	TabSym = new PrvekTab(id, IdKonst, val, TabSym, NULL);
+	TabSym = new PrvekTab(id, IdKonst, val, TabSym);
 }
 
 void deklProm(char *id) {
@@ -70,11 +86,24 @@ void deklProm(char *id) {
 		Chyba(id, "druha deklarace");
 		return;
 	}
-	TabSym = new PrvekTab(id, IdProm, volna_adr, TabSym, NULL);
+	TabSym = new PrvekTab(id, IdProm, volna_adr, TabSym);
 	volna_adr++;
 }
 
-void deklRecord(char *id, CRecord *record) {
+// Static array
+void deklProm(char *id, int prvni, int posledni){
+   PrvekTab *p = hledejId(id);
+   if (p) {
+      Chyba(id, "druha deklarace");
+      return;
+   }
+
+   //printf("Storing %s at address %d.\n", id, volna_adr);
+   TabSym = new PrvekTab(id, IdProm, volna_adr, prvni, posledni, TabSym);
+   volna_adr += posledni - prvni + 1;
+}
+
+/*void deklRecord(char *id, CRecord *record) {
 	PrvekTab *p = hledejId(id);
 	if (p) {
 		Chyba(id, "druha deklarace");
@@ -82,7 +111,7 @@ void deklRecord(char *id, CRecord *record) {
 	}
 
 	TabSym = new PrvekTab(id, IdRecord, 0, TabSym, record);
-}
+}*/
 
 /*int adrProm(char *id) {
 	PrvekTab *p = hledejId(id);
