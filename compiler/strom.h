@@ -27,6 +27,7 @@ class Var: public Expr {
 	bool rvalue;
 public:
 	Var(int, Expr *, bool);
+	virtual ~Var();
 	virtual void Translate();
 	virtual Node *Optimize();
 };

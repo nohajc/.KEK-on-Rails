@@ -61,6 +61,10 @@ static void Chyba(char *id, char *txt) {
 	printf("identifikator %s: %s\n", id, txt);
 }
 
+PrvekTab::~PrvekTab(){
+	delete [] ident;
+}
+
 PrvekTab *hledejId(char *id) {
 	PrvekTab *p = TabSym;
 	while (p)
@@ -183,3 +187,13 @@ DruhId idPromKonst(char *id, int *v) {
 	return Nedef;
 }
 
+void symCleanup() {
+	PrvekTab * sym = TabSym;
+	PrvekTab * next;
+
+	while(sym){
+		next = sym->dalsi;
+		delete sym;
+		sym = next;
+	}
+}

@@ -32,6 +32,10 @@ int initInput(char* fileName) {
 	return 1;
 }
 
+void closeInput() {
+	fclose(inputFile);
+}
+
 /**
  * přečte jeden symbol ze vstupu
  */

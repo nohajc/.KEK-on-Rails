@@ -12,6 +12,10 @@ Var::Var(int a, Expr * o, bool rv) {
 	rvalue = rv;
 }
 
+Var::~Var() {
+	delete offset;
+}
+
 Numb::Numb(int v) {
 	value = v;
 }
@@ -96,6 +100,7 @@ For::For(Statm *i, Expr *c, Statm *cnt, Statm *b) {
 For::~For() {
 	delete init;
 	delete cond;
+	delete counter;
 	delete body;
 }
 
@@ -115,6 +120,7 @@ Prog::Prog(StatmList *s) {
 
 Prog::~Prog() {
 	delete stm;
+	symCleanup();
 }
 
 // definice metody Optimize
@@ -198,7 +204,7 @@ Node *Write::Optimize() {
 }
 
 Node *Read::Optimize() {
-	var->Optimize();
+	var = (Var*) var->Optimize();
 	return this;
 }
 

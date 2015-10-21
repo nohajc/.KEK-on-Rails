@@ -160,6 +160,8 @@ void Typ(char *id) {
       
       Srovnani(RBRAC);
       deklProm(id, n_prvni->Value(), n_posledni->Value());
+      delete n_prvni;
+      delete n_posledni;
    }
    else{
       deklProm(id);

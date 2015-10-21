@@ -33,6 +33,7 @@ struct PrvekTab {
 	PrvekTab(char *i, DruhId d, int h, PrvekTab *n);
 	// Static array
 	PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n);
+	~PrvekTab();
 };
 
 static PrvekTab *TabSym;
@@ -48,5 +49,7 @@ PrvekTab *hledejId(char *);
 int adrProm(char*);
 int prvniIdxProm(char *id);
 DruhId idPromKonst(char*, int*);
+
+void symCleanup();
 
 #endif

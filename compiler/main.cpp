@@ -27,5 +27,7 @@ int main(int argc, char *argv[]) {
 	Print();
 	Run();
 	printf("Konec\n");
+	closeInput();
+	delete prog;
 	return 0;
 }
