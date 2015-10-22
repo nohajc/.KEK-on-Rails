@@ -177,6 +177,8 @@ Node *Bop::Optimize() {
 		res = leftval >= rightval;
 		break;
 	case Error: //cannot happen
+	default:
+		abort();
 		break;
 	}
 	delete this;
