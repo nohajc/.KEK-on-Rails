@@ -70,7 +70,7 @@ void DeklKonst() {
 	int hod;
 	Symb = readLexem();
 	Srovnani_IDENT(id);
-	Srovnani(EQ);
+	Srovnani(ASSIGN);
 	Srovnani_NUMB(&hod);
 	deklKonst(id, hod);
 	ZbDeklKonst();
@@ -83,7 +83,7 @@ void ZbDeklKonst() {
 		int hod;
 		Symb = readLexem();
 		Srovnani_IDENT(id);
-		Srovnani(EQ);
+		Srovnani(ASSIGN);
 		Srovnani_NUMB(&hod);
 		deklKonst(id, hod);
 		ZbDeklKonst();
@@ -116,7 +116,7 @@ CRecord * Record() {
 	Srovnani_IDENT(id);
 	TypRec();
 	CRecord *record = new CRecord(id, ZbRecord());
-	Srovnani(kwEND);
+	Srovnani(RCURLY);
 	return record;
 }
 
@@ -188,10 +188,10 @@ void ZbDeklProm() {
 }
 
 StatmList * SlozPrikaz() {
-	Srovnani(kwBEGIN);
+	Srovnani(LCURLY);
 	Statm *p = Prikaz();
 	StatmList *su = new StatmList(p, ZbPrikazu());
-	Srovnani(kwEND);
+	Srovnani(RCURLY);
 	return su;
 }
 
@@ -307,7 +307,7 @@ Statm * Prikaz() {
 		Srovnani(kwOF);
 		return new Case(expr, ntCASE_BODY());
 	}
-	case kwBEGIN:
+	case LCURLY:
 		return SlozPrikaz();
 	default:
 		return new Empty;
@@ -451,11 +451,11 @@ CaseBlock * ntCASE_BODY() {
 		Srovnani(kwELSE);
 		Statm *statm = Prikaz();
 		Srovnani(SEMICOLON);
-		Srovnani(kwEND);
+		Srovnani(RCURLY);
 		return new CaseBlock(statm, NULL, new CaseBlockScope(NULL));
 	}
-	case kwEND:
-		Srovnani(kwEND);
+	case RCURLY:
+		Srovnani(RCURLY);
 		return new CaseBlock();
 	default:
 		ChybaExpanze("ntCASE_BODY", Symb.type);

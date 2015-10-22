@@ -7,12 +7,12 @@
 #include <stdio.h>
 
 typedef enum {
-	LETTER, NUMBER, WHITE_SPACE, END, NO_TYPE
+	LETTER, NUMBER, WHITE_SPACE, NEW_LINE, END, NO_TYPE
 } InputCharType;
 
 const char *symbTable[43] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"DIVIDE", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
-		"ASSIGN", "COMMA", "SEMICOLON", "kwVAR", "kwCONST", "kwBEGIN", "kwEND",
+		"ASSIGN", "COMMA", "SEMICOLON", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO" }; //symbol names in the same order as in LexSymbolType
@@ -29,6 +29,8 @@ void readInput(void) {
 		input = NUMBER;
 	else if (character == EOF)
 		input = END;
+	else if (character == '\n')
+		input = NEW_LINE;
 	else if (character <= ' ')
 		input = WHITE_SPACE;
 	else
@@ -42,8 +44,8 @@ const struct {
 //
 		{ "var", kwVAR }, //
 		{ "const", kwCONST }, //
-		{ "begin", kwBEGIN }, //
-		{ "end", kwEND }, //
+//		{ "begin", kwBEGIN }, //
+//		{ "end", kwEND }, //
 		{ "if", kwIF }, //
 		{ "then", kwTHEN }, //
 		{ "else", kwELSE }, //
@@ -81,8 +83,13 @@ LexicalSymbol readLexem(void) {
 	int delkaId;
 	q0: switch (character) {
 	case '{':
+		data.type = LCURLY;
 		readInput();
-		goto q1;
+		return data;
+	case '}':
+		data.type = RCURLY;
+		readInput();
+		return data;
 	case '+':
 		data.type = PLUS;
 		readInput();
@@ -96,9 +103,8 @@ LexicalSymbol readLexem(void) {
 		readInput();
 		return data;
 	case '/':
-		data.type = DIVIDE;
 		readInput();
-		return data;
+		goto q1;
 	case '(':
 		data.type = LPAR;
 		readInput();
@@ -108,9 +114,8 @@ LexicalSymbol readLexem(void) {
 		readInput();
 		return data;
 	case '=':
-		data.type = EQ;
 		readInput();
-		return data;
+		goto q6;
 	case '<':
 		readInput();
 		goto q4;
@@ -118,16 +123,18 @@ LexicalSymbol readLexem(void) {
 		readInput();
 		goto q5;
 	case ':':
+		data.type = COLON;
 		readInput();
-		goto q6;
+		return data;
 	case ',':
 		data.type = COMMA;
 		readInput();
 		return data;
 	case ';':
 		data.type = SEMICOLON;
-		readInput();
-
+		do{ // All following new lines ignored
+			readInput();
+		} while(input == NEW_LINE || input == WHITE_SPACE);
 		return data;
 	case '.':
 		readInput();
@@ -149,7 +156,14 @@ LexicalSymbol readLexem(void) {
 		return data;
 	default:;
 	}
+
 	switch (input) {
+	case NEW_LINE: // New line is treated as semicolon
+		data.type = SEMICOLON;
+		do{ // All following new lines ignored
+			readInput();
+		} while(input == NEW_LINE || input == WHITE_SPACE);
+		return data;
 	case WHITE_SPACE:
 		readInput();
 		goto q0;
@@ -185,20 +199,44 @@ LexicalSymbol readLexem(void) {
 
 	q1: //
 	switch (character) {
-	case '}':
+	/*case '}':
+		readInput();
+		goto q0;*/
+	case '/': // One line comment
+		do{
+			readInput();
+			if(input == END){
+				error("Neocekavany konec souboru v komentari.");
+				data.type = ERR;
+				return data;
+			}
+		} while(input != NEW_LINE);
 		readInput();
 		goto q0;
+	case '*': // Long comment
+		readInput();
+		goto q1a;
 	default:
-		break;
+		data.type = DIVIDE;
+		return data;
 	}
-	switch (input) {
-	case END:
+
+	q1a: // Long comment
+	switch (character) {
+	case '*':
+		readInput();
+		if(character == '/'){
+			readInput();
+			goto q0;
+		}
+		goto q1a;
+	case EOF:
 		data.type = ERR;
 		error("Neocekavany konec souboru v komentari.");
 		return data;
 	default:
 		readInput();
-		goto q1;
+		goto q1a;
 	}
 
 	q2: //
@@ -263,18 +301,18 @@ LexicalSymbol readLexem(void) {
 	switch (character) {
 	case '=':
 		readInput();
-		data.type = ASSIGN;
+		data.type = EQ;
 		return data;
 	default:
-		data.type = COLON;
+		data.type = ASSIGN;
 		return data;
 	}
-	switch (input) {
+	/*switch (input) {
 	default:
 		data.type = ERR;
 		error("Ocekava se \'=\'.");
 		return data;
-	}
+	}*/
 
 	q7: //
 	switch (input) {
