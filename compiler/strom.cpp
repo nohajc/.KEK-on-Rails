@@ -3,6 +3,8 @@
 #include "strom.h"
 #include "tabsym.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 // konstruktory a destruktory
 
@@ -623,5 +625,202 @@ void Case::Translate() {
 	/* after every matched scope, hop/skip/jump to the end of the case */
 	for (int i = 0; i < fjp; i = i + 1) {
 		PutIC(finalJumps[i]);
+	}
+}
+
+/******************************************************************************/
+/* printing *******************************************************************/
+
+void printfi(int ident, const char *t, ...) {
+	va_list ap;
+	int i;
+
+	for (i = 0; i < ident; i++) {
+			printf("|----");
+	}
+
+	va_start(ap, t);
+	vfprintf(stdout, t, ap);
+	va_end(ap);
+}
+
+void Var::Print(int ident) {
+	printfi(ident, "Var [addr=%d]\n", this->addr);
+
+	printfi(ident, "offset:\n");
+	if (this->offset) {
+		this->offset->Print(ident + 1);
+	}
+}
+
+void Numb::Print(int ident) {
+	printfi(ident, "Numb [value=%d]\n", this->value);
+}
+
+void Bop::Print(int ident) {
+	printfi(ident, "Bop\n");
+
+	printfi(ident, "left:\n");
+	if (this->left) {
+		this->left->Print(ident + 1);
+	}
+
+	printfi(ident, "right:\n");
+	if (this->right) {
+		this->right->Print(ident + 1);
+	}
+}
+
+void UnMinus::Print(int ident) {
+	printfi(ident, "UnMinus\n");
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
+	}
+}
+
+void Assign::Print(int ident) {
+	printfi(ident, "Assign\n");
+
+	printfi(ident, "var:\n");
+	if (this->var) {
+		this->var->Print(ident + 1);
+	}
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
+	}
+}
+
+void Write::Print(int ident) {
+	printfi(ident, "Write\n");
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
+	}
+}
+
+void Read::Print(int ident) {
+	printfi(ident, "Read\n");
+
+	printfi(ident, "var:\n");
+	if (this->var) {
+		this->var->Print(ident + 1);
+	}
+}
+
+void If::Print(int ident) {
+	printfi(ident, "If\n");
+
+	printfi(ident, "cond:\n");
+	if (this->cond) {
+		this->cond->Print(ident + 1);
+	}
+
+	printfi(ident, "thenstm:\n");
+	if (this->thenstm) {
+		this->thenstm->Print(ident + 1);
+	}
+
+	printfi(ident, "elsestm:\n");
+	if (this->elsestm) {
+		this->elsestm->Print(ident + 1);
+	}
+}
+
+void While::Print(int ident) {
+	printfi(ident, "While\n");
+
+	printfi(ident, "cond:\n");
+	if (this->cond) {
+		this->cond->Print(ident + 1);
+	}
+
+	printfi(ident, "body:\n");
+	if (this->body) {
+		this->body->Print(ident + 1);
+	}
+}
+
+void For::Print(int ident) {
+	printfi(ident, "For\n");
+
+	printfi(ident, "init:\n");
+	if (this->init) {
+		this->init->Print(ident + 1);
+	}
+
+	printfi(ident, "cond:\n");
+	if (this->cond) {
+		this->cond->Print(ident + 1);
+	}
+
+	printfi(ident, "counter:\n");
+	if (this->counter) {
+		this->counter->Print(ident + 1);
+	}
+
+	printfi(ident, "body:\n");
+	if (this->body) {
+		this->body->Print(ident + 1);
+	}
+}
+
+void StatmList::Print(int ident) {
+	printfi(ident, "StatmList\n");
+
+	printfi(ident, "statm:\n");
+	if (this->statm) {
+		this->statm->Print(ident + 1);
+	}
+
+	printfi(ident, "next:\n");
+	if (this->next) {
+		this->next->Print(ident + 1);
+	}
+}
+
+void Empty::Print(int ident) {
+	printfi(ident, "Empty\n");
+}
+
+void Prog::Print(int ident) {
+	printfi(ident, "Prog\n");
+
+	printfi(ident, "stm:\n");
+	if (this->stm) {
+		this->stm->Print(ident + 1);
+	}
+}
+
+
+void CaseBlock::Print(int ident) {
+	printfi(ident, "CaseBlock\n");
+
+	printfi(ident, "statm:\n");
+	if (this->statmList) {
+		this->statmList->Print(ident + 1);
+	}
+
+	printfi(ident, "next:\n");
+	if (this->next) {
+		this->next->Print(ident + 1);
+	}
+}
+
+void Case::Print(int ident) {
+	printfi(ident, "CaseBlock\n");
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
+	}
+
+	printfi(ident, "caseBlock:\n");
+	if (this->caseBlock) {
+		this->caseBlock->Print(ident + 1);
 	}
 }

@@ -9,6 +9,7 @@
 
 int main(int argc, char *argv[]) {
 	char *fileName;
+	int ast_print = 1;
 	printf("Syntakticky analyzator\n");
 	if (argc == 1) {
 		printf("Vstup z klavesnice, zadejte zdrojovy text\n");
@@ -22,6 +23,11 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	Prog *prog = Program();
+
+	if (ast_print) {
+		prog->Print(0);
+	}
+
 	prog = (Prog*) (prog->Optimize());
 	prog->Translate();
 	Print();
