@@ -232,11 +232,17 @@ void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter
 		Symb = readLexem();
 		*cond = new Bop(op, VarOrConst(id, offset), Vyraz());
 		*counter = new Assign(new Var(adrProm(id), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
-		Srovnani(kwDO);
+		Srovnani(RPAR);
 		*body = Prikaz();
 		return;
 	}
-
+	case SEMICOLON:
+		Symb = readLexem();
+		*cond = Podminka();
+		Srovnani(SEMICOLON);
+		*counter = Assignment();
+		Srovnani(RPAR);
+		return;
 	default:
 		ChybaExpanze("ZbFor", Symb.type);
 		return;
@@ -260,6 +266,15 @@ Expr * ArrayOffset(char * id) {
    return NULL;
 }
 
+Statm * Assignment() {
+	char id[MAX_IDENT_LEN];
+
+	Srovnani_IDENT(id);
+	Var *var = new Var(adrProm(id), ArrayOffset(id), false);
+	Srovnani(ASSIGN);
+	return new Assign(var, Vyraz());
+}
+
 Statm * Prikaz() {
 	Var * var;
 	// Skip newlines
@@ -269,11 +284,12 @@ Statm * Prikaz() {
 
 	switch (Symb.type) {
 	case IDENT: {
-		char id[MAX_IDENT_LEN];
+		return Assignment();
+		/*char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
 		Var *var = new Var(adrProm(id), ArrayOffset(id), false);
 		Srovnani(ASSIGN);
-		return new Assign(var, Vyraz());
+		return new Assign(var, Vyraz());*/
 	}
 	case kwWRITE:
 		Symb = readLexem();
@@ -286,21 +302,24 @@ Statm * Prikaz() {
 		return new Read(var);
 	case kwIF: {
 		Symb = readLexem();
+		Srovnani(LPAR);
 		Expr *cond = Podminka();
-		Srovnani(kwTHEN);
+		Srovnani(RPAR);
 		Statm *prikaz = Prikaz();
 		return new If(cond, prikaz, CastElse());
 	}
 	case kwWHILE: {
 		Expr *cond;
 		Symb = readLexem();
+		Srovnani(LPAR);
 		cond = Podminka();
-		Srovnani(kwDO);
+		Srovnani(RPAR);
 		return new While(cond, Prikaz());
 	}
 	case kwFOR: {
-		Symb = readLexem();
 		char id[MAX_IDENT_LEN];
+		Symb = readLexem();
+		Srovnani(LPAR);
 		Srovnani_IDENT(id);
 
 		Expr * offset = ArrayOffset(id);

@@ -17,6 +17,7 @@ void ZbDeklProm();
 StatmList *SlozPrikaz();
 StatmList *ZbPrikazu();
 Statm *Prikaz();
+Statm *Assignment();
 Statm *CastElse();
 Expr *Podminka();
 Operator RelOp();
