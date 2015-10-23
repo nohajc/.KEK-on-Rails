@@ -15,7 +15,8 @@ const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"ASSIGN", "COMMA", "SEMICOLON", "NEWLINE", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
-		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO" }; //symbol names in the same order as in LexSymbolType
+		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO",
+		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -91,20 +92,39 @@ LexicalSymbol readLexemInternal(void) {
 		readInput();
 		return data;
 	case '+':
-		data.type = PLUS;
 		readInput();
+		if(character == '='){
+			data.type = ADD_ASSIGN;
+			readInput();
+		}
+		else{
+			data.type = PLUS;
+		}
 		return data;
 	case '-':
-		data.type = MINUS;
 		readInput();
+		if(character == '='){
+			data.type = SUB_ASSIGN;
+			readInput();
+		}
+		else{
+			data.type = MINUS;
+		}
 		return data;
 	case '*':
-		data.type = TIMES;
 		readInput();
+		if(character == '='){
+			data.type = MUL_ASSIGN;
+			readInput();
+		}
+		else{
+			data.type = TIMES;
+		}
 		return data;
 	case '/':
 		readInput();
 		goto q1;
+	// TODO: Modulo operation
 	case '(':
 		data.type = LPAR;
 		readInput();
@@ -199,9 +219,10 @@ LexicalSymbol readLexemInternal(void) {
 
 	q1: //
 	switch (character) {
-	/*case '}':
+	case '=':
 		readInput();
-		goto q0;*/
+		data.type = DIV_ASSIGN;
+		return data;
 	case '/': // One line comment
 		do{
 			readInput();

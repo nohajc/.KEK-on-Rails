@@ -51,7 +51,11 @@ typedef enum {
 	RBRAC,
 	kwFOR,
 	kwTO,
-	kwDOWNTO
+	kwDOWNTO,
+	ADD_ASSIGN,
+	SUB_ASSIGN,
+	MUL_ASSIGN,
+	DIV_ASSIGN
 } LexSymbolType;
 
 extern const char *symbTable[];

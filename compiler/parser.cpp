@@ -271,8 +271,33 @@ Statm * Assignment() {
 
 	Srovnani_IDENT(id);
 	Var *var = new Var(adrProm(id), ArrayOffset(id), false);
-	Srovnani(ASSIGN);
-	return new Assign(var, Vyraz());
+	Expr * e;
+	//Srovnani(ASSIGN);
+	switch (Symb.type) {
+	case ASSIGN:
+		Symb = readLexem();
+		e = Vyraz();
+		return new Assign(var, e);
+	case ADD_ASSIGN:
+		Symb = readLexem();
+		e = Vyraz();
+		return new Assign(var, new Bop(Plus, var, e));
+	case SUB_ASSIGN:
+		Symb = readLexem();
+		e = Vyraz();
+		return new Assign(var, new Bop(Minus, var, e));
+	case MUL_ASSIGN:
+		Symb = readLexem();
+		e = Vyraz();
+		return new Assign(var, new Bop(Times, var, e));
+	case DIV_ASSIGN:
+		Symb = readLexem();
+		e = Vyraz();
+		return new Assign(var, new Bop(Divide, var, e));
+	default:
+		ChybaExpanze("Assignment", Symb.type);
+		return NULL;
+	}
 }
 
 Statm * Prikaz() {
