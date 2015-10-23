@@ -29,8 +29,8 @@ void readInput(void) {
 		input = NUMBER;
 	else if (character == EOF)
 		input = END;
-	else if (character == '\n')
-		input = NEW_LINE;
+	/*else if (character == '\n')
+		input = NEW_LINE;*/
 	else if (character <= ' ')
 		input = WHITE_SPACE;
 	else
@@ -78,7 +78,7 @@ void error(char* text) {
 	exit(1);
 }
 
-LexicalSymbol readLexem(void) {
+LexicalSymbol readLexemInternal(void) {
 	LexicalSymbol data;
 	int delkaId;
 	q0: switch (character) {
@@ -348,6 +348,19 @@ LexicalSymbol readLexem(void) {
 	default:
 		return data;
 	}
+}
+
+LexicalSymbol readLexem(void) {
+	LexicalSymbol symb = readLexemInternal();
+	printf("LEXEM: %s", symbTable[symb.type]);
+	if(symb.type == NUMB){
+		printf(" %d", symb.number);
+	}
+	else if(symb.type == IDENT){
+		printf(" \"%s\"", symb.ident);
+	}
+	printf("\n");
+	return symb;
 }
 
 int initLexan(char *fileName) {
