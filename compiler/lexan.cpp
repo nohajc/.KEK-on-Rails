@@ -10,9 +10,9 @@ typedef enum {
 	LETTER, NUMBER, WHITE_SPACE, NEW_LINE, END, NO_TYPE
 } InputCharType;
 
-const char *symbTable[43] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
+const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"DIVIDE", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
-		"ASSIGN", "COMMA", "SEMICOLON", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
+		"ASSIGN", "COMMA", "SEMICOLON", "NEWLINE", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO" }; //symbol names in the same order as in LexSymbolType
@@ -29,8 +29,8 @@ void readInput(void) {
 		input = NUMBER;
 	else if (character == EOF)
 		input = END;
-	/*else if (character == '\n')
-		input = NEW_LINE;*/
+	else if (character == '\n')
+		input = NEW_LINE;
 	else if (character <= ' ')
 		input = WHITE_SPACE;
 	else
@@ -159,7 +159,7 @@ LexicalSymbol readLexemInternal(void) {
 
 	switch (input) {
 	case NEW_LINE: // New line is treated as semicolon
-		data.type = SEMICOLON;
+		data.type = NEWLINE;
 		do{ // All following new lines ignored
 			readInput();
 		} while(input == NEW_LINE || input == WHITE_SPACE);

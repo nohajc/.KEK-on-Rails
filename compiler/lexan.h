@@ -23,6 +23,7 @@ typedef enum {
 	ASSIGN,
 	COMMA,
 	SEMICOLON,
+	NEWLINE,
 	kwVAR,
 	kwCONST,
 	LCURLY,
@@ -51,7 +52,7 @@ typedef enum {
 	kwDOWNTO
 } LexSymbolType;
 
-extern const char *symbTable[43];
+extern const char *symbTable[];
 
 #define MAX_IDENT_LEN 32
 
