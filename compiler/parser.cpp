@@ -233,8 +233,7 @@ void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter
 		*cond = new Bop(op, VarOrConst(id, offset), Vyraz());
 		*counter = new Assign(new Var(adrProm(id), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
 		Srovnani(RPAR);
-		*body = Prikaz();
-		return;
+		break;
 	}
 	case SEMICOLON:
 		Symb = readLexem();
@@ -242,11 +241,12 @@ void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter
 		Srovnani(SEMICOLON);
 		*counter = Assignment();
 		Srovnani(RPAR);
-		return;
+		break;
 	default:
 		ChybaExpanze("ZbFor", Symb.type);
 		return;
 	}
+	*body = Prikaz();
 }
 
 Expr * ArrayOffset(char * id) {
