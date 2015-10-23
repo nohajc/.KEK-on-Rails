@@ -13,6 +13,7 @@ public:
 	virtual void Translate() = 0;
 	virtual ~Node() {
 	}
+	virtual void Print(int) = 0;
 };
 
 class Expr: public Node {
@@ -30,6 +31,7 @@ public:
 	virtual ~Var();
 	virtual void Translate();
 	virtual Node *Optimize();
+	virtual void Print(int);
 };
 
 class Numb: public Expr {
@@ -38,6 +40,7 @@ public:
 	Numb(int);
 	virtual void Translate();
 	int Value();
+	virtual void Print(int);
 };
 
 class Bop: public Expr {
@@ -48,6 +51,7 @@ public:
 	virtual ~Bop();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class UnMinus: public Expr {
@@ -57,6 +61,7 @@ public:
 	virtual ~UnMinus();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class Assign: public Statm {
@@ -67,6 +72,7 @@ public:
 	virtual ~Assign();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class Write: public Statm {
@@ -76,6 +82,7 @@ public:
 	virtual ~Write();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class Read : public Statm {
@@ -85,6 +92,7 @@ public:
 	virtual ~Read();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class If: public Statm {
@@ -96,6 +104,7 @@ public:
 	virtual ~If();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class While: public Statm {
@@ -106,6 +115,7 @@ public:
 	virtual ~While();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class For : public Statm {
@@ -118,6 +128,7 @@ public:
    virtual ~For();
    virtual Node *Optimize();
    virtual void Translate();
+   virtual void Print(int);
 };
 
 class StatmList: public Statm {
@@ -128,11 +139,13 @@ public:
 	virtual ~StatmList();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class Empty: public Statm {
 	virtual void Translate() {
 	}
+	virtual void Print(int);
 };
 
 class Prog: public Node {
@@ -142,6 +155,7 @@ public:
 	virtual ~Prog();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 Expr *VarOrConst(char*, Expr * offset);
@@ -172,6 +186,7 @@ public:
 	CaseBlock(Statm *, CaseBlock *, CaseBlockScope *);
 	~CaseBlock();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 class Case: public Statm {
@@ -182,6 +197,7 @@ public:
 	virtual ~Case();
 	virtual Node *Optimize();
 	virtual void Translate();
+	virtual void Print(int);
 };
 
 #endif
