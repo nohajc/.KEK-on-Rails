@@ -5,6 +5,8 @@
 
 #include "vstup.h"
 
+#define DEBUG_LEXEM 0
+
 typedef enum {
 	IDENT,
 	NUMB,

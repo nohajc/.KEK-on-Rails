@@ -352,6 +352,7 @@ LexicalSymbol readLexemInternal(void) {
 
 LexicalSymbol readLexem(void) {
 	LexicalSymbol symb = readLexemInternal();
+	#if DEBUG_LEXEM == 1
 	printf("LEXEM: %s", symbTable[symb.type]);
 	if(symb.type == NUMB){
 		printf(" %d", symb.number);
@@ -360,6 +361,7 @@ LexicalSymbol readLexem(void) {
 		printf(" \"%s\"", symb.ident);
 	}
 	printf("\n");
+	#endif
 	return symb;
 }
 

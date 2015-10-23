@@ -74,7 +74,12 @@ void DeklKonst() {
 	Srovnani_NUMB(&hod);
 	deklKonst(id, hod);
 	ZbDeklKonst();
-	Srovnani(SEMICOLON);
+	if(Symb.type == SEMICOLON){
+		Srovnani(SEMICOLON);
+	}
+	else if(Symb.type == NEWLINE){
+		Srovnani(NEWLINE);
+	}
 }
 
 void ZbDeklKonst() {
@@ -174,7 +179,12 @@ void DeklProm() {
 	Srovnani_IDENT(id);
 	Typ(id);
 	ZbDeklProm();
-	Srovnani(SEMICOLON);
+	if(Symb.type == SEMICOLON){
+		Srovnani(SEMICOLON);
+	}
+	else if(Symb.type == NEWLINE){
+		Srovnani(NEWLINE);
+	}
 }
 
 void ZbDeklProm() {
@@ -196,7 +206,7 @@ StatmList * SlozPrikaz() {
 }
 
 StatmList * ZbPrikazu() {
-	if (Symb.type == SEMICOLON) {
+	if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 		Symb = readLexem();
 		Statm *p = Prikaz();
 		return new StatmList(p, ZbPrikazu());
@@ -252,6 +262,11 @@ Expr * ArrayOffset(char * id) {
 
 Statm * Prikaz() {
 	Var * var;
+	// Skip newlines
+	while (Symb.type == NEWLINE){
+		Symb = readLexem();
+	}
+
 	switch (Symb.type) {
 	case IDENT: {
 		char id[MAX_IDENT_LEN];
