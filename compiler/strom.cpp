@@ -201,6 +201,12 @@ Node *Bop::Optimize() {
 	case Xor:
 		res = leftval ^ rightval;
 		break;
+	case Lsh:
+		res = leftval << rightval;
+		break;
+	case Rsh:
+		res = leftval >> rightval;
+		break;
 	case Error: //cannot happen
 	default:
 		abort();

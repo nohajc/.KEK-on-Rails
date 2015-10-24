@@ -17,4 +17,19 @@ var a, b, c, d
 	else {
 		write c
 	}
+
+	/*read a
+	write a << 1
+	write a << 2
+	write a << 3
+	write a << 4
+
+	read b
+	write b >> 1
+	write b >> 2
+	write b >> 3
+	write b >> 4*/
+
+	write 3 * 2 + 10 << 2
+	write 3 * 2 + (10 << 2)
 }

@@ -17,7 +17,7 @@ const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO",
 		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN",
-		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR" }; //symbol names in the same order as in LexSymbolType
+		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -334,10 +334,10 @@ LexicalSymbol readLexemInternal(void) {
 		data.type = LTE;
 		readInput();
 		return data;
-	/*case '>':
-		data.type = NEQ;
+	case '<':
+		data.type = LSHIFT;
 		readInput();
-		return data;*/
+		return data;
 	default:
 		break;
 	}
@@ -351,6 +351,10 @@ LexicalSymbol readLexemInternal(void) {
 	switch (character) {
 	case '=':
 		data.type = GTE;
+		readInput();
+		return data;
+	case '>':
+		data.type = RSHIFT;
 		readInput();
 		return data;
 	default:

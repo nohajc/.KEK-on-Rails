@@ -63,7 +63,9 @@ typedef enum {
 	LOG_AND,
 	BIT_OR,
 	BIT_AND,
-	XOR
+	XOR,
+	LSHIFT,
+	RSHIFT
 } LexSymbolType;
 
 extern const char *symbTable[];

@@ -23,6 +23,8 @@ enum Operator {
 	BitOr,
 	BitAnd,
 	Xor,
+	Lsh,
+	Rsh,
 	Error
 };
 

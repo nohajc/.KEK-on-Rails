@@ -168,6 +168,12 @@ void Run() {
 			case Xor:
 				z[++v] = left ^ right;
 				break;
+			case Lsh:
+				z[++v] = left << right;
+				break;
+			case Rsh:
+				z[++v] = left >> right;
+				break;
 			}
 			break;
 		}

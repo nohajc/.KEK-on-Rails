@@ -35,6 +35,8 @@ Expr * BAndTerm();
 Expr * ZbBAndTermu(Expr*);
 Expr * RelOpTerm();
 Expr * ZbRelOpTermu(Expr*);
+Expr * ShiftTerm();
+Expr * ZbShiftTermu(Expr * du);
 Expr *Term();
 Expr *ZbTermu(Expr*);
 Expr *Faktor();

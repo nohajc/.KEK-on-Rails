@@ -510,17 +510,34 @@ Expr * ZbBAndTermu(Expr * du) {
 }
 
 Expr * RelOpTerm() {
-	return ZbRelOpTermu(Term());
+	return ZbRelOpTermu(ShiftTerm());
 }
 
 Expr * ZbRelOpTermu(Expr * du) {
 	switch (Symb.type) {
+	case LSHIFT:
+		Symb = readLexem();
+		return ZbRelOpTermu(new Bop(Lsh, du, ShiftTerm()));
+	case RSHIFT:
+		Symb = readLexem();
+		return ZbRelOpTermu(new Bop(Rsh, du, ShiftTerm()));
+	default:
+		return du;
+	}
+}
+
+Expr * ShiftTerm() {
+	return ZbShiftTermu(Term());
+}
+
+Expr * ZbShiftTermu(Expr * du) {
+	switch (Symb.type) {
 	case PLUS:
 		Symb = readLexem();
-		return ZbRelOpTermu(new Bop(Plus, du, Term()));
+		return ZbShiftTermu(new Bop(Plus, du, Term()));
 	case MINUS:
 		Symb = readLexem();
-		return ZbRelOpTermu(new Bop(Minus, du, Term()));
+		return ZbShiftTermu(new Bop(Minus, du, Term()));
 	default:
 		return du;
 	}
