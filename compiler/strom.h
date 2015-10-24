@@ -152,6 +152,13 @@ public:
 	virtual void Print(int);
 };
 
+class Break: public Statm {
+public:
+	virtual ~Break(){}
+	virtual void Translate();
+	virtual void Print(int);
+};
+
 class Empty: public Statm {
 	virtual void Translate() {
 	}

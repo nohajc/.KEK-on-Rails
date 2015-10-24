@@ -28,7 +28,18 @@ enum Operator {
 	Error
 };
 
-int Gener(TypInstr, int = 0);
+/* 
+Extra instruction info:
+	NIL - no special meaning
+	UBRK - break with unresolved address
+	BRK - break with resolved address
+*/
+enum Label {
+	NIL, UBRK, BRK
+};
+
+int Gener(TypInstr, int = 0, Label lab = NIL);
+void resolveBreak(int a1, int a2);
 void GenTR(char*);
 void PutIC(int);
 int GetIC();

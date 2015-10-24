@@ -1,0 +1,26 @@
+var i, j
+
+{
+	i = 0
+	read j
+
+	/*
+	// This does not compile:
+	if(j > 128) {
+		break
+	}
+	*/
+
+	while (1) {
+		write i
+		i++
+		if(i > j) break
+	}
+
+	for(i = 256; 1; i--) {
+		write i
+		if(i <= j){
+			break
+		}
+	}
+}

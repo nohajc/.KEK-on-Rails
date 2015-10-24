@@ -378,8 +378,13 @@ void While::Translate() {
 	int a1 = GetIC();
 	cond->Translate();
 	int a2 = Gener(IFJ);
+
+	int b1 = GetIC();
 	body->Translate();
+	int b2 = GetIC();
+	
 	Gener(JU, a1);
+	resolveBreak(b1, b2);
 	PutIC(a2);
 }
 
@@ -388,9 +393,15 @@ void For::Translate() {
 	int a1 = GetIC();
 	cond->Translate();
 	int a2 = Gener(IFJ);
+
+	int b1 = GetIC();
 	body->Translate();
+	int b2 = GetIC();
+
 	counter->Translate();
+
 	Gener(JU, a1);
+	resolveBreak(b1, b2);
 	PutIC(a2);
 }
 
@@ -400,6 +411,10 @@ void StatmList::Translate() {
 		s->statm->Translate();
 		s = s->next;
 	} while (s);
+}
+
+void Break::Translate() {
+	Gener(JU, 0, UBRK);
 }
 
 void Prog::Translate() {
@@ -834,6 +849,10 @@ void StatmList::Print(int ident) {
 	if (this->next) {
 		this->next->Print(ident + 1);
 	}
+}
+
+void Break::Print(int ident) {
+	printfi(ident, "Break\n");
 }
 
 void Empty::Print(int ident) {

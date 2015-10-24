@@ -7,6 +7,7 @@
 struct Instr {
 	TypInstr typ;
 	int opd;
+	Label lab;
 };
 
 enum {
@@ -19,11 +20,28 @@ static int m[MaxProm];         // pamet promennych
 static Instr p[MaxProg];       // pamet programu;
 static int ic;                 // citac instrukci
 
-int Gener(TypInstr ti, int opd) {
+int Gener(TypInstr ti, int opd, Label lab) {
 	p[ic].typ = ti;
 	p[ic].opd = opd;
+	p[ic].lab = lab;
 	return ic++;
 }
+
+void resolveBreak(int a1, int a2) {
+	for (int i = a1; i < a2; ++i) {
+		if (p[i].lab == UBRK) {
+			PutIC(i);
+			p[i].lab = BRK;
+		}
+	}
+}
+
+/*int Gener(TypInstr ti, int opd, Label lab) {
+	p[ic].typ = ti;
+	p[ic].opd = opd;
+	p[ic].lab = lab;
+	return ic++;
+}*/
 
 void GenTR(char *id) {
 	int v;

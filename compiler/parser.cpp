@@ -22,6 +22,11 @@ void ChybaExpanze(char* neterminal, LexSymbolType s) {
 	exit(1);
 }
 
+void Chyba(char * msg) {
+	printf("%s\n", msg);
+	exit(1);
+}
+
 void Srovnani(LexSymbolType s) {
 	if (Symb.type == s)
 		Symb = readLexem();
@@ -197,21 +202,21 @@ void ZbDeklProm() {
 	}
 }
 
-StatmList * SlozPrikaz() {
+StatmList * SlozPrikaz(Context ctxt) {
 	Srovnani(LCURLY);
-	Statm *p = Prikaz();
-	StatmList *su = new StatmList(p, ZbPrikazu());
+	Statm *p = Prikaz(ctxt);
+	StatmList *su = new StatmList(p, ZbPrikazu(ctxt));
 	Srovnani(RCURLY);
 	return su;
 }
 
-StatmList * ZbPrikazu() {
+StatmList * ZbPrikazu(Context ctxt) {
 	if (Symb.type != RCURLY) {
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
 		}
-		Statm *p = Prikaz();
-		return new StatmList(p, ZbPrikazu());
+		Statm *p = Prikaz(ctxt);
+		return new StatmList(p, ZbPrikazu(ctxt));
 	}
 	return 0;
 }
@@ -248,7 +253,7 @@ void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter
 		ChybaExpanze("ZbFor", Symb.type);
 		return;
 	}
-	*body = Prikaz();
+	*body = Prikaz(C_CYCLE);
 }
 
 Expr * ArrayOffset(char * id) {
@@ -313,7 +318,7 @@ Statm * Assignment() {
 	}
 }
 
-Statm * Prikaz() {
+Statm * Prikaz(Context ctxt) {
 	Var * var;
 	// Skip newlines
 	while (Symb.type == NEWLINE){
@@ -343,8 +348,8 @@ Statm * Prikaz() {
 		Srovnani(LPAR);
 		Expr *cond = Podminka();
 		Srovnani(RPAR);
-		Statm *prikaz = Prikaz();
-		return new If(cond, prikaz, CastElse());
+		Statm *prikaz = Prikaz(ctxt);
+		return new If(cond, prikaz, CastElse(ctxt));
 	}
 	case kwWHILE: {
 		Expr *cond;
@@ -352,7 +357,7 @@ Statm * Prikaz() {
 		Srovnani(LPAR);
 		cond = Podminka();
 		Srovnani(RPAR);
-		return new While(cond, Prikaz());
+		return new While(cond, Prikaz(C_CYCLE));
 	}
 	case kwFOR: {
 		char id[MAX_IDENT_LEN];
@@ -370,7 +375,14 @@ Statm * Prikaz() {
 		ZbFor(id, offset, &cond, &counter, &body);
 		return new For(init, cond, counter, body);
 	}
-
+	case kwBREAK: {
+		Symb = readLexem();
+		if(ctxt == C_CYCLE){
+			return new Break();
+		}
+		Chyba("Prikaz break je platny pouze uvnitr cyklu nebo prikazu switch.");
+		return new Empty;
+	}
 
 	case kwCASE: {
 
@@ -380,13 +392,13 @@ Statm * Prikaz() {
 		return new Case(expr, ntCASE_BODY());
 	}
 	case LCURLY:
-		return SlozPrikaz();
+		return SlozPrikaz(ctxt);
 	default:
 		return new Empty;
 	}
 }
 
-Statm * CastElse() {
+Statm * CastElse(Context ctxt) {
 	// Skip newlines
 	while (Symb.type == NEWLINE){
 		Symb = readLexem();
@@ -394,7 +406,7 @@ Statm * CastElse() {
 
 	if (Symb.type == kwELSE) {
 		Symb = readLexem();
-		return Prikaz();
+		return Prikaz(ctxt);
 	}
 	return 0;
 }

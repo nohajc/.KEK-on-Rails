@@ -53,6 +53,7 @@ typedef enum {
 	kwFOR,
 	kwTO,
 	kwDOWNTO,
+	kwBREAK,
 	ADD_ASSIGN,
 	SUB_ASSIGN,
 	MUL_ASSIGN,

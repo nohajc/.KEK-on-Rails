@@ -8,17 +8,22 @@
 #include "lexan.h"
 #include "tabsym.h"
 
+enum Context {
+	C_NIL, C_CYCLE
+};
+
 Prog *Program();
 void Dekl();
 void DeklKonst();
 void ZbDeklKonst();
 void DeklProm();
 void ZbDeklProm();
-StatmList *SlozPrikaz();
-StatmList *ZbPrikazu();
-Statm *Prikaz();
+StatmList *SlozPrikaz(Context ctxt = C_NIL);
+StatmList *ZbPrikazu(Context ctxt = C_NIL);
+Statm *Prikaz(Context ctxt = C_NIL);
 Statm *Assignment();
-Statm *CastElse();
+Statm *CastElse(Context ctxt = C_NIL);
+void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body);
 Expr *Podminka();
 Operator RelOp();
 Expr *Vyraz();
