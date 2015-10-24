@@ -6,7 +6,7 @@ var i, j, isprime[2..n+1*3], prime[0..n]
 
 	// The sieve of Eratosthenes
 	//for (i = 2 to sqrtn)
-	for (i = 2; i <= sqrtn; i += 1) {
+	for (i = 2; i <= sqrtn; i++) {
 		if (isprime[i] == 1) {
 			j = i * i
 			while (j <= n) {
@@ -29,7 +29,7 @@ var i, j, isprime[2..n+1*3], prime[0..n]
 		}
 
 	//for (i = 0 to j - 1) write prime[i]
-	for (i = 0; i != j; i += 1) write prime[i]
+	for (i = 0; i != j; i++) write prime[i]
 	
 	//write 10 % 4
 }

@@ -1,4 +1,4 @@
-var a, b, c, d
+var a, b, c, d, i
 
 {
 	a = 4
@@ -6,7 +6,7 @@ var a, b, c, d
 	c = 10
 	read d
 
-	// 1 + -4 = -3
+	// 0 + -4 = -4
 	write !c + -a
 
 	//if (a == (d & 4) && b == 5 || c != 1) {
@@ -32,4 +32,10 @@ var a, b, c, d
 
 	write 3 * 2 + 10 << 2
 	write 3 * 2 + (10 << 2)
+
+	for(i = 14; i >= 0; i--){
+		write i
+	}
+
+	for(i = 14 downto 0) write i
 }

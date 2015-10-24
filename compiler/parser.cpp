@@ -301,6 +301,12 @@ Statm * Assignment() {
 		Symb = readLexem();
 		e = Vyraz();
 		return new Assign(var, new Bop(Modulo, VarOrConst(id, offset), e));
+	case INCREMENT:
+		Symb = readLexem();
+		return new Assign(var, new Bop(Plus, VarOrConst(id, offset), new Numb(1)));
+	case DECREMENT:
+		Symb = readLexem();
+		return new Assign(var, new Bop(Minus, VarOrConst(id, offset), new Numb(1)));
 	default:
 		ChybaExpanze("Assignment", Symb.type);
 		return NULL;
@@ -580,7 +586,7 @@ Expr * ZbTermu(Expr * du) {
 Expr * Faktor() {
 	Expr * offset;
 
-	if (Symb.type == MINUS) { // Even amount of unary minuses cancels each other - it's not a prefix decrement!
+	if (Symb.type == MINUS) {
 		Symb = readLexem();
 		return new UnMinus(Faktor());
 	}

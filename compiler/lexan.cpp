@@ -16,7 +16,7 @@ const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO",
-		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN",
+		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN", "INCREMENT", "DECREMENT",
 		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
@@ -98,6 +98,10 @@ LexicalSymbol readLexemInternal(void) {
 			data.type = ADD_ASSIGN;
 			readInput();
 		}
+		else if(character == '+'){
+			data.type = INCREMENT;
+			readInput();
+		}
 		else{
 			data.type = PLUS;
 		}
@@ -106,6 +110,10 @@ LexicalSymbol readLexemInternal(void) {
 		readInput();
 		if(character == '='){
 			data.type = SUB_ASSIGN;
+			readInput();
+		}
+		else if(character == '-'){
+			data.type = DECREMENT;
 			readInput();
 		}
 		else{
