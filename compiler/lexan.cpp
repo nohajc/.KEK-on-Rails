@@ -49,16 +49,16 @@ const struct {
 //		{ "begin", kwBEGIN }, //
 //		{ "end", kwEND }, //
 		{ "if", kwIF }, //
-		{ "then", kwTHEN }, //
+//		{ "then", kwTHEN }, //
 		{ "else", kwELSE }, //
 		{ "while", kwWHILE }, //
-		{ "do", kwDO }, //
+//		{ "do", kwDO }, //
 		{ "write", kwWRITE }, //
 		{ "read", kwREAD }, //
 		{ "case", kwCASE }, //
 		{ "of", kwOF }, //
-		{ "Integer", kwINTEGER }, //
-		{ "Record", kwRECORD }, //
+//		{ "Integer", kwINTEGER }, //
+//		{ "Record", kwRECORD }, //
 		{ "for", kwFOR },
 		{ "to", kwTO },
 		{ "downto", kwDOWNTO },

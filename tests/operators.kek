@@ -1,17 +1,20 @@
-var a, b, c
+var a, b, c, d
 
 {
 	a = 4
 	b = 5
-	c = 0
+	c = 10
+	read d
 
 	// 1 + -4 = -3
 	write !c + -a
 
-	if (a == 4 && b == 5) {
-		write a
+	//if (a == (d & 4) && b == 5 || c != 1) {
+	//if (a == (d & 4) && (b == 5 || c != 1)) {
+	if (a == (d ^ 4) && (b == 5 || c != 1)) {
+		write d
 	}
-	/*else {
-		write b
-	}*/
+	else {
+		write c
+	}
 }

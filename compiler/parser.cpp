@@ -206,8 +206,10 @@ StatmList * SlozPrikaz() {
 }
 
 StatmList * ZbPrikazu() {
-	if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
-		Symb = readLexem();
+	if (Symb.type != RCURLY) {
+		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
+			Symb = readLexem();
+		}
 		Statm *p = Prikaz();
 		return new StatmList(p, ZbPrikazu());
 	}
@@ -379,6 +381,11 @@ Statm * Prikaz() {
 }
 
 Statm * CastElse() {
+	// Skip newlines
+	while (Symb.type == NEWLINE){
+		Symb = readLexem();
+	}
+
 	if (Symb.type == kwELSE) {
 		Symb = readLexem();
 		return Prikaz();
