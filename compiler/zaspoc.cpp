@@ -91,6 +91,9 @@ void Print() {
 		case SWAP:
 			printf("SWAP\n");
 			break;
+		case NOT:
+			printf("NOT\n");
+			break;
 		case STOP:
 			printf("STOP\n\n");
 			return;
@@ -150,11 +153,29 @@ void Run() {
 			case GreaterOrEq:
 				z[++v] = left >= right;
 				break;
+			case LogOr:
+				z[++v] = left || right;
+				break;
+			case LogAnd:
+				z[++v] = left && right;
+				break;
+			case BitOr:
+				z[++v] = left | right;
+				break;
+			case BitAnd:
+				z[++v] = left & right;
+				break;
+			case Xor:
+				z[++v] = left ^ right;
+				break;
 			}
 			break;
 		}
 		case UNM:
 			z[v] = -z[v];
+			break;
+		case NOT:
+			z[v] = !z[v];
 			break;
 		case DR:
 			z[v] = m[z[v]];

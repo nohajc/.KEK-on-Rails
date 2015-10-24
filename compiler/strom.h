@@ -64,6 +64,16 @@ public:
 	virtual void Print(int);
 };
 
+class Not: public Expr {
+	Expr *expr;
+public:
+	Not(Expr *e);
+	virtual ~Not();
+	virtual Node *Optimize();
+	virtual void Translate();
+	virtual void Print(int);
+};
+
 class Assign: public Statm {
 	Var *var;
 	Expr *expr;

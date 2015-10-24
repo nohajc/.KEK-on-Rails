@@ -11,12 +11,13 @@ typedef enum {
 } InputCharType;
 
 const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
-		"DIVIDE", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
+		"DIVIDE", "MODULO", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
 		"ASSIGN", "COMMA", "SEMICOLON", "NEWLINE", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
 		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO",
-		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN" }; //symbol names in the same order as in LexSymbolType
+		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN",
+		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -124,7 +125,16 @@ LexicalSymbol readLexemInternal(void) {
 	case '/':
 		readInput();
 		goto q1;
-	// TODO: Modulo operation
+	case '%':
+		readInput();
+		if(character == '='){
+			data.type = MOD_ASSIGN;
+			readInput();
+		}
+		else{
+			data.type = MODULO;
+		}
+		return data;
 	case '(':
 		data.type = LPAR;
 		readInput();
@@ -172,6 +182,40 @@ LexicalSymbol readLexemInternal(void) {
 		return data;
 	case ']':
 		data.type = RBRAC;
+		readInput();
+		return data;
+	case '!':
+		readInput();
+		if(character == '='){
+			data.type = NEQ;
+			readInput();
+		}
+		else{
+			data.type = LOG_NOT;
+		}
+		return data;
+	case '|':
+		readInput();
+		if(character == '|'){
+			data.type = LOG_OR;
+			readInput();
+		}
+		else{
+			data.type = BIT_OR;
+		}
+		return data;
+	case '&':
+		readInput();
+		if(character == '&'){
+			data.type = LOG_AND;
+			readInput();
+		}
+		else{
+			data.type = BIT_AND;
+		}
+		return data;
+	case '^':
+		data.type = XOR;
 		readInput();
 		return data;
 	default:;
@@ -290,10 +334,10 @@ LexicalSymbol readLexemInternal(void) {
 		data.type = LTE;
 		readInput();
 		return data;
-	case '>':
+	/*case '>':
 		data.type = NEQ;
 		readInput();
-		return data;
+		return data;*/
 	default:
 		break;
 	}

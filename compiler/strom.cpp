@@ -45,6 +45,14 @@ UnMinus::~UnMinus() {
 	delete expr;
 }
 
+Not::Not(Expr *e) {
+	expr = e;
+}
+
+Not::~Not(){
+	delete expr;
+}
+
 Assign::Assign(Var *v, Expr *e) {
 	var = v;
 	expr = e;
@@ -178,6 +186,21 @@ Node *Bop::Optimize() {
 	case GreaterOrEq:
 		res = leftval >= rightval;
 		break;
+	case LogOr:
+		res = leftval || rightval;
+		break;
+	case LogAnd:
+		res = leftval && rightval;
+		break;
+	case BitOr:
+		res = leftval | rightval;
+		break;
+	case BitAnd:
+		res = leftval & rightval;
+		break;
+	case Xor:
+		res = leftval ^ rightval;
+		break;
 	case Error: //cannot happen
 	default:
 		abort();
@@ -193,6 +216,16 @@ Node *UnMinus::Optimize() {
 	if (!e)
 		return this;
 	e = new Numb(-e->Value());
+	delete this;
+	return e;
+}
+
+Node *Not::Optimize() {
+	expr->Optimize();
+	Numb *e = dynamic_cast<Numb*>(expr);
+	if (!e)
+		return this;
+	e = new Numb(!e->Value());
 	delete this;
 	return e;
 }
@@ -299,6 +332,11 @@ void Bop::Translate() {
 void UnMinus::Translate() {
 	expr->Translate();
 	Gener(UNM);
+}
+
+void Not::Translate() {
+	expr->Translate();
+	Gener(NOT);
 }
 
 void Assign::Translate() {
@@ -673,6 +711,15 @@ void Bop::Print(int ident) {
 
 void UnMinus::Print(int ident) {
 	printfi(ident, "UnMinus\n");
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
+	}
+}
+
+void Not::Print(int ident) {
+	printfi(ident, "Not\n");
 
 	printfi(ident, "expr:\n");
 	if (this->expr) {

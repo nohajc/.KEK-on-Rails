@@ -4,7 +4,7 @@
 #define _ZASPOC_
 
 enum TypInstr {
-	TA, TC, BOP, UNM, DR, ST, IFJ, JU, WRT, RD, DUP, SWAP, STOP
+	TA, TC, BOP, UNM, DR, ST, IFJ, JU, WRT, RD, DUP, SWAP, NOT, STOP
 };
 enum Operator {
 	Plus,
@@ -18,6 +18,11 @@ enum Operator {
 	Greater,
 	LessOrEq,
 	GreaterOrEq,
+	LogOr,
+	LogAnd,
+	BitOr,
+	BitAnd,
+	Xor,
 	Error
 };
 

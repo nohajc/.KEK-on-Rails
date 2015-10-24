@@ -23,9 +23,22 @@ Expr *Podminka();
 Operator RelOp();
 Expr *Vyraz();
 Expr *ZbVyrazu(Expr*);
+Expr * LOrTerm();
+Expr * ZbLOrTermu(Expr*);
+Expr * XorTerm();
+Expr * ZbXorTermu(Expr * du);
+Expr * LAndTerm();
+Expr * ZbLAndTermu(Expr*);
+Expr * BOrTerm();
+Expr * ZbBOrTermu(Expr*);
+Expr * BAndTerm();
+Expr * ZbBAndTermu(Expr*);
+Expr * RelOpTerm();
+Expr * ZbRelOpTermu(Expr*);
 Expr *Term();
 Expr *ZbTermu(Expr*);
 Expr *Faktor();
+Expr *ZbFaktoru(Expr*);
 
 static LexicalSymbol Symb;
 

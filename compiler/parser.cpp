@@ -270,7 +270,8 @@ Statm * Assignment() {
 	char id[MAX_IDENT_LEN];
 
 	Srovnani_IDENT(id);
-	Var *var = new Var(adrProm(id), ArrayOffset(id), false);
+	Expr * offset = ArrayOffset(id);
+	Var *var = new Var(adrProm(id), offset, false);
 	Expr * e;
 	//Srovnani(ASSIGN);
 	switch (Symb.type) {
@@ -281,19 +282,23 @@ Statm * Assignment() {
 	case ADD_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz();
-		return new Assign(var, new Bop(Plus, var, e));
+		return new Assign(var, new Bop(Plus, VarOrConst(id, offset), e));
 	case SUB_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz();
-		return new Assign(var, new Bop(Minus, var, e));
+		return new Assign(var, new Bop(Minus, VarOrConst(id, offset), e));
 	case MUL_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz();
-		return new Assign(var, new Bop(Times, var, e));
+		return new Assign(var, new Bop(Times, VarOrConst(id, offset), e));
 	case DIV_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz();
-		return new Assign(var, new Bop(Divide, var, e));
+		return new Assign(var, new Bop(Divide, VarOrConst(id, offset), e));
+	case MOD_ASSIGN:
+		Symb = readLexem();
+		e = Vyraz();
+		return new Assign(var, new Bop(Modulo, VarOrConst(id, offset), e));
 	default:
 		ChybaExpanze("Assignment", Symb.type);
 		return NULL;
@@ -382,10 +387,11 @@ Statm * CastElse() {
 }
 
 Expr * Podminka() {
-	Expr *left = Vyraz();
+	/*Expr *left = Vyraz();
 	Operator op = RelOp();
 	Expr *right = Vyraz();
-	return new Bop(op, left, right);
+	return new Bop(op, left, right);*/
+	return Vyraz();
 }
 
 Operator RelOp() {
@@ -409,27 +415,105 @@ Operator RelOp() {
 		Symb = readLexem();
 		return GreaterOrEq;
 	default:
-		ChybaExpanze("RelOp", Symb.type);
+		//ChybaExpanze("RelOp", Symb.type);
 		return Error;
 	}
 }
 
 Expr * Vyraz() {
-	if (Symb.type == MINUS) {
-		Symb = readLexem();
-		return ZbVyrazu(new UnMinus(Term()));
-	}
-	return ZbVyrazu(Term());
+	return ZbVyrazu(LOrTerm());
 }
 
 Expr * ZbVyrazu(Expr * du) {
 	switch (Symb.type) {
+	case LOG_OR:
+		Symb = readLexem();
+		return ZbVyrazu(new Bop(LogOr, du, LOrTerm()));
+	default:
+		return du;
+	}
+}
+
+Expr * LOrTerm() {
+	return ZbLOrTermu(XorTerm());
+}
+
+Expr * ZbLOrTermu(Expr * du) {
+	switch (Symb.type) {
+	case XOR:
+		Symb = readLexem();
+		return ZbLOrTermu(new Bop(Xor, du, XorTerm()));
+	default:
+		return du;
+	}
+}
+
+Expr * XorTerm() {
+	return ZbXorTermu(LAndTerm());
+}
+
+Expr * ZbXorTermu(Expr * du) {
+	switch (Symb.type) {
+	case LOG_AND:
+		Symb = readLexem();
+		return ZbXorTermu(new Bop(LogAnd, du, LAndTerm()));
+	default:
+		return du;
+	}
+}
+
+Expr * LAndTerm() {
+	return ZbLAndTermu(BOrTerm());
+}
+
+Expr * ZbLAndTermu(Expr * du) {
+	switch (Symb.type) {
+	case BIT_OR:
+		Symb = readLexem();
+		return ZbLAndTermu(new Bop(BitOr, du, BOrTerm()));
+	default:
+		return du;
+	}
+}
+
+Expr * BOrTerm() {
+	return ZbBOrTermu(BAndTerm());
+}
+
+Expr * ZbBOrTermu(Expr * du) {
+	switch (Symb.type) {
+	case BIT_AND:
+		Symb = readLexem();
+		return ZbBOrTermu(new Bop(BitAnd, du, BAndTerm()));
+	default:
+		return du;
+	}
+}
+
+Expr * BAndTerm() {
+	return ZbBAndTermu(RelOpTerm());
+}
+
+Expr * ZbBAndTermu(Expr * du) {
+	Operator op = RelOp();
+	if (op == Error) {
+		return du;
+	}
+	return ZbBAndTermu(new Bop(op, du, RelOpTerm()));
+}
+
+Expr * RelOpTerm() {
+	return ZbRelOpTermu(Term());
+}
+
+Expr * ZbRelOpTermu(Expr * du) {
+	switch (Symb.type) {
 	case PLUS:
 		Symb = readLexem();
-		return ZbVyrazu(new Bop(Plus, du, Term()));
+		return ZbRelOpTermu(new Bop(Plus, du, Term()));
 	case MINUS:
 		Symb = readLexem();
-		return ZbVyrazu(new Bop(Minus, du, Term()));
+		return ZbRelOpTermu(new Bop(Minus, du, Term()));
 	default:
 		return du;
 	}
@@ -447,6 +531,9 @@ Expr * ZbTermu(Expr * du) {
 	case DIVIDE:
 		Symb = readLexem();
 		return ZbVyrazu(new Bop(Divide, du, Faktor()));
+	case MODULO:
+		Symb = readLexem();
+		return ZbVyrazu(new Bop(Modulo, du, Faktor()));
 	default:
 		return du;
 	}
@@ -468,6 +555,15 @@ Expr * ZbTermu(Expr * du) {
 
 Expr * Faktor() {
 	Expr * offset;
+
+	if (Symb.type == MINUS) { // Even amount of unary minuses cancels each other - it's not a prefix decrement!
+		Symb = readLexem();
+		return new UnMinus(Faktor());
+	}
+	if (Symb.type == LOG_NOT) {
+		Symb = readLexem();
+		return new Not(Faktor());
+	}
 
 	switch (Symb.type) {
 	case IDENT:

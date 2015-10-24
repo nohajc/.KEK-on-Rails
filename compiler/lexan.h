@@ -14,6 +14,7 @@ typedef enum {
 	MINUS,
 	TIMES,
 	DIVIDE,
+	MODULO,
 	EQ,
 	NEQ,
 	LT,
@@ -55,7 +56,14 @@ typedef enum {
 	ADD_ASSIGN,
 	SUB_ASSIGN,
 	MUL_ASSIGN,
-	DIV_ASSIGN
+	DIV_ASSIGN,
+	MOD_ASSIGN,
+	LOG_NOT,
+	LOG_OR,
+	LOG_AND,
+	BIT_OR,
+	BIT_AND,
+	XOR
 } LexSymbolType;
 
 extern const char *symbTable[];
