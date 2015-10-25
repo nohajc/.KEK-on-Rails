@@ -1,0 +1,16 @@
+class Test{
+	var v1, v2
+	const c1
+	static var sv
+
+	Test() { // Constructor
+	}
+
+	method1(a, b) {
+		return a + b
+	}
+
+	static main(args) {
+		return 0
+	}
+}

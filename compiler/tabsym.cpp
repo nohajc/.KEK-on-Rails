@@ -31,7 +31,7 @@ PrvekTab::PrvekTab(char *i, DruhId d, int h, PrvekTab *n) {
 		hodn = h;
 		break;
 	case IdProm:
-		this->hodn = volna_adr++;
+		this->hodn = volna_adr++; ClassEnv * cls, MethodEnv * mth
 		break;
 	case IdRecord:
 		this->record = r;
@@ -75,7 +75,7 @@ PrvekTab *hledejId(char *id) {
 	return NULL;
 }
 
-void deklKonst(char *id, int val) {
+void deklKonst(char *id, int val, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejId(id);
 	if (p) {
 		Chyba(id, "druha deklarace");
@@ -84,7 +84,7 @@ void deklKonst(char *id, int val) {
 	TabSym = new PrvekTab(id, IdKonst, val, TabSym);
 }
 
-void deklProm(char *id) {
+void deklProm(char *id, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejId(id);
 	if (p) {
 		Chyba(id, "druha deklarace");
@@ -95,7 +95,7 @@ void deklProm(char *id) {
 }
 
 // Static array
-void deklProm(char *id, int prvni, int posledni){
+void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
    PrvekTab *p = hledejId(id);
    if (p) {
       Chyba(id, "druha deklarace");
@@ -148,11 +148,11 @@ int adrProm(char *id) {
 	PrvekTab *p = hledejId(id);
 	if (!p) {
 		Chyba(id, "neni deklarovan");
-		return 0;
+		exit(1);
 	}
 	else if (p->druh != IdProm) {
 		Chyba(id, "neni identifikatorem promenne");
-		return 0;
+		exit(1);
 	}
 	else{
 		return p->hodn;
@@ -164,11 +164,11 @@ int prvniIdxProm(char *id)
 	PrvekTab *p = hledejId(id);
 	if (!p) {
 		Chyba(id, "neni deklarovan");
-		return 0;
+		exit(1);
 	}
 	else if (p->druh != IdProm) {
 		Chyba(id, "neni identifikatorem promenne");
-		return 0;
+		exit(1);
 	}
 	else{
 		return p->prvni;

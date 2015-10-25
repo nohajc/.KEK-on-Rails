@@ -3,6 +3,9 @@
 #ifndef TABSYM_H
 #define TABSYM_H
 
+#include <stdio.h>
+#include <stdlib.h>
+
 enum DruhId {
 	Nedef, IdProm, IdKonst, IdRecord
 };
@@ -23,6 +26,7 @@ struct PrvekTab {
 	DruhId druh;
 	int hodn;
 	bool pole;
+	bool isStatic;
 	int prvni, posledni;
 
 	//CRecord *record;
@@ -36,13 +40,35 @@ struct PrvekTab {
 	~PrvekTab();
 };
 
-static PrvekTab *TabSym;
+struct MethodEnv {
+	char * methodName;
+	bool isStatic;
+	PrvekTab * syms; // method vars and consts
+	MethodEnv * next;
+};
+
+struct ClassEnv {
+	char * className;
+	PrvekTab * syms; // class consts and vars
+	MethodEnv * methods;
+	ClassEnv * next;
+};
+
+struct Env {
+	ClassEnv * clsEnv;
+	MethodEnv * mthEnv;
+};
+
+static ClassEnv * TabClass;
+
+
+static PrvekTab * TabSym; // TODO: remove this
 static int volna_adr;
 
-void deklKonst(char *, int);
-void deklProm(char *);
-void deklProm(char *, int, int);
-void deklRecord(char *, CRecord *);
+void deklKonst(char *, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
+void deklProm(char *, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
+void deklProm(char *, int, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
+//void deklRecord(char *, CRecord *);
 
 PrvekTab *hledejId(char *);
 

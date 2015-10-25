@@ -51,26 +51,22 @@ void Srovnani_NUMB(int *h) {
 }
 
 Prog *Program() {
-	Dekl();
+	//Dekl(); // Declarations moved inside the program. They can be anywhere.
 	return new Prog(SlozPrikaz());
 }
 
-void Dekl() {
+StatmList * Dekl() {
 	switch (Symb.type) {
 	case kwVAR:
-		DeklProm();
-		Dekl();
-		break;
+		return new StatmList(DeklProm(), Dekl());
 	case kwCONST:
-		DeklKonst();
-		Dekl();
-		break;
+		return new StatmList(DeklKonst(), Dekl());
 	default:
-		break;
+		return new StatmList(new Empty, NULL);
 	}
 }
 
-void DeklKonst() {
+StatmList * DeklKonst() {
 	char id[MAX_IDENT_LEN];
 	int hod;
 	Symb = readLexem();
@@ -85,6 +81,7 @@ void DeklKonst() {
 	else if(Symb.type == NEWLINE){
 		Srovnani(NEWLINE);
 	}
+	return new StatmList(new Empty, NULL);
 }
 
 void ZbDeklKonst() {
@@ -146,7 +143,8 @@ CRecord * Record() {
 	}
 }*/
 
-void Typ(char *id) {
+// Returns true if the Type is primitive (integer, char, ...)
+bool Typ(char *id) { // TODO: remove static array declaration
 	/*if (Symb.type == COLON) {
 		Srovnani(COLON);
 
@@ -172,34 +170,68 @@ void Typ(char *id) {
       deklProm(id, n_prvni->Value(), n_posledni->Value());
       delete n_prvni;
       delete n_posledni;
+      return false;
    }
    else{
       deklProm(id);
+      return true;
    }
 }
 
-void DeklProm() {
+StatmList * DeklProm() {
 	char id[MAX_IDENT_LEN];
 	Symb = readLexem();
 	Srovnani_IDENT(id);
-	Typ(id);
-	ZbDeklProm();
-	if(Symb.type == SEMICOLON){
+	bool prim = Typ(id);
+	Statm * st;
+	StatmList * ret;
+	Var * var;
+	Expr * e;
+
+	if (prim && Symb.type == ASSIGN) {
+		Symb = readLexem();
+		var = new Var(adrProm(id), NULL, false);
+		e = Vyraz();
+		st = new Assign(var, e);
+	}
+	else {
+		st = new Empty;
+	}
+
+	ret = new StatmList(st, ZbDeklProm());
+	if (Symb.type == SEMICOLON) {
 		Srovnani(SEMICOLON);
 	}
-	else if(Symb.type == NEWLINE){
+	else if (Symb.type == NEWLINE) {
 		Srovnani(NEWLINE);
 	}
+
+	return ret;
 }
 
-void ZbDeklProm() {
+StatmList * ZbDeklProm() {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		Symb = readLexem();
 		Srovnani_IDENT(id);
-		Typ(id);
-		ZbDeklProm();
+		bool prim = Typ(id);
+		Statm * st;
+		Var * var;
+		Expr * e;
+
+		if (prim && Symb.type == ASSIGN) {
+			Symb = readLexem();
+			var = new Var(adrProm(id), NULL, false);
+			e = Vyraz();
+			st = new Assign(var, e);
+		}
+		else {
+			st = new Empty;
+		}
+
+		return new StatmList(st, ZbDeklProm());
 	}
+	return new StatmList(new Empty, NULL);
 }
 
 StatmList * SlozPrikaz(Context ctxt) {
@@ -329,6 +361,9 @@ Statm * Prikaz(Context ctxt) {
 	skipNewlines();
 
 	switch (Symb.type) {
+	case kwVAR:
+	case kwCONST:
+		return Dekl();
 	case IDENT: {
 		return Assignment();
 		/*char id[MAX_IDENT_LEN];
@@ -398,7 +433,7 @@ Statm * Prikaz(Context ctxt) {
 	case LCURLY:
 		return SlozPrikaz(ctxt);
 	default:
-		return new Empty; // This may be problematic. Shouldn't we just throw error?
+		return new Empty;
 	}
 }
 

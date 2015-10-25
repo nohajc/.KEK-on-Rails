@@ -13,11 +13,11 @@ enum Context {
 };
 
 Prog *Program();
-void Dekl();
-void DeklKonst();
+StatmList * Dekl();
+StatmList * DeklKonst();
 void ZbDeklKonst();
-void DeklProm();
-void ZbDeklProm();
+StatmList * DeklProm();
+StatmList * ZbDeklProm();
 StatmList *SlozPrikaz(Context ctxt = C_NIL);
 StatmList *ZbPrikazu(Context ctxt = C_NIL);
 Statm *Prikaz(Context ctxt = C_NIL);
@@ -58,7 +58,7 @@ void Srovnani_IDENT(char *);
 Expr * RecordFaktor(char *);
 CRecord * Record();
 CRecord * ZbRecord();
-void Typ(char *);
+bool Typ(char *);
 void TypVar(char *);
 void TypRec();
 
