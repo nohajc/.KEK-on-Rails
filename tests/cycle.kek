@@ -1,8 +1,8 @@
-var i, j
+var i, j, k
 
 {
 	i = 0
-	read j
+	read k
 
 	/*
 	// This does not compile:
@@ -12,15 +12,22 @@ var i, j
 	*/
 
 	while (1) {
-		write i
-		i++
-		if(i > j) break
+		j = 0
+		while (1) {
+			if (j >= i) break
+			write j
+			j++
+		}
+		i += 10
+		if(i > k) break
 	}
 
-	for(i = 256; 1; i--) {
+	/*for(i = 256; 1; i--) {
 		write i
-		if(i <= j){
+		if(i <= k){
 			break
 		}
-	}
+	}*/
+
+	// TODO: test nested cycles with breaks
 }
