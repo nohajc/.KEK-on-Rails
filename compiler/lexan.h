@@ -5,7 +5,7 @@
 
 #include "vstup.h"
 
-#define DEBUG_LEXEM 0
+#define DEBUG_LEXEM 1
 
 typedef enum {
 	IDENT,
@@ -40,8 +40,9 @@ typedef enum {
 	kwREAD,
 	EOI,
 	ERR,
+	kwSWITCH,
 	kwCASE,
-	kwOF,
+	kwDEFAULT,
 	DOT,
 	DOUBLE_DOT,
 	COLON,

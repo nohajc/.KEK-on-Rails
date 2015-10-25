@@ -14,7 +14,7 @@ const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"DIVIDE", "MODULO", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
 		"ASSIGN", "COMMA", "SEMICOLON", "NEWLINE", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
-		"EOI", "ERR" /* <nesro> */, "kwCASE", "kwOF", "DOT", "DOUBLE_DOT",
+		"EOI", "ERR" /* <nesro> */, "kwSWITCH", "kwCASE", "kwDEFAULT", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO", "kwBREAK",
 		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN", "INCREMENT", "DECREMENT",
 		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT" }; //symbol names in the same order as in LexSymbolType
@@ -55,8 +55,9 @@ const struct {
 //		{ "do", kwDO }, //
 		{ "write", kwWRITE }, //
 		{ "read", kwREAD }, //
+		{ "switch", kwSWITCH },
 		{ "case", kwCASE }, //
-		{ "of", kwOF }, //
+		{ "default", kwDEFAULT }, //
 //		{ "Integer", kwINTEGER }, //
 //		{ "Record", kwRECORD }, //
 		{ "for", kwFOR },

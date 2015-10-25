@@ -318,12 +318,15 @@ Statm * Assignment() {
 	}
 }
 
-Statm * Prikaz(Context ctxt) {
-	Var * var;
-	// Skip newlines
+static void skipNewlines() {
 	while (Symb.type == NEWLINE){
 		Symb = readLexem();
 	}
+}
+
+Statm * Prikaz(Context ctxt) {
+	Var * var;
+	skipNewlines();
 
 	switch (Symb.type) {
 	case IDENT: {
@@ -384,25 +387,23 @@ Statm * Prikaz(Context ctxt) {
 		return new Empty;
 	}
 
-	case kwCASE: {
-
-		Srovnani(kwCASE);
+	case kwSWITCH: {
+		Srovnani(kwSWITCH);
+		Srovnani(LPAR);
 		Expr *expr = Vyraz();
-		Srovnani(kwOF);
+		Srovnani(RPAR);
+		Srovnani(LCURLY);
 		return new Case(expr, ntCASE_BODY());
 	}
 	case LCURLY:
 		return SlozPrikaz(ctxt);
 	default:
-		return new Empty;
+		return new Empty; // This may be problematic. Shouldn't we just throw error?
 	}
 }
 
 Statm * CastElse(Context ctxt) {
-	// Skip newlines
-	while (Symb.type == NEWLINE){
-		Symb = readLexem();
-	}
+	skipNewlines();
 
 	if (Symb.type == kwELSE) {
 		Symb = readLexem();
@@ -635,25 +636,38 @@ Expr * Faktor() {
 }
 
 CaseBlock * ntCASE_BODY() {
+	skipNewlines();
 
 	switch (Symb.type) {
-	case NUMB: {
+	case kwCASE: {
+		Symb = readLexem();
 		CaseBlockScope *scope = ntCASE_SCOPE();
 		Statm *statm = Prikaz();
-		Srovnani(SEMICOLON);
+		if(Symb.type == SEMICOLON){
+			Srovnani(SEMICOLON);
+		}
+		else{
+			Srovnani(NEWLINE);
+		}
 		CaseBlock *caseBlock = new CaseBlock(statm, ntCASE_BODY(), scope);
 		return caseBlock;
 	}
-	case kwELSE: {
-		Srovnani(kwELSE);
+	case kwDEFAULT: {
+		Srovnani(kwDEFAULT);
+		Srovnani(COLON);
 		Statm *statm = Prikaz();
-		Srovnani(SEMICOLON);
+		if(Symb.type == SEMICOLON){
+			Srovnani(SEMICOLON);
+		}
+		else{
+			Srovnani(NEWLINE);
+		}
 		Srovnani(RCURLY);
 		return new CaseBlock(statm, NULL, new CaseBlockScope(NULL));
 	}
-	case RCURLY:
-		Srovnani(RCURLY);
+	case RCURLY: {
 		return new CaseBlock();
+	}
 	default:
 		ChybaExpanze("ntCASE_BODY", Symb.type);
 		break;
