@@ -1,0 +1,18 @@
+{
+	var a, b, c
+
+	read a
+
+	switch (a) {
+	case 0..9, 99..127: {
+		b = 2
+		write 0
+	}
+	case 10..19, 324:
+		write 1
+	case 20..29:
+		write 2
+	default:
+		write 999
+	}
+}
