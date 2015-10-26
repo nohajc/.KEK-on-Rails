@@ -1,6 +1,6 @@
-class Test{
+class Test: Object{
 	var v1, v2
-	const c1
+	const c1 = 42
 	static var sv
 
 	Test() { // Constructor

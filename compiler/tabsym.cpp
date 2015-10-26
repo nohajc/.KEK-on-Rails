@@ -75,7 +75,11 @@ PrvekTab *hledejId(char *id) {
 	return NULL;
 }
 
-ClassEnv * deklClass(char *) {
+ClassEnv * deklClass(char * cls, char * par) {
+	return NULL; // TODO: Implement
+}
+
+MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * cls){
 	return NULL; // TODO: Implement
 }
 
@@ -88,7 +92,7 @@ void deklKonst(char *id, int val, ClassEnv * cls, MethodEnv * mth) {
 	TabSym = new PrvekTab(id, IdKonst, val, TabSym);
 }
 
-void deklProm(char *id, ClassEnv * cls, MethodEnv * mth) {
+void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejId(id);
 	if (p) {
 		Chyba(id, "druha deklarace");

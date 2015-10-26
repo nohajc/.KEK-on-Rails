@@ -63,11 +63,16 @@ Prog *Program() {
 }
 
 StatmList * Dekl() {
+	StatmList * p, * d, * k;
 	switch (Symb.type) {
 	case kwVAR:
-		return new StatmList(DeklProm(), Dekl());
+		p = DeklProm();
+		d = Dekl();
+		return new StatmList(p, d);
 	case kwCONST:
-		return new StatmList(DeklKonst(), Dekl());
+		k = DeklKonst();
+		d = Dekl();
+		return new StatmList(k, d);
 	default:
 		return new StatmList(new Empty, NULL);
 	}
@@ -267,7 +272,7 @@ ClassList * ZbTrid() {
 }
 
 Class * Trida() {
-	char id[MAX_IDENT_LEN];
+	char id[MAX_IDENT_LEN], parId[MAX_IDENT_LEN];
 	ClassEnv * clsEnv;
 	Class * ret;
 
@@ -278,14 +283,88 @@ Class * Trida() {
 
 	Srovnani(kwCLASS);
 	Srovnani_IDENT(id);
-	clsEnv = deklClass(id);
+	if(Symb.type == COLON){ // Class has parent
+		Symb = readLexem();
+		Srovnani_IDENT(parId);
+		clsEnv = deklClass(id, parId);
+	}
+	else{ // Class does not have a parent
+		clsEnv = deklClass(id);
+	}
 
 	// TODO: Parse parent class identifier
 
-	//Srovnani(LCURLY);
-	ret = new Class(SlozPrikaz()); // TODO: This will change
-	//Srovnani(RCURLY);
-	return ret;
+	return new Class(SeznamMetod());
+}
+
+StatmList * SeznamMetod() {
+	Srovnani(LCURLY);
+	Statm * m = ClenTridy();
+	StatmList * lst = new StatmList(m, ZbMetod());
+	Srovnani(RCURLY);
+	return lst;
+}
+
+StatmList * ZbMetod() {
+	if (Symb.type != RCURLY) {
+		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
+			Symb = readLexem();
+		}
+		Statm * m = ClenTridy();
+		if(!m){
+			return NULL;
+		}
+		return new StatmList(m, ZbMetod());
+	}
+	return 0;
+}
+
+Statm * ClenTridy() {
+	bool isStatic = false;
+
+	skipNewlines();
+	if(Symb.type == RCURLY){
+		return NULL;
+	}
+
+	if (Symb.type == kwSTATIC) {
+		isStatic = true;
+		Symb = readLexem();
+	}
+
+	switch (Symb.type) {
+	case kwVAR:
+	case kwCONST:
+		return Dekl(); // TODO: Pass down env information
+	default:
+		return Metoda(isStatic);
+	}
+}
+
+Statm * Metoda(bool isStatic) {
+	char id[MAX_IDENT_LEN];
+	bool isConstructor = false; // TODO: compare method name with class name
+
+	Srovnani_IDENT(id);
+
+	if(isConstructor && isStatic) {
+		Chyba("Konstruktor nesmi byt staticky.");
+	}
+
+	deklMethod(id, isConstructor, isStatic); // TODO: Pass down env information
+
+	Srovnani(LPAR);
+	// Parse method args
+	while (Symb.type != RPAR) {
+		Srovnani_IDENT(id);
+		deklProm(id, true);
+		if (Symb.type != RPAR) {
+			Srovnani(COMMA);
+		}
+	}
+	Srovnani(RPAR);
+
+	return new Method(SlozPrikaz()); // TODO: pass down env information
 }
 
 StatmList * SlozPrikaz(Context ctxt) {
@@ -412,6 +491,9 @@ Statm * Prikaz(Context ctxt) {
 	case kwVAR:
 	case kwCONST:
 		return Dekl();
+	case kwRETURN:
+		Symb = readLexem();
+		return new Return(Vyraz());
 	case IDENT: {
 		return Assignment();
 		/*char id[MAX_IDENT_LEN];

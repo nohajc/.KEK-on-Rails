@@ -151,6 +151,22 @@ ClassList::~ClassList() {
 	delete next;
 }
 
+Method::Method(StatmList * b) {
+	body = b;
+}
+
+Method::~Method() {
+	delete body;
+}
+
+Return::Return(Expr * e) {
+	expr = e;
+}
+
+Return::~Return() {
+	delete expr;
+}
+
 // definice metody Optimize
 
 Node *Var::Optimize() {
@@ -465,6 +481,15 @@ void ClassList::Translate() {
 		lst->cls->Translate();
 		lst = lst->next;
 	} while (lst);
+}
+
+void Method::Translate() {
+	body->Translate();
+}
+
+void Return::Translate() {
+	expr->Translate();
+	// TODO: implement
 }
 
 Expr *VarOrConst(char *id, Expr * offset)
@@ -933,6 +958,24 @@ void ClassList::Print(int ident) {
 	printfi(ident, "next:\n");
 	if (this->next) {
 		this->next->Print(ident + 1);
+	}
+}
+
+void Method::Print(int ident) {
+	printfi(ident, "Method\n");
+
+	printfi(ident, "body:\n");
+	if (this->body) {
+		this->body->Print(ident + 1);
+	}
+}
+
+void Return::Print(int ident) {
+	printfi(ident, "Return\n");
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
 	}
 }
 

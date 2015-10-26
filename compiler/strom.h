@@ -22,13 +22,42 @@ class Expr: public Node {
 class Statm: public Node {
 };
 
+enum Scope{
+	SC_GLOBAL, // Only classe names are global - you can globally reference a static class member
+	SC_LOCAL,
+	SC_ARG,
+	SC_INSTANCE, // instance variable
+	SC_CLASS // class static variable
+};
+
 class Var: public Expr {
 	int addr;
 	Expr * offset;
 	bool rvalue;
+	Scope sc;
 public:
 	Var(int, Expr *, bool);
 	virtual ~Var();
+	virtual void Translate();
+	virtual Node *Optimize();
+	virtual void Print(int);
+};
+
+class ClassRef: public Var { // Var which is also a class
+	Var * target; // Member of the referenced class - must be static
+public:
+	ClassRef(Var *);
+	virtual ~ClassRef();
+	virtual void Translate();
+	virtual Node *Optimize();
+	virtual void Print(int);
+};
+
+class ObjRef: public Var { // Var which is also an object
+	Var * target; // Member of the referenced object
+public:
+	ObjRef(Var *);
+	virtual ~ObjRef();
 	virtual void Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);
@@ -165,7 +194,7 @@ class Empty: public Statm {
 	virtual void Print(int);
 };
 
-class Class: public Node {
+class Class: public Statm {
 	StatmList *stm;
 public:
 	Class(StatmList*);
@@ -175,13 +204,34 @@ public:
 	virtual void Print(int);
 };
 
-class ClassList: public Node {
+class ClassList: public Statm {
 	Class * cls;
 	ClassList *next;
 public:
 	ClassList(Class*, ClassList*);
 	virtual ~ClassList();
 	virtual Node *Optimize();
+	virtual void Translate();
+	virtual void Print(int);
+};
+
+/*class MethodList: public StatmList{
+};*/
+
+class Method: public Statm {
+	StatmList * body;
+public:
+	Method(StatmList *);
+	virtual ~Method();
+	virtual void Translate();
+	virtual void Print(int);
+};
+
+class Return: public Statm {
+	Expr * expr;
+public:
+	Return(Expr *);
+	virtual ~Return();
 	virtual void Translate();
 	virtual void Print(int);
 };

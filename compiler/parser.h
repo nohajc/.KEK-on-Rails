@@ -50,6 +50,10 @@ Expr *ZbFaktoru(Expr*);
 ClassList * SeznamTrid();
 ClassList * ZbTrid();
 Class * Trida();
+StatmList * SeznamMetod();
+StatmList * ZbMetod();
+Statm * ClenTridy();
+Statm * Metoda(bool isStatic);
 
 static LexicalSymbol Symb;
 
