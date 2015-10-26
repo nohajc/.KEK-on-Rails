@@ -351,7 +351,9 @@ Node *Prog::Optimize() {
 }
 
 Node *Class::Optimize() {
-	stm = (StatmList*) (stm->Optimize());
+	if (stm) {
+		stm = (StatmList*) (stm->Optimize());
+	}
 	return this;
 }
 
@@ -476,7 +478,9 @@ void Prog::Translate() {
 }
 
 void Class::Translate() {
-	stm->Translate();
+	if (stm) {
+		stm->Translate();
+	}
 }
 
 void ClassList::Translate() {

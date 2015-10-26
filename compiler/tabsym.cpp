@@ -20,10 +20,11 @@ CRecord::CRecord(char *ident, CRecord *next) {
 	this->m_Next = next;
 }
 
-PrvekTab::PrvekTab(char *i, DruhId d, int h, PrvekTab *n) {
+PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n) {
 	ident = new char[strlen(i)+1];
 	strcpy(ident, i);
 	druh = d; hodn = h; dalsi = n;
+	sc = s;
 
 	prvni = 0;
 	pole = false;
@@ -46,10 +47,25 @@ ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 		parent = par;
 	}
 	next = n;
+	class_addr_next = 0;
+	obj_addr_next = 0;
 }
 
 ClassEnv::~ClassEnv() {
 	delete [] className;
+}
+
+MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
+	methodName = new char[strlen(name) + 1];
+	strcpy(methodName, name);
+	isStatic = sttc;
+	next = n;
+	arg_addr_next = 0;
+	local_addr_next = 0;
+}
+
+MethodEnv::~MethodEnv() {
+	delete [] methodName;
 }
 
 static void Chyba(char *id, char *txt) {
@@ -82,12 +98,34 @@ ClassEnv * hledejClass(char * id) {
 	return NULL;
 }
 
-MethodEnv * hledejMethod(char *, ClassEnv *) {
+MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
+	MethodEnv * me = ce->methods;
 
+	while (me) {
+		if(!strcmp(id, me->methodName)) {
+			return me;
+		}
+		me = me->next;
+	}
+	return NULL;
 }
 
-PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *) {
+PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me) {
+	PrvekTab * syms;
+	if (me) { // Local var
+		syms = me->syms;
+	}
+	else { // Class member
+		syms = ce->syms;
+	}
 
+	while (syms) {
+		if(!strcmp(id, syms->ident)) {
+			return syms;
+		}
+		syms = syms->dalsi;
+	}
+	return NULL;
 }
 
 ClassEnv * deklClass(char * cls, char * par) {
@@ -109,27 +147,86 @@ ClassEnv * deklClass(char * cls, char * par) {
 }
 
 MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * cls){
-	return NULL; // TODO: Implement
+	if (constructor) {
+		if (cls->constructor) {
+			Chyba(mth, "trida muze mit pouze jeden konstruktor");
+		}
+		cls->constructor = new MethodEnv(mth, isStatic, NULL);
+		return cls->constructor;
+	}
+
+	MethodEnv * me = hledejMethod(mth, cls);
+
+	if (me) {
+		Chyba(mth, "druha deklarace");
+	}
+	cls->methods = new MethodEnv(mth, isStatic, cls->methods);
+
+	return cls->methods;
 }
 
-void deklKonst(char *id, int val, ClassEnv * cls, MethodEnv * mth) {
-	PrvekTab *p = hledejId(id);
+void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth) {
+	PrvekTab *p = hledejMember(id, cls, mth);
 	if (p) {
 		Chyba(id, "druha deklarace");
 	}
-	TabSym = new PrvekTab(id, IdKonst, val, TabSym);
+
+	// Constant value doesn't need memory space - it will be inlined
+	// Shouldn't we change it?
+	if (mth) {
+		mth->syms = new PrvekTab(id, IdKonst, SC_LOCAL, val, mth->syms);
+	}
+	else if (isStatic) {
+		cls->syms = new PrvekTab(id, IdKonst, SC_CLASS, val, cls->syms);
+	}
+	else {
+		Chyba(id, "Konstantni clen tridy musi byt staticky.");
+	}
 }
 
 void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth) {
-	PrvekTab *p = hledejId(id);
+	PrvekTab *p = hledejMember(id, cls, mth);
 	if (p) {
 		Chyba(id, "druha deklarace");
 	}
-	TabSym = new PrvekTab(id, IdProm, volna_adr, TabSym);
-	volna_adr++;
+
+	if (mth) { // Local or args
+		int addr;
+		Scope sc;
+
+		if (arg) {
+			addr = mth->arg_addr_next;
+			mth->arg_addr_next++;
+			sc = SC_ARG;
+		}
+		else {
+			addr = mth->local_addr_next;
+			mth->local_addr_next++;
+			sc = SC_LOCAL;
+		}
+
+		mth->syms = new PrvekTab(id, IdProm, sc, addr, mth->syms);
+	}
+	else { // Class or instance
+		int addr;
+		Scope sc;
+
+		if (isStatic) {
+			addr = cls->class_addr_next;
+			cls->class_addr_next++;
+			sc = SC_CLASS;
+		}
+		else {
+			addr = cls->obj_addr_next;
+			cls->obj_addr_next++;
+			sc = SC_INSTANCE;
+		}
+
+		cls->syms = new PrvekTab(id, IdProm, sc, addr, cls->syms);
+	}
 }
 
-// Static array
+// Static array - TODO: remove
 void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
    PrvekTab *p = hledejId(id);
    if (p) {

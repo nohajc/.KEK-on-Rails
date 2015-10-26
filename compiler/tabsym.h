@@ -37,7 +37,6 @@ struct PrvekTab {
 	Scope sc;
 	int hodn; // TODO: this will be a pointer (var can also be an obj ref)
 	bool pole;
-	bool isStatic;
 	int prvni, posledni;
 
 	//CRecord *record;
@@ -45,7 +44,7 @@ struct PrvekTab {
 	//PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r);
 
 	// Variable
-	PrvekTab(char *i, DruhId d, int h, PrvekTab *n);
+	PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n);
 	// Static array
 	PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n);
 	~PrvekTab();
@@ -59,6 +58,9 @@ struct MethodEnv {
 	MethodEnv * next;
 	int arg_addr_next; // Arguments address counter
 	int local_addr_next; // Local vars address counter
+
+	MethodEnv(char * name, bool sttc, MethodEnv * n = NULL);
+	~MethodEnv();
 };
 
 struct ClassEnv {
@@ -82,13 +84,12 @@ struct Env {
 
 static ClassEnv * TabClass = NULL;
 
-
 static PrvekTab * TabSym; // TODO: remove this
 static int volna_adr;
 
 ClassEnv * deklClass(char *, char * = NULL);
 MethodEnv * deklMethod(char *, bool constructor = false, bool isStatic = false, ClassEnv * cls = NULL);
-void deklKonst(char *, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
+void deklKonst(char *, int, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, bool arg = false, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, int, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 //void deklRecord(char *, CRecord *);

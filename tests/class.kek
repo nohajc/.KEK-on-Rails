@@ -1,10 +1,19 @@
-class Test: Object{
+class Object {
+	method1() {
+	}
+}
+
+class Test: Object {
 	var v1, v2
-	const c1 = 42
+	static const c1 = 42
 	static var sv
 
 	Test() { // Constructor
 	}
+
+	/*Test(c) {
+		c++
+	}*/
 
 	method1(a, b) {
 		return a + b

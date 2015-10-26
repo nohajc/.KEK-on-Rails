@@ -13,11 +13,11 @@ enum Context {
 };
 
 Prog *Program();
-StatmList * Dekl(Env env);
-StatmList * DeklKonst(Env env);
-void ZbDeklKonst(Env env);
-StatmList * DeklProm(Env env);
-StatmList * ZbDeklProm(Env env);
+StatmList * Dekl(Env env, bool);
+StatmList * DeklKonst(Env env, bool);
+void ZbDeklKonst(Env env, bool);
+StatmList * DeklProm(Env env, bool);
+StatmList * ZbDeklProm(Env env, bool);
 StatmList *SlozPrikaz(Env env, Context ctxt = C_NIL);
 StatmList *ZbPrikazu(Env env, Context ctxt = C_NIL);
 Statm *Prikaz(Env env, Context ctxt = C_NIL);
@@ -66,7 +66,7 @@ void Srovnani_IDENT(char *);
 Expr * RecordFaktor(char *);
 CRecord * Record();
 CRecord * ZbRecord();
-bool Typ(Env env, char *);
+bool Typ(Env env, char *, bool);
 void TypVar(char *);
 void TypRec();
 

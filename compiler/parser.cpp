@@ -62,31 +62,31 @@ Prog *Program() {
 	return new Prog(SeznamTrid());
 }
 
-StatmList * Dekl(Env env) {
+StatmList * Dekl(Env env, bool isStatic) {
 	StatmList * p, * d, * k;
 	switch (Symb.type) {
 	case kwVAR:
-		p = DeklProm(env);
-		d = Dekl(env);
+		p = DeklProm(env, isStatic);
+		d = Dekl(env, isStatic);
 		return new StatmList(p, d);
 	case kwCONST:
-		k = DeklKonst(env);
-		d = Dekl(env);
+		k = DeklKonst(env, isStatic);
+		d = Dekl(env, isStatic);
 		return new StatmList(k, d);
 	default:
 		return new StatmList(new Empty, NULL);
 	}
 }
 
-StatmList * DeklKonst(Env env) {
+StatmList * DeklKonst(Env env, bool isStatic) {
 	char id[MAX_IDENT_LEN];
 	int hod;
 	Symb = readLexem();
 	Srovnani_IDENT(id);
 	Srovnani(ASSIGN);
 	Srovnani_NUMB(&hod);
-	deklKonst(id, hod);
-	ZbDeklKonst(env);
+	deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+	ZbDeklKonst(env, isStatic);
 	if(Symb.type == SEMICOLON){
 		Srovnani(SEMICOLON);
 	}
@@ -96,7 +96,7 @@ StatmList * DeklKonst(Env env) {
 	return new StatmList(new Empty, NULL);
 }
 
-void ZbDeklKonst(Env env) {
+void ZbDeklKonst(Env env, bool isStatic) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		int hod;
@@ -104,8 +104,8 @@ void ZbDeklKonst(Env env) {
 		Srovnani_IDENT(id);
 		Srovnani(ASSIGN);
 		Srovnani_NUMB(&hod);
-		deklKonst(id, hod);
-		ZbDeklKonst(env);
+		deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+		ZbDeklKonst(env, isStatic);
 	}
 }
 
@@ -156,7 +156,7 @@ CRecord * Record() {
 }*/
 
 // Returns true if the Type is primitive (integer, char, ...)
-bool Typ(Env env, char *id) { // TODO: remove static array declaration
+bool Typ(Env env, char *id, bool isStatic) { // TODO: remove static array declaration
 	/*if (Symb.type == COLON) {
 		Srovnani(COLON);
 
@@ -164,7 +164,7 @@ bool Typ(Env env, char *id) { // TODO: remove static array declaration
 	} else {
 		deklProm(id);
 	}*/
-	if(Symb.type == LBRAC){
+	if(Symb.type == LBRAC){ // TODO: Change static arrays to dynamic
       Numb *n_prvni, *n_posledni;
 
       Symb = readLexem();
@@ -185,16 +185,16 @@ bool Typ(Env env, char *id) { // TODO: remove static array declaration
       return false;
    }
    else{
-      deklProm(id);
+      deklProm(id, false, isStatic, env.clsEnv, env.mthEnv);
       return true;
    }
 }
 
-StatmList * DeklProm(Env env) {
+StatmList * DeklProm(Env env, bool isStatic) {
 	char id[MAX_IDENT_LEN];
 	Symb = readLexem();
 	Srovnani_IDENT(id);
-	bool prim = Typ(env, id);
+	bool prim = Typ(env, id, isStatic);
 	Statm * st;
 	StatmList * ret;
 	Var * var;
@@ -210,7 +210,7 @@ StatmList * DeklProm(Env env) {
 		st = new Empty;
 	}
 
-	ret = new StatmList(st, ZbDeklProm(env));
+	ret = new StatmList(st, ZbDeklProm(env, isStatic));
 	if (Symb.type == SEMICOLON) {
 		Srovnani(SEMICOLON);
 	}
@@ -221,12 +221,12 @@ StatmList * DeklProm(Env env) {
 	return ret;
 }
 
-StatmList * ZbDeklProm(Env env) {
+StatmList * ZbDeklProm(Env env, bool isStatic) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		Symb = readLexem();
 		Srovnani_IDENT(id);
-		bool prim = Typ(env, id);
+		bool prim = Typ(env, id, isStatic);
 		Statm * st;
 		Var * var;
 		Expr * e;
@@ -241,7 +241,7 @@ StatmList * ZbDeklProm(Env env) {
 			st = new Empty;
 		}
 
-		return new StatmList(st, ZbDeklProm(env));
+		return new StatmList(st, ZbDeklProm(env, isStatic));
 	}
 	return new StatmList(new Empty, NULL);
 }
@@ -301,7 +301,13 @@ Class * Trida() {
 StatmList * SeznamMetod(Env env) {
 	Srovnani(LCURLY);
 	Statm * m = ClenTridy(env);
-	StatmList * lst = new StatmList(m, ZbMetod(env));
+	StatmList * lst;
+	if (!m) {
+		lst = NULL;
+	}
+	else{
+		lst = new StatmList(m, ZbMetod(env));
+	}
 	Srovnani(RCURLY);
 	return lst;
 }
@@ -336,7 +342,7 @@ Statm * ClenTridy(Env env) {
 	switch (Symb.type) {
 	case kwVAR:
 	case kwCONST:
-		return Dekl(env);
+		return Dekl(env, isStatic);
 	default:
 		return Metoda(env, isStatic);
 	}
@@ -357,21 +363,21 @@ Statm * Metoda(Env env, bool isStatic) {
 		Chyba("Konstruktor nesmi byt staticky.");
 	}
 
-	MethodEnv * mthEnv = deklMethod(id, isConstructor, isStatic, env.clsEnv); // TODO: Pass down env information
+	MethodEnv * mthEnv = deklMethod(id, isConstructor, isStatic, env.clsEnv);
 	env.mthEnv = mthEnv;
 
 	Srovnani(LPAR);
 	// Parse method args
 	while (Symb.type != RPAR) {
 		Srovnani_IDENT(id);
-		deklProm(id, true);
+		deklProm(id, true, false, env.clsEnv, env.mthEnv);
 		if (Symb.type != RPAR) {
 			Srovnani(COMMA);
 		}
 	}
 	Srovnani(RPAR);
 
-	return new Method(SlozPrikaz(env)); // TODO: pass down env information
+	return new Method(SlozPrikaz(env));
 }
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {
@@ -497,7 +503,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 	switch (Symb.type) {
 	case kwVAR:
 	case kwCONST:
-		return Dekl(env);
+		return Dekl(env, false);
 	case kwRETURN:
 		Symb = readLexem();
 		return new Return(Vyraz());
