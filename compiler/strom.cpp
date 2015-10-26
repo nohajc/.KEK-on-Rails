@@ -910,15 +910,14 @@ void For::Print(int ident) {
 void StatmList::Print(int ident) {
 	printfi(ident, "StatmList\n");
 
-	printfi(ident, "statm:\n");
-	if (this->statm) {
-		this->statm->Print(ident + 1);
-	}
-
-	printfi(ident, "next:\n");
-	if (this->next) {
-		this->next->Print(ident + 1);
-	}
+	StatmList *s = this;
+	do {
+		printfi(ident, "statm:\n");
+		if (s->statm) {
+			s->statm->Print(ident + 1);
+		}
+		s = s->next;
+	} while (s);
 }
 
 void Break::Print(int ident) {
@@ -950,15 +949,14 @@ void Class::Print(int ident) {
 void ClassList::Print(int ident) {
 	printfi(ident, "ClassList\n");
 
-	printfi(ident, "cls:\n");
-	if (this->cls) {
-		this->cls->Print(ident + 1);
-	}
-
-	printfi(ident, "next:\n");
-	if (this->next) {
-		this->next->Print(ident + 1);
-	}
+	ClassList * lst = this;
+	do {
+		printfi(ident, "cls:\n");
+		if (lst->cls) {
+			lst->cls->Print(ident + 1);
+		}
+		lst = lst->next;
+	} while(lst);
 }
 
 void Method::Print(int ident) {
