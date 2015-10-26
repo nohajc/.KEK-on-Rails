@@ -75,6 +75,10 @@ PrvekTab *hledejId(char *id) {
 	return NULL;
 }
 
+ClassEnv * deklClass(char *) {
+	return NULL; // TODO: Implement
+}
+
 void deklKonst(char *id, int val, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejId(id);
 	if (p) {

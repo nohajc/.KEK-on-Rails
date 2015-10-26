@@ -17,7 +17,8 @@ const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"EOI", "ERR" /* <nesro> */, "kwSWITCH", "kwCASE", "kwDEFAULT", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO", "kwBREAK",
 		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN", "INCREMENT", "DECREMENT",
-		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT" }; //symbol names in the same order as in LexSymbolType
+		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT",
+		"kwCLASS" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -64,6 +65,7 @@ const struct {
 		{ "to", kwTO },
 		{ "downto", kwDOWNTO },
 		{ "break", kwBREAK },
+		{ "class", kwCLASS },
 		{ NULL, (LexSymbolType) 0 } //
 };
 

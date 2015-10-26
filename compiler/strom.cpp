@@ -124,13 +124,31 @@ StatmList::~StatmList() {
 	delete next;
 }
 
-Prog::Prog(StatmList *s) {
-	stm = s;
+Prog::Prog(ClassList *l) {
+	lst = l;
 }
 
 Prog::~Prog() {
-	delete stm;
+	delete lst;
 	symCleanup();
+}
+
+Class::Class(StatmList * s) {
+	stm = s;
+}
+
+Class::~Class() {
+	delete stm;
+}
+
+ClassList::ClassList(Class * c, ClassList * n) {
+	cls = c;
+	next = n;
+}
+
+ClassList::~ClassList() {
+	delete cls;
+	delete next;
 }
 
 // definice metody Optimize
@@ -308,7 +326,22 @@ Node *StatmList::Optimize() {
 }
 
 Node *Prog::Optimize() {
+	lst = (ClassList*) (lst->Optimize());
+	return this;
+}
+
+Node *Class::Optimize() {
 	stm = (StatmList*) (stm->Optimize());
+	return this;
+}
+
+Node *ClassList::Optimize() {
+	ClassList *lst = this;
+	do {
+		lst->cls = (Class*) (lst->cls->Optimize());
+		lst = lst->next;
+	} while (lst);
+
 	return this;
 }
 
@@ -418,8 +451,20 @@ void Break::Translate() {
 }
 
 void Prog::Translate() {
-	stm->Translate();
+	lst->Translate();
 	Gener(STOP);
+}
+
+void Class::Translate() {
+	stm->Translate();
+}
+
+void ClassList::Translate() {
+	ClassList * lst = this;
+	do {
+		lst->cls->Translate();
+		lst = lst->next;
+	} while (lst);
 }
 
 Expr *VarOrConst(char *id, Expr * offset)
@@ -862,12 +907,34 @@ void Empty::Print(int ident) {
 void Prog::Print(int ident) {
 	printfi(ident, "Prog\n");
 
+	printfi(ident, "lst:\n");
+	if (this->lst) {
+		this->lst->Print(ident + 1);
+	}
+}
+
+void Class::Print(int ident) {
+	printfi(ident, "Class\n");
+
 	printfi(ident, "stm:\n");
 	if (this->stm) {
 		this->stm->Print(ident + 1);
 	}
 }
 
+void ClassList::Print(int ident) {
+	printfi(ident, "ClassList\n");
+
+	printfi(ident, "cls:\n");
+	if (this->cls) {
+		this->cls->Print(ident + 1);
+	}
+
+	printfi(ident, "next:\n");
+	if (this->next) {
+		this->next->Print(ident + 1);
+	}
+}
 
 void CaseBlock::Print(int ident) {
 	printfi(ident, "CaseBlock\n");

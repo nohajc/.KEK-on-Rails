@@ -165,10 +165,31 @@ class Empty: public Statm {
 	virtual void Print(int);
 };
 
-class Prog: public Node {
+class Class: public Node {
 	StatmList *stm;
 public:
-	Prog(StatmList*);
+	Class(StatmList*);
+	virtual ~Class();
+	virtual Node *Optimize();
+	virtual void Translate();
+	virtual void Print(int);
+};
+
+class ClassList: public Node {
+	Class * cls;
+	ClassList *next;
+public:
+	ClassList(Class*, ClassList*);
+	virtual ~ClassList();
+	virtual Node *Optimize();
+	virtual void Translate();
+	virtual void Print(int);
+};
+
+class Prog: public Node {
+	ClassList *lst;
+public:
+	Prog(ClassList*);
 	virtual ~Prog();
 	virtual Node *Optimize();
 	virtual void Translate();

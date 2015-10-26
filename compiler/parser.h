@@ -47,6 +47,10 @@ Expr *ZbTermu(Expr*);
 Expr *Faktor();
 Expr *ZbFaktoru(Expr*);
 
+ClassList * SeznamTrid();
+ClassList * ZbTrid();
+Class * Trida();
+
 static LexicalSymbol Symb;
 
 Prog* Program();

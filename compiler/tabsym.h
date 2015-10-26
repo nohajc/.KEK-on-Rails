@@ -65,6 +65,7 @@ static ClassEnv * TabClass;
 static PrvekTab * TabSym; // TODO: remove this
 static int volna_adr;
 
+ClassEnv * deklClass(char *);
 void deklKonst(char *, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, int, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);

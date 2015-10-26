@@ -23,6 +23,10 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	Prog *prog = Program();
+	if(!prog){
+		printf("Vstupni soubor je prazdny.\n");
+		return 0;
+	}
 
 	if (ast_print) {
 		prog->Print(0);

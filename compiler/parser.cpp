@@ -50,9 +50,16 @@ void Srovnani_NUMB(int *h) {
 		ChybaSrovnani(NUMB);
 }
 
+static void skipNewlines() {
+	while (Symb.type == NEWLINE){
+		Symb = readLexem();
+	}
+}
+
 Prog *Program() {
 	//Dekl(); // Declarations moved inside the program. They can be anywhere.
-	return new Prog(SlozPrikaz());
+	//return new Prog(SlozPrikaz());
+	return new Prog(SeznamTrid());
 }
 
 StatmList * Dekl() {
@@ -234,6 +241,53 @@ StatmList * ZbDeklProm() {
 	return new StatmList(new Empty, NULL);
 }
 
+ClassList * SeznamTrid() {
+	Class * cls = Trida();
+	ClassList * ret = NULL;
+
+	if (cls) {
+		ret = new ClassList(cls, ZbTrid());
+		Srovnani(EOI);
+	}
+	return ret;
+}
+
+ClassList * ZbTrid() {
+	if (Symb.type != EOI) {
+		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
+			Symb = readLexem();
+		}
+		Class * cls = Trida();
+		if(!cls){
+			return NULL;
+		}
+		return new ClassList(cls, ZbTrid());
+	}
+	return 0;
+}
+
+Class * Trida() {
+	char id[MAX_IDENT_LEN];
+	ClassEnv * clsEnv;
+	Class * ret;
+
+	skipNewlines();
+	if(Symb.type == EOI){
+		return NULL;
+	}
+
+	Srovnani(kwCLASS);
+	Srovnani_IDENT(id);
+	clsEnv = deklClass(id);
+
+	// TODO: Parse parent class identifier
+
+	//Srovnani(LCURLY);
+	ret = new Class(SlozPrikaz()); // TODO: This will change
+	//Srovnani(RCURLY);
+	return ret;
+}
+
 StatmList * SlozPrikaz(Context ctxt) {
 	Srovnani(LCURLY);
 	Statm *p = Prikaz(ctxt);
@@ -347,12 +401,6 @@ Statm * Assignment() {
 	default:
 		ChybaExpanze("Assignment", Symb.type);
 		return NULL;
-	}
-}
-
-static void skipNewlines() {
-	while (Symb.type == NEWLINE){
-		Symb = readLexem();
 	}
 }
 
