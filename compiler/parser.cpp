@@ -62,23 +62,23 @@ Prog *Program() {
 	return new Prog(SeznamTrid());
 }
 
-StatmList * Dekl() {
+StatmList * Dekl(Env env) {
 	StatmList * p, * d, * k;
 	switch (Symb.type) {
 	case kwVAR:
-		p = DeklProm();
-		d = Dekl();
+		p = DeklProm(env);
+		d = Dekl(env);
 		return new StatmList(p, d);
 	case kwCONST:
-		k = DeklKonst();
-		d = Dekl();
+		k = DeklKonst(env);
+		d = Dekl(env);
 		return new StatmList(k, d);
 	default:
 		return new StatmList(new Empty, NULL);
 	}
 }
 
-StatmList * DeklKonst() {
+StatmList * DeklKonst(Env env) {
 	char id[MAX_IDENT_LEN];
 	int hod;
 	Symb = readLexem();
@@ -86,7 +86,7 @@ StatmList * DeklKonst() {
 	Srovnani(ASSIGN);
 	Srovnani_NUMB(&hod);
 	deklKonst(id, hod);
-	ZbDeklKonst();
+	ZbDeklKonst(env);
 	if(Symb.type == SEMICOLON){
 		Srovnani(SEMICOLON);
 	}
@@ -96,7 +96,7 @@ StatmList * DeklKonst() {
 	return new StatmList(new Empty, NULL);
 }
 
-void ZbDeklKonst() {
+void ZbDeklKonst(Env env) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		int hod;
@@ -105,7 +105,7 @@ void ZbDeklKonst() {
 		Srovnani(ASSIGN);
 		Srovnani_NUMB(&hod);
 		deklKonst(id, hod);
-		ZbDeklKonst();
+		ZbDeklKonst(env);
 	}
 }
 
@@ -156,7 +156,7 @@ CRecord * Record() {
 }*/
 
 // Returns true if the Type is primitive (integer, char, ...)
-bool Typ(char *id) { // TODO: remove static array declaration
+bool Typ(Env env, char *id) { // TODO: remove static array declaration
 	/*if (Symb.type == COLON) {
 		Srovnani(COLON);
 
@@ -190,11 +190,11 @@ bool Typ(char *id) { // TODO: remove static array declaration
    }
 }
 
-StatmList * DeklProm() {
+StatmList * DeklProm(Env env) {
 	char id[MAX_IDENT_LEN];
 	Symb = readLexem();
 	Srovnani_IDENT(id);
-	bool prim = Typ(id);
+	bool prim = Typ(env, id);
 	Statm * st;
 	StatmList * ret;
 	Var * var;
@@ -202,7 +202,7 @@ StatmList * DeklProm() {
 
 	if (prim && Symb.type == ASSIGN) {
 		Symb = readLexem();
-		var = new Var(adrProm(id), NULL, false);
+		var = new Var(id, adrProm(id), NULL, false);
 		e = Vyraz();
 		st = new Assign(var, e);
 	}
@@ -210,7 +210,7 @@ StatmList * DeklProm() {
 		st = new Empty;
 	}
 
-	ret = new StatmList(st, ZbDeklProm());
+	ret = new StatmList(st, ZbDeklProm(env));
 	if (Symb.type == SEMICOLON) {
 		Srovnani(SEMICOLON);
 	}
@@ -221,19 +221,19 @@ StatmList * DeklProm() {
 	return ret;
 }
 
-StatmList * ZbDeklProm() {
+StatmList * ZbDeklProm(Env env) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		Symb = readLexem();
 		Srovnani_IDENT(id);
-		bool prim = Typ(id);
+		bool prim = Typ(env, id);
 		Statm * st;
 		Var * var;
 		Expr * e;
 
 		if (prim && Symb.type == ASSIGN) {
 			Symb = readLexem();
-			var = new Var(adrProm(id), NULL, false);
+			var = new Var(id, adrProm(id), NULL, false);
 			e = Vyraz();
 			st = new Assign(var, e);
 		}
@@ -241,7 +241,7 @@ StatmList * ZbDeklProm() {
 			st = new Empty;
 		}
 
-		return new StatmList(st, ZbDeklProm());
+		return new StatmList(st, ZbDeklProm(env));
 	}
 	return new StatmList(new Empty, NULL);
 }
@@ -273,6 +273,7 @@ ClassList * ZbTrid() {
 
 Class * Trida() {
 	char id[MAX_IDENT_LEN], parId[MAX_IDENT_LEN];
+	Env env;
 	ClassEnv * clsEnv;
 	Class * ret;
 
@@ -292,34 +293,34 @@ Class * Trida() {
 		clsEnv = deklClass(id);
 	}
 
-	// TODO: Parse parent class identifier
-
-	return new Class(SeznamMetod());
+	env.clsEnv = clsEnv;
+	env.mthEnv = NULL;
+	return new Class(SeznamMetod(env));
 }
 
-StatmList * SeznamMetod() {
+StatmList * SeznamMetod(Env env) {
 	Srovnani(LCURLY);
-	Statm * m = ClenTridy();
-	StatmList * lst = new StatmList(m, ZbMetod());
+	Statm * m = ClenTridy(env);
+	StatmList * lst = new StatmList(m, ZbMetod(env));
 	Srovnani(RCURLY);
 	return lst;
 }
 
-StatmList * ZbMetod() {
+StatmList * ZbMetod(Env env) {
 	if (Symb.type != RCURLY) {
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
 		}
-		Statm * m = ClenTridy();
+		Statm * m = ClenTridy(env);
 		if(!m){
 			return NULL;
 		}
-		return new StatmList(m, ZbMetod());
+		return new StatmList(m, ZbMetod(env));
 	}
 	return 0;
 }
 
-Statm * ClenTridy() {
+Statm * ClenTridy(Env env) {
 	bool isStatic = false;
 
 	skipNewlines();
@@ -335,23 +336,29 @@ Statm * ClenTridy() {
 	switch (Symb.type) {
 	case kwVAR:
 	case kwCONST:
-		return Dekl(); // TODO: Pass down env information
+		return Dekl(env);
 	default:
-		return Metoda(isStatic);
+		return Metoda(env, isStatic);
 	}
 }
 
-Statm * Metoda(bool isStatic) {
+Statm * Metoda(Env env, bool isStatic) {
 	char id[MAX_IDENT_LEN];
-	bool isConstructor = false; // TODO: compare method name with class name
+	bool isConstructor = false;
 
 	Srovnani_IDENT(id);
+
+	if(env.clsEnv && !strcmp(id, env.clsEnv->className)){
+		isConstructor = true;
+		//printf("Found constructor %s.\n", id);
+	}
 
 	if(isConstructor && isStatic) {
 		Chyba("Konstruktor nesmi byt staticky.");
 	}
 
-	deklMethod(id, isConstructor, isStatic); // TODO: Pass down env information
+	MethodEnv * mthEnv = deklMethod(id, isConstructor, isStatic, env.clsEnv); // TODO: Pass down env information
+	env.mthEnv = mthEnv;
 
 	Srovnani(LPAR);
 	// Parse method args
@@ -364,29 +371,29 @@ Statm * Metoda(bool isStatic) {
 	}
 	Srovnani(RPAR);
 
-	return new Method(SlozPrikaz()); // TODO: pass down env information
+	return new Method(SlozPrikaz(env)); // TODO: pass down env information
 }
 
-StatmList * SlozPrikaz(Context ctxt) {
+StatmList * SlozPrikaz(Env env, Context ctxt) {
 	Srovnani(LCURLY);
-	Statm *p = Prikaz(ctxt);
-	StatmList *su = new StatmList(p, ZbPrikazu(ctxt));
+	Statm *p = Prikaz(env, ctxt);
+	StatmList *su = new StatmList(p, ZbPrikazu(env, ctxt));
 	Srovnani(RCURLY);
 	return su;
 }
 
-StatmList * ZbPrikazu(Context ctxt) {
+StatmList * ZbPrikazu(Env env, Context ctxt) {
 	if (Symb.type != RCURLY) {
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
 		}
-		Statm *p = Prikaz(ctxt);
-		return new StatmList(p, ZbPrikazu(ctxt));
+		Statm *p = Prikaz(env, ctxt);
+		return new StatmList(p, ZbPrikazu(env, ctxt));
 	}
 	return 0;
 }
 
-void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body){
+void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body){
 	Operator op = Error, op_c = Error;
 	if(Symb.type == kwTO){
 		op = LessOrEq;
@@ -403,7 +410,7 @@ void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter
 	{
 		Symb = readLexem();
 		*cond = new Bop(op, VarOrConst(id, offset), Vyraz());
-		*counter = new Assign(new Var(adrProm(id), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
+		*counter = new Assign(new Var(id, adrProm(id), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
 		Srovnani(RPAR);
 		break;
 	}
@@ -418,7 +425,7 @@ void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter
 		ChybaExpanze("ZbFor", Symb.type);
 		return;
 	}
-	*body = Prikaz(C_CYCLE);
+	*body = Prikaz(env, C_CYCLE);
 }
 
 Expr * ArrayOffset(char * id) {
@@ -443,7 +450,7 @@ Statm * Assignment() {
 
 	Srovnani_IDENT(id);
 	Expr * offset = ArrayOffset(id);
-	Var *var = new Var(adrProm(id), offset, false);
+	Var *var = new Var(id, adrProm(id), offset, false);
 	Expr * e;
 	//Srovnani(ASSIGN);
 	switch (Symb.type) {
@@ -483,14 +490,14 @@ Statm * Assignment() {
 	}
 }
 
-Statm * Prikaz(Context ctxt) {
+Statm * Prikaz(Env env, Context ctxt) {
 	Var * var;
 	skipNewlines();
 
 	switch (Symb.type) {
 	case kwVAR:
 	case kwCONST:
-		return Dekl();
+		return Dekl(env);
 	case kwRETURN:
 		Symb = readLexem();
 		return new Return(Vyraz());
@@ -509,15 +516,15 @@ Statm * Prikaz(Context ctxt) {
 		Symb = readLexem();
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
-		var = new Var(adrProm(id), ArrayOffset(id), false);
+		var = new Var(id, adrProm(id), ArrayOffset(id), false);
 		return new Read(var);
 	case kwIF: {
 		Symb = readLexem();
 		Srovnani(LPAR);
 		Expr *cond = Podminka();
 		Srovnani(RPAR);
-		Statm *prikaz = Prikaz(ctxt);
-		return new If(cond, prikaz, CastElse(ctxt));
+		Statm *prikaz = Prikaz(env, ctxt);
+		return new If(cond, prikaz, CastElse(env, ctxt));
 	}
 	case kwWHILE: {
 		Expr *cond;
@@ -525,7 +532,7 @@ Statm * Prikaz(Context ctxt) {
 		Srovnani(LPAR);
 		cond = Podminka();
 		Srovnani(RPAR);
-		return new While(cond, Prikaz(C_CYCLE));
+		return new While(cond, Prikaz(env, C_CYCLE));
 	}
 	case kwFOR: {
 		char id[MAX_IDENT_LEN];
@@ -534,13 +541,13 @@ Statm * Prikaz(Context ctxt) {
 		Srovnani_IDENT(id);
 
 		Expr * offset = ArrayOffset(id);
-		Var *var = new Var(adrProm(id), offset, false);
+		Var *var = new Var(id, adrProm(id), offset, false);
 		Srovnani(ASSIGN);
 		Statm * init = new Assign(var, Vyraz());
 		Expr * cond;
 		Statm * counter;
 		Statm * body;
-		ZbFor(id, offset, &cond, &counter, &body);
+		ZbFor(env, id, offset, &cond, &counter, &body);
 		return new For(init, cond, counter, body);
 	}
 	case kwBREAK: {
@@ -558,21 +565,21 @@ Statm * Prikaz(Context ctxt) {
 		Expr *expr = Vyraz();
 		Srovnani(RPAR);
 		Srovnani(LCURLY);
-		return new Case(expr, ntCASE_BODY());
+		return new Case(expr, ntCASE_BODY(env));
 	}
 	case LCURLY:
-		return SlozPrikaz(ctxt);
+		return SlozPrikaz(env, ctxt);
 	default:
 		return new Empty;
 	}
 }
 
-Statm * CastElse(Context ctxt) {
+Statm * CastElse(Env env, Context ctxt) {
 	skipNewlines();
 
 	if (Symb.type == kwELSE) {
 		Symb = readLexem();
-		return Prikaz(ctxt);
+		return Prikaz(env, ctxt);
 	}
 	return 0;
 }
@@ -800,27 +807,27 @@ Expr * Faktor() {
 	}
 }
 
-CaseBlock * ntCASE_BODY() {
+CaseBlock * ntCASE_BODY(Env env) {
 	skipNewlines();
 
 	switch (Symb.type) {
 	case kwCASE: {
 		Symb = readLexem();
 		CaseBlockScope *scope = ntCASE_SCOPE();
-		Statm *statm = Prikaz();
+		Statm *statm = Prikaz(env);
 		if(Symb.type == SEMICOLON){
 			Srovnani(SEMICOLON);
 		}
 		else{
 			Srovnani(NEWLINE);
 		}
-		CaseBlock *caseBlock = new CaseBlock(statm, ntCASE_BODY(), scope);
+		CaseBlock *caseBlock = new CaseBlock(statm, ntCASE_BODY(env), scope);
 		return caseBlock;
 	}
 	case kwDEFAULT: {
 		Srovnani(kwDEFAULT);
 		Srovnani(COLON);
-		Statm *statm = Prikaz();
+		Statm *statm = Prikaz(env);
 		if(Symb.type == SEMICOLON){
 			Srovnani(SEMICOLON);
 		}

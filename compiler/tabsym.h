@@ -10,6 +10,14 @@ enum DruhId {
 	Nedef, IdProm, IdKonst
 };
 
+enum Scope {
+	SC_GLOBAL, // Only class names are global - you can globally reference a static class member
+	SC_LOCAL,
+	SC_ARG,
+	SC_INSTANCE, // instance variable
+	SC_CLASS // class static variable
+};
+
 class CRecord {
 public:
 	char *m_Ident;
@@ -26,6 +34,7 @@ struct ClassEnv;
 struct PrvekTab {
 	char *ident;
 	DruhId druh;
+	Scope sc;
 	int hodn; // TODO: this will be a pointer (var can also be an obj ref)
 	bool pole;
 	bool isStatic;
@@ -61,6 +70,9 @@ struct ClassEnv {
 	ClassEnv * parent;
 	int class_addr_next; // Static members address counter
 	int obj_addr_next; // Instance members address counter
+
+	ClassEnv(char * name, ClassEnv * par, ClassEnv * n);
+	~ClassEnv();
 };
 
 struct Env {
@@ -68,7 +80,7 @@ struct Env {
 	MethodEnv * mthEnv;
 };
 
-static ClassEnv * TabClass;
+static ClassEnv * TabClass = NULL;
 
 
 static PrvekTab * TabSym; // TODO: remove this
@@ -81,7 +93,10 @@ void deklProm(char *, bool arg = false, bool isStatic = false, ClassEnv * cls = 
 void deklProm(char *, int, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 //void deklRecord(char *, CRecord *);
 
-PrvekTab *hledejId(char *);
+PrvekTab *hledejId(char *); // TODO: remove this
+ClassEnv * hledejClass(char *);
+MethodEnv * hledejMethod(char *, ClassEnv *);
+PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *);
 
 int adrProm(char*);
 int prvniIdxProm(char *id);

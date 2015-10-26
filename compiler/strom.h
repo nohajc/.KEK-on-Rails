@@ -4,6 +4,7 @@
 #define _STROM_
 
 #include "zaspoc.h"
+#include "tabsym.h"
 
 class Node {
 public:
@@ -22,21 +23,14 @@ class Expr: public Node {
 class Statm: public Node {
 };
 
-enum Scope{
-	SC_GLOBAL, // Only classe names are global - you can globally reference a static class member
-	SC_LOCAL,
-	SC_ARG,
-	SC_INSTANCE, // instance variable
-	SC_CLASS // class static variable
-};
-
 class Var: public Expr {
+	char * name;
 	int addr;
 	Expr * offset;
 	bool rvalue;
 	Scope sc;
 public:
-	Var(int, Expr *, bool);
+	Var(const char *, int, Expr *, bool);
 	virtual ~Var();
 	virtual void Translate();
 	virtual Node *Optimize();

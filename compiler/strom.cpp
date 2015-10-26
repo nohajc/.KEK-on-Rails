@@ -5,17 +5,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 // konstruktory a destruktory
 
-Var::Var(int a, Expr * o, bool rv) {
+Var::Var(const char * n, int a, Expr * o, bool rv) {
 	addr = a;
 	offset = o;
 	rvalue = rv;
+	name = new char[strlen(n) + 1];
+	strcpy(name, n);
 }
 
 Var::~Var() {
 	delete offset;
+	delete [] name;
 }
 
 Numb::Numb(int v) {
@@ -498,7 +502,7 @@ Expr *VarOrConst(char *id, Expr * offset)
    DruhId druh = idPromKonst(id,&v);
    switch (druh) {
    case IdProm:
-      return new Var(v, offset, true);
+      return new Var(id, v, offset, true);
    case IdKonst:
       return new Numb(v);
    default:

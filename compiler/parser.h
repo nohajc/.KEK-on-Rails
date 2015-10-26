@@ -13,17 +13,17 @@ enum Context {
 };
 
 Prog *Program();
-StatmList * Dekl();
-StatmList * DeklKonst();
-void ZbDeklKonst();
-StatmList * DeklProm();
-StatmList * ZbDeklProm();
-StatmList *SlozPrikaz(Context ctxt = C_NIL);
-StatmList *ZbPrikazu(Context ctxt = C_NIL);
-Statm *Prikaz(Context ctxt = C_NIL);
+StatmList * Dekl(Env env);
+StatmList * DeklKonst(Env env);
+void ZbDeklKonst(Env env);
+StatmList * DeklProm(Env env);
+StatmList * ZbDeklProm(Env env);
+StatmList *SlozPrikaz(Env env, Context ctxt = C_NIL);
+StatmList *ZbPrikazu(Env env, Context ctxt = C_NIL);
+Statm *Prikaz(Env env, Context ctxt = C_NIL);
 Statm *Assignment();
-Statm *CastElse(Context ctxt = C_NIL);
-void ZbFor(char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body);
+Statm *CastElse(Env env, Context ctxt = C_NIL);
+void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body);
 Expr *Podminka();
 Operator RelOp();
 Expr *Vyraz();
@@ -50,10 +50,10 @@ Expr *ZbFaktoru(Expr*);
 ClassList * SeznamTrid();
 ClassList * ZbTrid();
 Class * Trida();
-StatmList * SeznamMetod();
-StatmList * ZbMetod();
-Statm * ClenTridy();
-Statm * Metoda(bool isStatic);
+StatmList * SeznamMetod(Env env);
+StatmList * ZbMetod(Env env);
+Statm * ClenTridy(Env env);
+Statm * Metoda(Env env, bool isStatic);
 
 static LexicalSymbol Symb;
 
@@ -66,11 +66,11 @@ void Srovnani_IDENT(char *);
 Expr * RecordFaktor(char *);
 CRecord * Record();
 CRecord * ZbRecord();
-bool Typ(char *);
+bool Typ(Env env, char *);
 void TypVar(char *);
 void TypRec();
 
-CaseBlock * ntCASE_BODY();
+CaseBlock * ntCASE_BODY(Env env);
 CaseBlockScope * ntCASE_SCOPE();
 Numb * ntCASE_RANGE();
 CaseBlockScope * ntCASE_SCOPE_NEXT();

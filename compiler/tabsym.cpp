@@ -21,24 +21,6 @@ CRecord::CRecord(char *ident, CRecord *next) {
 }
 
 PrvekTab::PrvekTab(char *i, DruhId d, int h, PrvekTab *n) {
-	/*ident = strdup(i);
-
-	druh = d;
-	dalsi = n;
-
-	switch (d) {
-	case IdKonst:
-		hodn = h;
-		break;
-	case IdProm:
-		this->hodn = volna_adr++; ClassEnv * cls, MethodEnv * mth
-		break;
-	case IdRecord:
-		this->record = r;
-		break;
-	default:
-		break;
-	}*/
 	ident = new char[strlen(i)+1];
 	strcpy(ident, i);
 	druh = d; hodn = h; dalsi = n;
@@ -57,11 +39,25 @@ PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
    pole = true;
 }
 
-static void Chyba(char *id, char *txt) {
-	printf("identifikator %s: %s\n", id, txt);
+ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
+	className = new char[strlen(name) + 1];
+	strcpy(className, name);
+	if (par) {
+		parent = par;
+	}
+	next = n;
 }
 
-PrvekTab::~PrvekTab(){
+ClassEnv::~ClassEnv() {
+	delete [] className;
+}
+
+static void Chyba(char *id, char *txt) {
+	printf("identifikator %s: %s\n", id, txt);
+	exit(1);
+}
+
+PrvekTab::~PrvekTab() {
 	delete [] ident;
 }
 
@@ -75,8 +71,41 @@ PrvekTab *hledejId(char *id) {
 	return NULL;
 }
 
+ClassEnv * hledejClass(char * id) {
+	ClassEnv * ce = TabClass;
+	while (ce) {
+		if (!strcmp(id, ce->className)) {
+			return ce;
+		}
+		ce = ce->next;
+	}
+	return NULL;
+}
+
+MethodEnv * hledejMethod(char *, ClassEnv *) {
+
+}
+
+PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *) {
+
+}
+
 ClassEnv * deklClass(char * cls, char * par) {
-	return NULL; // TODO: Implement
+	ClassEnv * ce = hledejClass(cls);
+	ClassEnv * pe = NULL;
+
+	if (par) {
+		pe = hledejClass(par);
+		if (!pe) {
+			Chyba(par, "neni deklarovan");
+		}
+	}
+	
+	if (ce) {
+		Chyba(cls, "druha deklarace");
+	}
+	TabClass = new ClassEnv(cls, pe, TabClass);
+	return TabClass;
 }
 
 MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * cls){
@@ -87,7 +116,6 @@ void deklKonst(char *id, int val, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejId(id);
 	if (p) {
 		Chyba(id, "druha deklarace");
-		return;
 	}
 	TabSym = new PrvekTab(id, IdKonst, val, TabSym);
 }
@@ -96,7 +124,6 @@ void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth
 	PrvekTab *p = hledejId(id);
 	if (p) {
 		Chyba(id, "druha deklarace");
-		return;
 	}
 	TabSym = new PrvekTab(id, IdProm, volna_adr, TabSym);
 	volna_adr++;
@@ -107,7 +134,6 @@ void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth
    PrvekTab *p = hledejId(id);
    if (p) {
       Chyba(id, "druha deklarace");
-      return;
    }
 
    //printf("Storing %s at address %d.\n", id, volna_adr);
