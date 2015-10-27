@@ -9,6 +9,14 @@
 
 // konstruktory a destruktory
 
+Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
+	addr = sym->hodn;
+	offset = o;
+	rvalue = rv;
+	name = new char[strlen(sym->ident) + 1];
+	strcpy(name, sym->ident);
+}
+
 Var::Var(const char * n, int a, Expr * o, bool rv) {
 	addr = a;
 	offset = o;
@@ -63,6 +71,17 @@ Assign::Assign(Var *v, Expr *e) {
 }
 
 Assign::~Assign() {
+	delete var;
+	delete expr;
+}
+
+AssignWithBop::AssignWithBop(Operator o, Var * v, Expr * e) {
+	op = o;
+	var = v;
+	expr = e;
+}
+
+AssignWithBop::~AssignWithBop() {
 	delete var;
 	delete expr;
 }
@@ -275,7 +294,12 @@ Node *Not::Optimize() {
 }
 
 Node *Assign::Optimize() {
-	expr = (Var*) (expr->Optimize());
+	expr = (Expr*) (expr->Optimize());
+	return this;
+}
+
+Node * AssignWithBop::Optimize() {
+	expr = (Expr*) (expr->Optimize());
 	return this;
 }
 
@@ -406,6 +430,15 @@ void Assign::Translate() {
 	Gener(ST);
 }
 
+void AssignWithBop::Translate() {
+	var->Translate();
+	Gener(DUP);
+	Gener(DR);
+	expr->Translate();
+	Gener(BOP, op);
+	Gener(ST);
+}
+
 void Write::Translate() {
 	expr->Translate();
 	Gener(WRT);
@@ -506,7 +539,7 @@ Expr *VarOrConst(char *id, Expr * offset)
    DruhId druh = idPromKonst(id,&v);
    switch (druh) {
    case IdProm:
-      return new Var(id, v, offset, true);
+      return new Var(id, v, offset, true); // TODO: This is wrong - will be reimplemented
    case IdKonst:
       return new Numb(v);
    default:
@@ -828,6 +861,20 @@ void Not::Print(int ident) {
 
 void Assign::Print(int ident) {
 	printfi(ident, "Assign\n");
+
+	printfi(ident, "var:\n");
+	if (this->var) {
+		this->var->Print(ident + 1);
+	}
+
+	printfi(ident, "expr:\n");
+	if (this->expr) {
+		this->expr->Print(ident + 1);
+	}
+}
+
+void AssignWithBop::Print(int ident) {
+	printfi(ident, "AssignWithBop\n");
 
 	printfi(ident, "var:\n");
 	if (this->var) {

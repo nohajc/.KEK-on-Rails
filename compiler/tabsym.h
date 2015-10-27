@@ -99,7 +99,7 @@ ClassEnv * hledejClass(char *);
 MethodEnv * hledejMethod(char *, ClassEnv *);
 PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *);
 
-int adrProm(char*);
+PrvekTab * adrProm(char*, ClassEnv * cls, MethodEnv * mth);
 int prvniIdxProm(char *id);
 DruhId idPromKonst(char*, int*);
 

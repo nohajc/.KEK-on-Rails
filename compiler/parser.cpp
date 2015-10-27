@@ -179,7 +179,7 @@ bool Typ(Env env, char *id, bool isStatic) { // TODO: remove static array declar
       if(!n_posledni) ChybaDekl();
       
       Srovnani(RBRAC);
-      deklProm(id, n_prvni->Value(), n_posledni->Value());
+      deklProm(id, n_prvni->Value(), n_posledni->Value(), env.clsEnv, env.mthEnv);
       delete n_prvni;
       delete n_posledni;
       return false;
@@ -202,7 +202,7 @@ StatmList * DeklProm(Env env, bool isStatic) {
 
 	if (prim && Symb.type == ASSIGN) {
 		Symb = readLexem();
-		var = new Var(id, adrProm(id), NULL, false);
+		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
 		e = Vyraz();
 		st = new Assign(var, e);
 	}
@@ -233,7 +233,7 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 
 		if (prim && Symb.type == ASSIGN) {
 			Symb = readLexem();
-			var = new Var(id, adrProm(id), NULL, false);
+			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
 			e = Vyraz();
 			st = new Assign(var, e);
 		}
@@ -416,7 +416,8 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	{
 		Symb = readLexem();
 		*cond = new Bop(op, VarOrConst(id, offset), Vyraz());
-		*counter = new Assign(new Var(id, adrProm(id), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
+		// TODO: This can be optimized with AssignWithBop
+		*counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
 		Srovnani(RPAR);
 		break;
 	}
@@ -424,7 +425,7 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 		Symb = readLexem();
 		*cond = Podminka();
 		Srovnani(SEMICOLON);
-		*counter = Assignment();
+		*counter = Assignment(env);
 		Srovnani(RPAR);
 		break;
 	default:
@@ -451,12 +452,12 @@ Expr * ArrayOffset(char * id) {
    return NULL;
 }
 
-Statm * Assignment() {
+Statm * Assignment(Env env) {
 	char id[MAX_IDENT_LEN];
 
 	Srovnani_IDENT(id);
 	Expr * offset = ArrayOffset(id);
-	Var *var = new Var(id, adrProm(id), offset, false);
+	Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
 	Expr * e;
 	//Srovnani(ASSIGN);
 	switch (Symb.type) {
@@ -467,7 +468,7 @@ Statm * Assignment() {
 	case ADD_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz();
-		return new Assign(var, new Bop(Plus, VarOrConst(id, offset), e));
+		return new Assign(var, new Bop(Plus, VarOrConst(id, offset), e)); //TODO: Use AssignWithBop here to optimize the op
 	case SUB_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz();
@@ -508,7 +509,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Symb = readLexem();
 		return new Return(Vyraz());
 	case IDENT: {
-		return Assignment();
+		return Assignment(env);
 		/*char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
 		Var *var = new Var(adrProm(id), ArrayOffset(id), false);
@@ -522,7 +523,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Symb = readLexem();
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
-		var = new Var(id, adrProm(id), ArrayOffset(id), false);
+		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), ArrayOffset(id), false);
 		return new Read(var);
 	case kwIF: {
 		Symb = readLexem();
@@ -547,7 +548,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Srovnani_IDENT(id);
 
 		Expr * offset = ArrayOffset(id);
-		Var *var = new Var(id, adrProm(id), offset, false);
+		Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
 		Srovnani(ASSIGN);
 		Statm * init = new Assign(var, Vyraz());
 		Expr * cond;

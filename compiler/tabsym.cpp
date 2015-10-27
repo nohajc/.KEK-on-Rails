@@ -228,7 +228,7 @@ void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth
 
 // Static array - TODO: remove
 void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
-   PrvekTab *p = hledejId(id);
+   PrvekTab *p = hledejMember(id, cls, mth);
    if (p) {
       Chyba(id, "druha deklarace");
    }
@@ -275,8 +275,8 @@ void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth
 		return p->hodn;
 }*/
 
-int adrProm(char *id) {
-	PrvekTab *p = hledejId(id);
+PrvekTab * adrProm(char *id, ClassEnv * cls, MethodEnv * mth) {
+	PrvekTab *p = hledejMember(id, cls, mth); // local, instance or class var
 	if (!p) {
 		Chyba(id, "neni deklarovan");
 		exit(1);
@@ -286,7 +286,7 @@ int adrProm(char *id) {
 		exit(1);
 	}
 	else{
-		return p->hodn;
+		return p;
 	}
 }
 
@@ -306,6 +306,7 @@ int prvniIdxProm(char *id)
 	}
 }
 
+// TODO: fix this to use env and search in the right place
 DruhId idPromKonst(char *id, int *v) {
 	PrvekTab *p = TabSym;
 	while (p)

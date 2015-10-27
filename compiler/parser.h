@@ -21,7 +21,7 @@ StatmList * ZbDeklProm(Env env, bool);
 StatmList *SlozPrikaz(Env env, Context ctxt = C_NIL);
 StatmList *ZbPrikazu(Env env, Context ctxt = C_NIL);
 Statm *Prikaz(Env env, Context ctxt = C_NIL);
-Statm *Assignment();
+Statm *Assignment(Env env);
 Statm *CastElse(Env env, Context ctxt = C_NIL);
 void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body);
 Expr *Podminka();

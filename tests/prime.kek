@@ -1,5 +1,5 @@
 class Prime {
-	const n = 100, sqrtn = 10
+	static const n = 100, sqrtn = 10
 	var i, j, isprime[2..n+1*3]
 
 	Prime() {

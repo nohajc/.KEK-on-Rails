@@ -30,7 +30,8 @@ class Var: public Expr {
 	bool rvalue;
 	Scope sc;
 public:
-	Var(const char *, int, Expr *, bool);
+	Var(const PrvekTab *, Expr *, bool);
+	Var(const char *, int, Expr *, bool); // TODO: remove this
 	virtual ~Var();
 	virtual void Translate();
 	virtual Node *Optimize();
@@ -104,6 +105,18 @@ public:
 	Assign(Var*, Expr*);
 	virtual ~Assign();
 	virtual Node *Optimize();
+	virtual void Translate();
+	virtual void Print(int);
+};
+
+class AssignWithBop: public Statm {
+	Operator op;
+	Var * var;
+	Expr * expr;
+public:
+	AssignWithBop(Operator, Var *, Expr *);
+	virtual ~AssignWithBop();
+	virtual Node * Optimize();
 	virtual void Translate();
 	virtual void Print(int);
 };
