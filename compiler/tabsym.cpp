@@ -46,9 +46,15 @@ ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 	if (par) {
 		parent = par;
 	}
+	else{
+		parent = NULL;
+	}
 	next = n;
 	class_addr_next = 0;
 	obj_addr_next = 0;
+	syms = NULL;
+	methods = NULL;
+	constructor = NULL;
 }
 
 ClassEnv::~ClassEnv() {
@@ -62,6 +68,8 @@ MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
 	next = n;
 	arg_addr_next = 0;
 	local_addr_next = 0;
+	args = NULL;
+	syms = NULL;
 }
 
 MethodEnv::~MethodEnv() {
@@ -112,12 +120,19 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
 
 PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me) {
 	PrvekTab * syms;
-	if (me) { // Local var
+	if (me) { // Try to search through local vars first
 		syms = me->syms;
+
+		while (syms) {
+			if(!strcmp(id, syms->ident)) {
+				return syms;
+			}
+			syms = syms->dalsi;
+		}
 	}
-	else { // Class member
-		syms = ce->syms;
-	}
+
+	// If we get here, we try class members
+	syms = ce->syms;
 
 	while (syms) {
 		if(!strcmp(id, syms->ident)) {
@@ -226,16 +241,22 @@ void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth
 	}
 }
 
-// Static array - TODO: remove
+// Static array - TODO: remove, it is broken
 void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
-   PrvekTab *p = hledejMember(id, cls, mth);
-   if (p) {
-      Chyba(id, "druha deklarace");
-   }
+	PrvekTab *p = hledejMember(id, cls, mth);
+	if (p) {
+		Chyba(id, "druha deklarace");
+	}
 
-   //printf("Storing %s at address %d.\n", id, volna_adr);
-   TabSym = new PrvekTab(id, IdProm, volna_adr, prvni, posledni, TabSym);
-   volna_adr += posledni - prvni + 1;
+	//printf("Storing %s at address %d.\n", id, volna_adr);
+	if (mth) {
+		mth->syms = new PrvekTab(id, IdProm, mth->local_addr_next, prvni, posledni, mth->syms);
+		mth->local_addr_next += posledni - prvni + 1;
+	}
+	else{
+		cls->syms = new PrvekTab(id, IdProm, cls->obj_addr_next, prvni, posledni, cls->syms);
+		cls->obj_addr_next += posledni - prvni + 1;
+	}
 }
 
 /*void deklRecord(char *id, CRecord *record) {
@@ -275,14 +296,10 @@ void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth
 		return p->hodn;
 }*/
 
-PrvekTab * adrProm(char *id, ClassEnv * cls, MethodEnv * mth) {
+PrvekTab * adrSym(char *id, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejMember(id, cls, mth); // local, instance or class var
 	if (!p) {
 		Chyba(id, "neni deklarovan");
-		exit(1);
-	}
-	else if (p->druh != IdProm) {
-		Chyba(id, "neni identifikatorem promenne");
 		exit(1);
 	}
 	else{
@@ -290,34 +307,35 @@ PrvekTab * adrProm(char *id, ClassEnv * cls, MethodEnv * mth) {
 	}
 }
 
-int prvniIdxProm(char *id)
-{
-	PrvekTab *p = hledejId(id);
-	if (!p) {
-		Chyba(id, "neni deklarovan");
-		exit(1);
-	}
-	else if (p->druh != IdProm) {
+PrvekTab * adrProm(char *id, ClassEnv * cls, MethodEnv * mth) {
+	PrvekTab * p = adrSym(id, cls, mth);
+	if (p->druh != IdProm) {
 		Chyba(id, "neni identifikatorem promenne");
-		exit(1);
 	}
-	else{
-		return p->prvni;
-	}
+	return p;
 }
 
 // TODO: fix this to use env and search in the right place
-DruhId idPromKonst(char *id, int *v) {
-	PrvekTab *p = TabSym;
-	while (p)
-		if (strcmp(id, p->ident) == 0) {
-			*v = p->hodn;
-			return p->druh;
-		} else
-			p = p->dalsi;
-	Chyba(id, "neni deklarovan");
-	return Nedef;
+int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably also remove this - first index of array will always be zero
+{
+	PrvekTab *p = hledejMember(id, cls, mth);
+	if (!p) {
+		Chyba(id, "neni deklarovan");
+	}
+	else if (p->druh != IdProm) {
+		Chyba(id, "neni identifikatorem promenne");
+	}
+	return p->prvni;
 }
+
+// TODO: fix this to use env and search in the right place
+/*DruhId idPromKonst(char *id, int *v, ClassEnv * cls, MethodEnv * mth) {
+	PrvekTab *p = hledejMember(id, cls, mth);
+	if (!p) {
+		Chyba(id, "neni deklarovan");
+	}
+	return p->druh;
+}*/
 
 void symCleanup() {
 	PrvekTab * sym = TabSym;

@@ -169,13 +169,13 @@ bool Typ(Env env, char *id, bool isStatic) { // TODO: remove static array declar
 
       Symb = readLexem();
       //Srovnani_NUMB(&prvni);
-      n_prvni = dynamic_cast<Numb*>(Vyraz()->Optimize());
+      n_prvni = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
       if(!n_prvni) ChybaDekl();
 
       Srovnani(DOUBLE_DOT);
 
       //Srovnani_NUMB(&posledni);
-      n_posledni = dynamic_cast<Numb*>(Vyraz()->Optimize());
+      n_posledni = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
       if(!n_posledni) ChybaDekl();
       
       Srovnani(RBRAC);
@@ -203,7 +203,7 @@ StatmList * DeklProm(Env env, bool isStatic) {
 	if (prim && Symb.type == ASSIGN) {
 		Symb = readLexem();
 		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
-		e = Vyraz();
+		e = Vyraz(env);
 		st = new Assign(var, e);
 	}
 	else {
@@ -234,7 +234,7 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 		if (prim && Symb.type == ASSIGN) {
 			Symb = readLexem();
 			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
-			e = Vyraz();
+			e = Vyraz(env);
 			st = new Assign(var, e);
 		}
 		else {
@@ -415,15 +415,15 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	case kwDOWNTO:
 	{
 		Symb = readLexem();
-		*cond = new Bop(op, VarOrConst(id, offset), Vyraz());
+		*cond = new Bop(op, VarOrConst(id, offset, env), Vyraz(env));
 		// TODO: This can be optimized with AssignWithBop
-		*counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset), new Numb(1)));
+		*counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset, env), new Numb(1)));
 		Srovnani(RPAR);
 		break;
 	}
 	case SEMICOLON:
 		Symb = readLexem();
-		*cond = Podminka();
+		*cond = Podminka(env);
 		Srovnani(SEMICOLON);
 		*counter = Assignment(env);
 		Srovnani(RPAR);
@@ -435,12 +435,12 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	*body = Prikaz(env, C_CYCLE);
 }
 
-Expr * ArrayOffset(char * id) {
+Expr * ArrayOffset(Env env, char * id) {
    if (Symb.type == LBRAC) {
-      int offset = prvniIdxProm(id);
+      int offset = prvniIdxProm(id, env.clsEnv, env.mthEnv);
 
       Symb = readLexem();
-      Expr * e = Vyraz();
+      Expr * e = Vyraz(env);
       if (offset) {
          e = new Bop(Minus, e, new Numb(offset));
       }
@@ -456,41 +456,41 @@ Statm * Assignment(Env env) {
 	char id[MAX_IDENT_LEN];
 
 	Srovnani_IDENT(id);
-	Expr * offset = ArrayOffset(id);
+	Expr * offset = ArrayOffset(env, id);
 	Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
 	Expr * e;
 	//Srovnani(ASSIGN);
 	switch (Symb.type) {
 	case ASSIGN:
 		Symb = readLexem();
-		e = Vyraz();
+		e = Vyraz(env);
 		return new Assign(var, e);
 	case ADD_ASSIGN:
 		Symb = readLexem();
-		e = Vyraz();
-		return new Assign(var, new Bop(Plus, VarOrConst(id, offset), e)); //TODO: Use AssignWithBop here to optimize the op
+		e = Vyraz(env);
+		return new Assign(var, new Bop(Plus, VarOrConst(id, offset, env), e)); //TODO: Use AssignWithBop here to optimize the op
 	case SUB_ASSIGN:
 		Symb = readLexem();
-		e = Vyraz();
-		return new Assign(var, new Bop(Minus, VarOrConst(id, offset), e));
+		e = Vyraz(env);
+		return new Assign(var, new Bop(Minus, VarOrConst(id, offset, env), e));
 	case MUL_ASSIGN:
 		Symb = readLexem();
-		e = Vyraz();
-		return new Assign(var, new Bop(Times, VarOrConst(id, offset), e));
+		e = Vyraz(env);
+		return new Assign(var, new Bop(Times, VarOrConst(id, offset, env), e));
 	case DIV_ASSIGN:
 		Symb = readLexem();
-		e = Vyraz();
-		return new Assign(var, new Bop(Divide, VarOrConst(id, offset), e));
+		e = Vyraz(env);
+		return new Assign(var, new Bop(Divide, VarOrConst(id, offset, env), e));
 	case MOD_ASSIGN:
 		Symb = readLexem();
-		e = Vyraz();
-		return new Assign(var, new Bop(Modulo, VarOrConst(id, offset), e));
+		e = Vyraz(env);
+		return new Assign(var, new Bop(Modulo, VarOrConst(id, offset, env), e));
 	case INCREMENT:
 		Symb = readLexem();
-		return new Assign(var, new Bop(Plus, VarOrConst(id, offset), new Numb(1)));
+		return new Assign(var, new Bop(Plus, VarOrConst(id, offset, env), new Numb(1)));
 	case DECREMENT:
 		Symb = readLexem();
-		return new Assign(var, new Bop(Minus, VarOrConst(id, offset), new Numb(1)));
+		return new Assign(var, new Bop(Minus, VarOrConst(id, offset, env), new Numb(1)));
 	default:
 		ChybaExpanze("Assignment", Symb.type);
 		return NULL;
@@ -507,7 +507,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		return Dekl(env, false);
 	case kwRETURN:
 		Symb = readLexem();
-		return new Return(Vyraz());
+		return new Return(Vyraz(env));
 	case IDENT: {
 		return Assignment(env);
 		/*char id[MAX_IDENT_LEN];
@@ -518,17 +518,17 @@ Statm * Prikaz(Env env, Context ctxt) {
 	}
 	case kwWRITE:
 		Symb = readLexem();
-		return new Write(Vyraz());
+		return new Write(Vyraz(env));
 	case kwREAD:
 		Symb = readLexem();
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
-		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), ArrayOffset(id), false);
+		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), ArrayOffset(env, id), false);
 		return new Read(var);
 	case kwIF: {
 		Symb = readLexem();
 		Srovnani(LPAR);
-		Expr *cond = Podminka();
+		Expr *cond = Podminka(env);
 		Srovnani(RPAR);
 		Statm *prikaz = Prikaz(env, ctxt);
 		return new If(cond, prikaz, CastElse(env, ctxt));
@@ -537,7 +537,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Expr *cond;
 		Symb = readLexem();
 		Srovnani(LPAR);
-		cond = Podminka();
+		cond = Podminka(env);
 		Srovnani(RPAR);
 		return new While(cond, Prikaz(env, C_CYCLE));
 	}
@@ -547,10 +547,10 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Srovnani(LPAR);
 		Srovnani_IDENT(id);
 
-		Expr * offset = ArrayOffset(id);
+		Expr * offset = ArrayOffset(env, id);
 		Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
 		Srovnani(ASSIGN);
-		Statm * init = new Assign(var, Vyraz());
+		Statm * init = new Assign(var, Vyraz(env));
 		Expr * cond;
 		Statm * counter;
 		Statm * body;
@@ -569,7 +569,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 	case kwSWITCH: {
 		Srovnani(kwSWITCH);
 		Srovnani(LPAR);
-		Expr *expr = Vyraz();
+		Expr *expr = Vyraz(env);
 		Srovnani(RPAR);
 		Srovnani(LCURLY);
 		return new Case(expr, ntCASE_BODY(env));
@@ -591,12 +591,12 @@ Statm * CastElse(Env env, Context ctxt) {
 	return 0;
 }
 
-Expr * Podminka() {
+Expr * Podminka(Env env) {
 	/*Expr *left = Vyraz();
 	Operator op = RelOp();
 	Expr *right = Vyraz();
 	return new Bop(op, left, right);*/
-	return Vyraz();
+	return Vyraz(env);
 }
 
 Operator RelOp() {
@@ -625,137 +625,137 @@ Operator RelOp() {
 	}
 }
 
-Expr * Vyraz() {
-	return ZbVyrazu(LOrTerm());
+Expr * Vyraz(Env env) {
+	return ZbVyrazu(env, LOrTerm(env));
 }
 
-Expr * ZbVyrazu(Expr * du) {
+Expr * ZbVyrazu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case LOG_OR:
 		Symb = readLexem();
-		return ZbVyrazu(new Bop(LogOr, du, LOrTerm()));
+		return ZbVyrazu(env, new Bop(LogOr, du, LOrTerm(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * LOrTerm() {
-	return ZbLOrTermu(XorTerm());
+Expr * LOrTerm(Env env) {
+	return ZbLOrTermu(env, XorTerm(env));
 }
 
-Expr * ZbLOrTermu(Expr * du) {
+Expr * ZbLOrTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case XOR:
 		Symb = readLexem();
-		return ZbLOrTermu(new Bop(Xor, du, XorTerm()));
+		return ZbLOrTermu(env, new Bop(Xor, du, XorTerm(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * XorTerm() {
-	return ZbXorTermu(LAndTerm());
+Expr * XorTerm(Env env) {
+	return ZbXorTermu(env, LAndTerm(env));
 }
 
-Expr * ZbXorTermu(Expr * du) {
+Expr * ZbXorTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case LOG_AND:
 		Symb = readLexem();
-		return ZbXorTermu(new Bop(LogAnd, du, LAndTerm()));
+		return ZbXorTermu(env, new Bop(LogAnd, du, LAndTerm(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * LAndTerm() {
-	return ZbLAndTermu(BOrTerm());
+Expr * LAndTerm(Env env) {
+	return ZbLAndTermu(env, BOrTerm(env));
 }
 
-Expr * ZbLAndTermu(Expr * du) {
+Expr * ZbLAndTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case BIT_OR:
 		Symb = readLexem();
-		return ZbLAndTermu(new Bop(BitOr, du, BOrTerm()));
+		return ZbLAndTermu(env, new Bop(BitOr, du, BOrTerm(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * BOrTerm() {
-	return ZbBOrTermu(BAndTerm());
+Expr * BOrTerm(Env env) {
+	return ZbBOrTermu(env, BAndTerm(env));
 }
 
-Expr * ZbBOrTermu(Expr * du) {
+Expr * ZbBOrTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case BIT_AND:
 		Symb = readLexem();
-		return ZbBOrTermu(new Bop(BitAnd, du, BAndTerm()));
+		return ZbBOrTermu(env, new Bop(BitAnd, du, BAndTerm(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * BAndTerm() {
-	return ZbBAndTermu(RelOpTerm());
+Expr * BAndTerm(Env env) {
+	return ZbBAndTermu(env, RelOpTerm(env));
 }
 
-Expr * ZbBAndTermu(Expr * du) {
+Expr * ZbBAndTermu(Env env, Expr * du) {
 	Operator op = RelOp();
 	if (op == Error) {
 		return du;
 	}
-	return ZbBAndTermu(new Bop(op, du, RelOpTerm()));
+	return ZbBAndTermu(env, new Bop(op, du, RelOpTerm(env)));
 }
 
-Expr * RelOpTerm() {
-	return ZbRelOpTermu(ShiftTerm());
+Expr * RelOpTerm(Env env) {
+	return ZbRelOpTermu(env, ShiftTerm(env));
 }
 
-Expr * ZbRelOpTermu(Expr * du) {
+Expr * ZbRelOpTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case LSHIFT:
 		Symb = readLexem();
-		return ZbRelOpTermu(new Bop(Lsh, du, ShiftTerm()));
+		return ZbRelOpTermu(env, new Bop(Lsh, du, ShiftTerm(env)));
 	case RSHIFT:
 		Symb = readLexem();
-		return ZbRelOpTermu(new Bop(Rsh, du, ShiftTerm()));
+		return ZbRelOpTermu(env, new Bop(Rsh, du, ShiftTerm(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * ShiftTerm() {
-	return ZbShiftTermu(Term());
+Expr * ShiftTerm(Env env) {
+	return ZbShiftTermu(env, Term(env));
 }
 
-Expr * ZbShiftTermu(Expr * du) {
+Expr * ZbShiftTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case PLUS:
 		Symb = readLexem();
-		return ZbShiftTermu(new Bop(Plus, du, Term()));
+		return ZbShiftTermu(env, new Bop(Plus, du, Term(env)));
 	case MINUS:
 		Symb = readLexem();
-		return ZbShiftTermu(new Bop(Minus, du, Term()));
+		return ZbShiftTermu(env, new Bop(Minus, du, Term(env)));
 	default:
 		return du;
 	}
 }
 
-Expr * Term() {
-	return ZbTermu(Faktor());
+Expr * Term(Env env) {
+	return ZbTermu(env, Faktor(env));
 }
 
-Expr * ZbTermu(Expr * du) {
+Expr * ZbTermu(Env env, Expr * du) {
 	switch (Symb.type) {
 	case TIMES:
 		Symb = readLexem();
-		return ZbTermu(new Bop(Times, du, Faktor()));
+		return ZbTermu(env, new Bop(Times, du, Faktor(env)));
 	case DIVIDE:
 		Symb = readLexem();
-		return ZbVyrazu(new Bop(Divide, du, Faktor()));
+		return ZbVyrazu(env, new Bop(Divide, du, Faktor(env)));
 	case MODULO:
 		Symb = readLexem();
-		return ZbVyrazu(new Bop(Modulo, du, Faktor()));
+		return ZbVyrazu(env, new Bop(Modulo, du, Faktor(env)));
 	default:
 		return du;
 	}
@@ -775,36 +775,36 @@ Expr * ZbTermu(Expr * du) {
 	exit(1);
 }*/
 
-Expr * Faktor() {
+Expr * Faktor(Env env) {
 	Expr * offset;
 
 	if (Symb.type == MINUS) {
 		Symb = readLexem();
-		return new UnMinus(Faktor());
+		return new UnMinus(Faktor(env));
 	}
 	if (Symb.type == LOG_NOT) {
 		Symb = readLexem();
-		return new Not(Faktor());
+		return new Not(Faktor(env));
 	}
 
 	switch (Symb.type) {
 	case IDENT:
 		char id[MAX_IDENT_LEN];
 		Srovnani_IDENT(id);
-		offset = ArrayOffset(id);
+		offset = ArrayOffset(env, id);
 		if (Symb.type == DOT) {
 			Srovnani(DOT);
 			//return RecordFaktor(id);
 			ChybaExpanze("Faktor", Symb.type);
 		}
-		return VarOrConst(id, offset);
+		return VarOrConst(id, offset, env);
 	case NUMB:
 		int hodn;
 		Srovnani_NUMB(&hodn);
 		return new Numb(hodn);
 	case LPAR: {
 		Symb = readLexem();
-		Expr *su = Vyraz();
+		Expr *su = Vyraz(env);
 		Srovnani(RPAR);
 		return su;
 	}

@@ -99,9 +99,10 @@ ClassEnv * hledejClass(char *);
 MethodEnv * hledejMethod(char *, ClassEnv *);
 PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *);
 
-PrvekTab * adrProm(char*, ClassEnv * cls, MethodEnv * mth);
-int prvniIdxProm(char *id);
-DruhId idPromKonst(char*, int*);
+PrvekTab * adrSym(char*, ClassEnv *, MethodEnv *);
+PrvekTab * adrProm(char*, ClassEnv *, MethodEnv *);
+int prvniIdxProm(char *, ClassEnv *, MethodEnv *);
+//DruhId idPromKonst(char *, int *, ClassEnv *, MethodEnv *);
 
 void symCleanup();
 

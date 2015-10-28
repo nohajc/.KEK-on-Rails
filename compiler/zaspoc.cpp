@@ -36,29 +36,6 @@ void resolveBreak(int a1, int a2) {
 	}
 }
 
-/*int Gener(TypInstr ti, int opd, Label lab) {
-	p[ic].typ = ti;
-	p[ic].opd = opd;
-	p[ic].lab = lab;
-	return ic++;
-}*/
-
-void GenTR(char *id) {
-	int v;
-	DruhId druh = idPromKonst(id, &v);
-	switch (druh) {
-	case IdProm:
-		Gener(TA, v);
-		Gener(DR);
-		break;
-	case IdKonst:
-		Gener(TC, v);
-		break;
-	default:
-		return;
-	}
-}
-
 void PutIC(int adr) {
 	p[adr].opd = ic;
 }

@@ -17,13 +17,13 @@ Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
 	strcpy(name, sym->ident);
 }
 
-Var::Var(const char * n, int a, Expr * o, bool rv) {
+/*Var::Var(const char * n, int a, Expr * o, bool rv) {
 	addr = a;
 	offset = o;
 	rvalue = rv;
 	name = new char[strlen(n) + 1];
 	strcpy(name, n);
-}
+}*/
 
 Var::~Var() {
 	delete offset;
@@ -533,15 +533,18 @@ void Return::Translate() {
 	// TODO: implement
 }
 
-Expr *VarOrConst(char *id, Expr * offset)
+Expr *VarOrConst(char *id, Expr * offset, Env env)
 {
    int v;
-   DruhId druh = idPromKonst(id,&v);
+   PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
+   //DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
+   DruhId druh = p->druh;
+
    switch (druh) {
    case IdProm:
-      return new Var(id, v, offset, true); // TODO: This is wrong - will be reimplemented
+      return new Var(p, offset, true);
    case IdKonst:
-      return new Numb(v);
+      return new Numb(p->hodn);
    default:
       return 0;
    }

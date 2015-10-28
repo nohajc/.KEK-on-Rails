@@ -31,7 +31,7 @@ class Var: public Expr {
 	Scope sc;
 public:
 	Var(const PrvekTab *, Expr *, bool);
-	Var(const char *, int, Expr *, bool); // TODO: remove this
+	//Var(const char *, int, Expr *, bool); // TODO: remove this
 	virtual ~Var();
 	virtual void Translate();
 	virtual Node *Optimize();
@@ -253,7 +253,7 @@ public:
 	virtual void Print(int);
 };
 
-Expr *VarOrConst(char*, Expr * offset);
+Expr *VarOrConst(char*, Expr * offset, Env env);
 
 /* <nesro> */
 
