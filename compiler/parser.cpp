@@ -387,7 +387,7 @@ StatmList * ZbPrikazu(Env env, Context ctxt) {
 }
 
 void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm ** counter, Statm ** body){
-	Operator op = Error, op_c = Error;
+	/*Operator op = Error, op_c = Error;
 	if(Symb.type == kwTO){
 		op = LessOrEq;
 		op_c = Plus;
@@ -395,10 +395,10 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	else if(Symb.type == kwDOWNTO){
 		op = GreaterOrEq;
 		op_c = Minus;
-	}
+	}*/
 
 	switch(Symb.type){
-	case kwTO:
+	/*case kwTO: // BROKEN!
 	case kwDOWNTO:
 	{
 		Symb = readLexem();
@@ -407,7 +407,7 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 		*counter = new AssignWithBop(op_c, new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Numb(1));
 		Srovnani(RPAR);
 		break;
-	}
+	}*/
 	case SEMICOLON:
 		Symb = readLexem();
 		*cond = Podminka(env);
@@ -450,6 +450,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 
 	switch (Symb.type) {
 	case DOT: // ref
+		Symb = readLexem();
 		p = hledejMember(id, env.clsEnv, env.mthEnv);
 		if (!rvalue && p->druh != IdProm) {
 			Chyba("Na leve strane musi byt promenna.");
@@ -473,6 +474,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 		Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;
 	case LPAR: // call
+		Symb = readLexem();
 		m = hledejMethod(id, env.clsEnv);
 		if (m) {
 			if (env.clsEnv != CLASS_ANY && !m->isStatic) {
@@ -648,7 +650,8 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Expr * cond;
 		Statm * counter;
 		Statm * body;
-		ZbFor(env, id, offset, &cond, &counter, &body);
+		//ZbFor(env, id, offset, &cond, &counter, &body);
+		ZbFor(env, NULL, NULL, &cond, &counter, &body);
 		return new For(init, cond, counter, body);
 	}
 	case kwBREAK: {
