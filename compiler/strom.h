@@ -32,18 +32,28 @@ class Var: public Expr {
 public:
 	Var(const PrvekTab *, Expr *, bool);
 	Var(char * n, bool rv);
-	//Var(const char *, int, Expr *, bool); // TODO: remove this
 	virtual ~Var();
 	virtual void Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);
 };
 
+class ArgList: public Expr {
+	Expr * arg;
+	ArgList * next;
+public:
+	ArgList(Expr *, ArgList *);
+	virtual ~ArgList();
+	virtual void Translate(){} // TODO: implement
+	virtual Node *Optimize(){ return this; } // TODO: implement
+	virtual void Print(int){} // TODO: implement
+};
+
 class Call: public Statm {
 	Expr * method;
-	// TODO: ArgList
+	ArgList * args;
 public:
-	Call(Expr *);
+	Call(Expr *, ArgList *);
 	virtual ~Call();
 	virtual void Translate(){} // TODO: implement
 	virtual Node *Optimize(){ return this; } // TODO: implement

@@ -28,12 +28,24 @@ Var::~Var() {
 	delete [] name;
 }
 
-Call::Call(Expr * m) {
+ArgList::ArgList(Expr * a, ArgList * n) {
+	arg = a;
+	next = n;
+}
+
+ArgList::~ArgList() {
+	delete arg;
+	delete next;
+}
+
+Call::Call(Expr * m, ArgList * a) {
 	method = m;
+	args = a;
 }
 
 Call::~Call() {
 	delete method;
+	delete args;
 }
 
 ClassRef::ClassRef(char * n, bool rv, Expr * t) : Var(n, rv){

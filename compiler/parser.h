@@ -21,6 +21,8 @@ StatmList * ZbDeklProm(Env, bool);
 StatmList *SlozPrikaz(Env env, Context ctxt = C_NIL);
 StatmList *ZbPrikazu(Env env, Context ctxt = C_NIL);
 Statm *Prikaz(Env env, Context ctxt = C_NIL);
+ArgList * Args(Env env);
+ArgList * ZbArgs(Env env);
 Expr * Ident(Env, bool);
 Expr * ZbIdent(Env, bool);
 Statm *AssignmentOrCall(Env);

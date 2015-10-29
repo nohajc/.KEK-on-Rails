@@ -106,20 +106,33 @@ ClassEnv * hledejClass(char * id) {
 	return NULL;
 }
 
-MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
-	// TODO: if (ce == CLASS_ANY)
-	MethodEnv * me = ce->methods;
+#define FIND_METHOD(first) { \
+	me = first; \
+	while (me) { \
+		if(!strcmp(id, me->methodName)) { \
+			return me; \
+		} \
+		me = me->next; \
+	} \
+}
 
-	while (me) {
-		if(!strcmp(id, me->methodName)) {
-			return me;
+MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
+	MethodEnv * me;
+
+	if(ce == CLASS_ANY) {
+		ClassEnv * tc = TabClass;
+		while (tc) {
+			FIND_METHOD(tc->methods);
+			tc = tc->next;
 		}
-		me = me->next;
 	}
+
+	FIND_METHOD(ce->methods);
+	
 	return NULL;
 }
 
-#define FIND_SYM(first) {\
+#define FIND_SYM(first) { \
 	syms = first; \
 	while (syms) { \
 		if(!strcmp(id, syms->ident)) { \

@@ -491,11 +491,36 @@ Expr * ZbIdent(Env env, bool rvalue) {
 	return NULL;
 }
 
+ArgList * ZbArgs(Env env) {
+	Expr * arg;
+	if(Symb.type == RPAR) {
+		return NULL;
+	}
+
+	Srovnani(COMMA);
+	arg = Vyraz(env);
+	return new ArgList(arg, ZbArgs(env));
+}
+
+ArgList * Args(Env env) {
+	Expr * arg;
+	if(Symb.type == RPAR) {
+		return NULL;
+	}
+
+	arg = Vyraz(env);
+	return new ArgList(arg, ZbArgs(env));
+}
+
 Expr * Ident(Env env, bool rvalue) {
 	Expr * e = ZbIdent(env, rvalue);
 
 	if (Symb.type == LPAR) {
-		return new Call(e); // TODO: parse arguments
+		Symb = readLexem();
+		ArgList * a = Args(env);
+		Srovnani(RPAR);
+
+		return new Call(e, a);
 	}
 
 	return e;
@@ -559,10 +584,6 @@ Statm * Assignment(Env env, Var * lvalue) {
 Statm * AssignmentOrCall(Env env) {
 	char id[MAX_IDENT_LEN];
 
-	// TODO: parse ident
-	/*Srovnani_IDENT(id);
-	Expr * offset = ArrayOffset(env, id);
-	Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);*/
 	Expr * e = Ident(env, false);
 	Var * var = dynamic_cast<Var*>(e); // var
 	if (!var) {
@@ -590,10 +611,10 @@ Statm * Prikaz(Env env, Context ctxt) {
 		return new Write(Vyraz(env));
 	case kwREAD:
 		Symb = readLexem();
-		char id[MAX_IDENT_LEN];
-		// TODO: parse ident
-		Srovnani_IDENT(id);
-		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), ArrayOffset(env, id), false);
+		var = dynamic_cast<Var*>(Ident(env, false)); // var
+		if (!var) {
+			Chyba("Ocekava se promenna.");
+		}
 		return new Read(var);
 	case kwIF: {
 		Symb = readLexem();
@@ -612,14 +633,16 @@ Statm * Prikaz(Env env, Context ctxt) {
 		return new While(cond, Prikaz(env, C_CYCLE));
 	}
 	case kwFOR: {
-		char id[MAX_IDENT_LEN];
+		//char id[MAX_IDENT_LEN];
 		Symb = readLexem();
 		Srovnani(LPAR);
-		// TODO: parse ident
-		Srovnani_IDENT(id);
-
+		/*Srovnani_IDENT(id);
 		Expr * offset = ArrayOffset(env, id);
-		Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
+		Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);*/
+		Var * var = dynamic_cast<Var*>(Ident(env, false));
+		if (!var) {
+			Chyba("Ocekava se promenna.");
+		}
 		Srovnani(ASSIGN);
 		Statm * init = new Assign(var, Vyraz(env));
 		Expr * cond;
@@ -846,16 +869,11 @@ Expr * Faktor(Env env) {
 
 	switch (Symb.type) {
 	case IDENT:
-		char id[MAX_IDENT_LEN];
-		// TODO: parse ident
-		Srovnani_IDENT(id);
+		//char id[MAX_IDENT_LEN];
+		/*Srovnani_IDENT(id);
 		offset = ArrayOffset(env, id);
-		/*if (Symb.type == DOT) {
-			Srovnani(DOT);
-			//return RecordFaktor(id);
-			ChybaExpanze("Faktor", Symb.type);
-		}*/
-		return VarOrConst(id, offset, env);
+		return VarOrConst(id, offset, env);*/
+		return Ident(env, true);
 	case NUMB:
 		int hodn;
 		Srovnani_NUMB(&hodn);
