@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-CRecord::CRecord(char *ident) {
+/*CRecord::CRecord(char *ident) {
 	this->m_Ident = strdup(ident);
 	this->m_Val = volna_adr++;
 	this->m_Next = NULL;
@@ -18,7 +18,7 @@ CRecord::CRecord(char *ident, CRecord *next) {
 	this->m_Ident = strdup(ident);
 	this->m_Val = volna_adr++;
 	this->m_Next = next;
-}
+}*/
 
 PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n) {
 	ident = new char[strlen(i)+1];
@@ -50,7 +50,7 @@ ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 		parent = NULL;
 	}
 	next = n;
-	class_addr_next = 0;
+	class_addr_next = 0; // TODO: set first addr to begin after the parent class' members
 	obj_addr_next = 0;
 	syms = NULL;
 	methods = NULL;
@@ -85,7 +85,7 @@ PrvekTab::~PrvekTab() {
 	delete [] ident;
 }
 
-PrvekTab *hledejId(char *id) {
+/*PrvekTab *hledejId(char *id) {
 	PrvekTab *p = TabSym;
 	while (p)
 		if (strcmp(id, p->ident) == 0)
@@ -93,7 +93,7 @@ PrvekTab *hledejId(char *id) {
 		else
 			p = p->dalsi;
 	return NULL;
-}
+}*/
 
 ClassEnv * hledejClass(char * id) {
 	ClassEnv * ce = TabClass;
@@ -128,7 +128,8 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
 	}
 
 	FIND_METHOD(ce->methods);
-	
+
+	// TODO: search the parents
 	return NULL;
 }
 
@@ -159,6 +160,8 @@ PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me) {
 	}
 
 	FIND_SYM(ce->syms);
+
+	// TODO: search the parents
 	return NULL;
 }
 
@@ -358,8 +361,8 @@ int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably als
 	return p->druh;
 }*/
 
-void symCleanup() {
-	PrvekTab * sym = TabSym;
+void symCleanup() { // TODO: fix this
+	PrvekTab * sym = NULL;
 	PrvekTab * next;
 
 	while(sym){

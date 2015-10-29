@@ -328,6 +328,7 @@ Statm * ClenTridy(Env env) {
 	case kwCONST:
 		return Dekl(env, isStatic);
 	default:
+		env.self = true; // call from method body is to self (own class methods) by default
 		return Metoda(env, isStatic);
 	}
 }
@@ -457,6 +458,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 		}
 
 		if (p) { // obj ref
+			env.self = false;
 			env.clsEnv = CLASS_ANY;
 			env.mthEnv = NULL;
 			return new ObjRef(p, offset, rvalue, ZbIdent(env, rvalue));
@@ -467,6 +469,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			if (offset) {
 				Chyba("Ke tride nelze pristupovat jako k poli");
 			}
+			env.self = false;
 			env.clsEnv = c;
 			env.mthEnv = NULL;
 			return new ClassRef(id, rvalue, ZbIdent(env, rvalue));
@@ -474,13 +477,12 @@ Expr * ZbIdent(Env env, bool rvalue) {
 		Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;
 	case LPAR: // call
-		Symb = readLexem();
 		m = hledejMethod(id, env.clsEnv);
 		if (m) {
-			if (env.clsEnv != CLASS_ANY && !m->isStatic) {
+			if (!env.self && env.clsEnv != CLASS_ANY && !m->isStatic) {
 				Chyba("Volana metoda musi byt staticka.");
 			}
-			return new MethodRef(id);
+			return new MethodRef(id); // TODO: forbid calling instance methods from static context
 		}
 		Chyba("Volana metoda neexistuje.");
 	default: // var/const

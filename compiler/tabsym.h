@@ -87,12 +87,13 @@ struct ClassEnv {
 struct Env {
 	ClassEnv * clsEnv;
 	MethodEnv * mthEnv;
+	bool self;
 };
 
 static ClassEnv * TabClass = NULL;
 
-static PrvekTab * TabSym; // TODO: remove this
-static int volna_adr;
+/*static PrvekTab * TabSym; // TODO: remove this
+static int volna_adr;*/
 
 ClassEnv * deklClass(char *, char * = NULL);
 MethodEnv * deklMethod(char *, bool constructor = false, bool isStatic = false, ClassEnv * cls = NULL);

@@ -901,12 +901,55 @@ void Var::Print(int ident) {
 	}
 }
 
+void ArgList::Print(int ident) {
+	printfi(ident, "ArgList\n");
+
+	ArgList * a = this;
+	do {
+		printfi(ident, "arg:\n");
+		if (a->arg) {
+			a->arg->Print(ident + 1);
+		}
+		a = a->next;
+	} while (a);
+}
+
+void Call::Print(int ident) {
+	printfi(ident, "Call\n");
+
+	printfi(ident, "method:\n");
+	if (this->method) {
+		this->method->Print(ident + 1);
+	}
+
+	printfi(ident, "args:\n");
+	if (this->args) {
+		this->args->Print(ident + 1);
+	}
+}
+
 void ClassRef::Print(int ident) {
-	target->Print(ident);
+	printfi(ident, "ClassRef\n");
+
+	printfi(ident, "target:\n");
+	if (this->target) {
+		target->Print(ident + 1);
+	}
 }
 
 void ObjRef::Print(int ident) {
-	target->Print(ident);
+	printfi(ident, "ObjRef\n");
+
+	printfi(ident, "target:\n");
+	if (this->target) {
+		target->Print(ident + 1);
+	}
+}
+
+void MethodRef::Print(int ident) {
+	printfi(ident, "MethodRef\n");
+
+	printfi(ident, "name: %s\n", name);
 }
 
 void Numb::Print(int ident) {

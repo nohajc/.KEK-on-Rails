@@ -46,7 +46,7 @@ public:
 	virtual ~ArgList();
 	virtual void Translate(){} // TODO: implement
 	virtual Node *Optimize(){ return this; } // TODO: implement
-	virtual void Print(int){} // TODO: implement
+	virtual void Print(int);
 };
 
 class Call: public Statm {
@@ -57,7 +57,7 @@ public:
 	virtual ~Call();
 	virtual void Translate(){} // TODO: implement
 	virtual Node *Optimize(){ return this; } // TODO: implement
-	virtual void Print(int){} // TODO: implement
+	virtual void Print(int);
 };
 
 class ClassRef: public Var { // Var which is also a class
@@ -87,7 +87,7 @@ public:
 	virtual ~MethodRef();
 	virtual void Translate(){} // TODO: implement
 	virtual Node *Optimize(){ return this; } // TODO: implement
-	virtual void Print(int){} // TODO: implement
+	virtual void Print(int);
 };
 
 class Numb: public Expr {
