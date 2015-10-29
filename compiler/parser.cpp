@@ -538,6 +538,9 @@ Statm * Assignment(Env env, Var * lvalue) {
 			Chyba("Ocekava se prirazeni.");
 		}
 	}
+	else {
+		var = lvalue;
+	}
 
 	switch (Symb.type) {
 	case ASSIGN:
