@@ -129,7 +129,9 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
 
 	FIND_METHOD(ce->methods);
 
-	// TODO: search the parents
+	if (ce->parent) {
+		return hledejMethod(id, ce->parent);
+	}
 	return NULL;
 }
 
@@ -161,7 +163,9 @@ PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me) {
 
 	FIND_SYM(ce->syms);
 
-	// TODO: search the parents
+	if (ce->parent) {
+		return hledejMember(id, ce->parent, NULL);
+	}
 	return NULL;
 }
 
