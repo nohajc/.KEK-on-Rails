@@ -72,7 +72,10 @@ typedef enum {
 	RSHIFT,
 	kwCLASS,
 	kwSTATIC,
-	kwRETURN
+	kwRETURN,
+	kwTHIS,
+	kwSUPER,
+	kwNEW
 } LexSymbolType;
 
 extern const char *symbTable[];

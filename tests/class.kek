@@ -1,5 +1,6 @@
 class Object {
 	method1() {
+		return new Object()
 	}
 }
 

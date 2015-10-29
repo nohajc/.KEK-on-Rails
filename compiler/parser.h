@@ -50,6 +50,7 @@ Expr * ZbShiftTermu(Env, Expr*);
 Expr *Term(Env);
 Expr *ZbTermu(Env, Expr*);
 Expr *Faktor(Env);
+Expr * ConstructorCall(Env env);
 
 ClassList * SeznamTrid();
 ClassList * ZbTrid();

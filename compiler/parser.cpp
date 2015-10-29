@@ -591,8 +591,25 @@ Statm * Assignment(Env env, Var * lvalue) {
 	}
 }
 
-Statm * AssignmentOrCall(Env env) {
+Expr * ConstructorCall(Env env) {
+	ClassEnv * ce;
 	char id[MAX_IDENT_LEN];
+
+	Srovnani_IDENT(id);
+	ce = hledejClass(id);
+	if (!ce) {
+		Chyba("Neexistujici konstruktor.");
+	}
+
+	Srovnani(LPAR);
+	ArgList * a = Args(env);
+	Srovnani(RPAR);
+
+	return new New(new MethodRef(id), a);
+}
+
+Statm * AssignmentOrCall(Env env) {
+	//char id[MAX_IDENT_LEN];
 
 	Expr * e = Ident(env, false);
 	Var * var = dynamic_cast<Var*>(e); // var
@@ -889,6 +906,9 @@ Expr * Faktor(Env env) {
 		int hodn;
 		Srovnani_NUMB(&hodn);
 		return new Numb(hodn);
+	case kwNEW:
+		Symb = readLexem();
+		return ConstructorCall(env);
 	case LPAR: {
 		Symb = readLexem();
 		Expr *su = Vyraz(env);

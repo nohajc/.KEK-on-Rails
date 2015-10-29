@@ -90,6 +90,17 @@ public:
 	virtual void Print(int);
 };
 
+class New: public Expr {
+	MethodRef * constructor;
+	ArgList * args;
+public:
+	New(MethodRef *, ArgList *);
+	virtual ~New();
+	virtual void Translate(){} // TODO: implement
+	virtual Node *Optimize(){ return this; } // TODO: implement
+	virtual void Print(int);
+};
+
 class Numb: public Expr {
 	int value;
 public:

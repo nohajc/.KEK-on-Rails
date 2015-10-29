@@ -48,6 +48,15 @@ Call::~Call() {
 	delete args;
 }
 
+New::New(MethodRef * c, ArgList * a) {
+	constructor = c;
+	args = a;
+}
+
+New::~New() {
+	delete constructor;
+}
+
 ClassRef::ClassRef(char * n, bool rv, Expr * t) : Var(n, rv){
 	target = t;
 }
@@ -950,6 +959,17 @@ void MethodRef::Print(int ident) {
 	printfi(ident, "MethodRef\n");
 
 	printfi(ident, "name: %s\n", name);
+}
+
+void New::Print(int ident) {
+	printfi(ident, "New\n");
+	printfi(ident, "constructor:\n");
+	constructor->Print(ident + 1);
+
+	printfi(ident, "args:\n");
+	if (args) {
+		args->Print(ident + 1);
+	}
 }
 
 void Numb::Print(int ident) {
