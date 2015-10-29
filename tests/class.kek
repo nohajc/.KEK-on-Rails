@@ -15,11 +15,11 @@ class Test: Object {
 		c++
 	}*/
 
-	method1(a, b) {
+	static method1(a, b) {
 		return a + b
 	}
 
 	static main(args) {
-		return 0
+		return method1(7, 2)
 	}
 }

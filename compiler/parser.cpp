@@ -482,7 +482,10 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			if (!env.self && env.clsEnv != CLASS_ANY && !m->isStatic) {
 				Chyba("Volana metoda musi byt staticka.");
 			}
-			return new MethodRef(id); // TODO: forbid calling instance methods from static context
+			if (env.self && env.mthEnv && env.mthEnv->isStatic && !m->isStatic) {
+				Chyba("Instancni metodu nelze volat ze statickeho kontextu.");
+			}
+			return new MethodRef(id);
 		}
 		Chyba("Volana metoda neexistuje.");
 	default: // var/const
