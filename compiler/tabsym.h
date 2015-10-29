@@ -77,6 +77,13 @@ struct ClassEnv {
 	~ClassEnv();
 };
 
+// Special class environment for searching through all classes
+#if defined(__LP64__)
+#define CLASS_ANY (ClassEnv*)0xFFFFFFFFFFFFFFFFULL
+#else
+#define CLASS_ANY (ClassEnv*)0xFFFFFFFF
+#endif
+
 struct Env {
 	ClassEnv * clsEnv;
 	MethodEnv * mthEnv;

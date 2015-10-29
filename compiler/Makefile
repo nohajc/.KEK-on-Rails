@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-Wall -Wextra -pedantic -Wno-write-strings -Wno-unused-variable -O0 -ggdb3
+CXXFLAGS=-Wall -Wextra -pedantic -Wno-write-strings -Wno-unused-variable -Wno-long-long -O0 -ggdb3
 
 OBJS=\
 	lexan.o \

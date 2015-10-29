@@ -20,7 +20,7 @@ public:
 class Expr: public Node {
 };
 
-class Statm: public Node {
+class Statm: public Expr {
 };
 
 class Var: public Expr {
@@ -31,6 +31,7 @@ class Var: public Expr {
 	Scope sc;
 public:
 	Var(const PrvekTab *, Expr *, bool);
+	Var(char * n, bool rv);
 	//Var(const char *, int, Expr *, bool); // TODO: remove this
 	virtual ~Var();
 	virtual void Translate();
@@ -38,10 +39,21 @@ public:
 	virtual void Print(int);
 };
 
-class ClassRef: public Var { // Var which is also a class
-	Var * target; // Member of the referenced class - must be static
+class Call: public Statm {
+	Expr * method;
+	// TODO: ArgList
 public:
-	ClassRef(Var *);
+	Call(Expr *);
+	virtual ~Call();
+	virtual void Translate(){} // TODO: implement
+	virtual Node *Optimize(){ return this; } // TODO: implement
+	virtual void Print(int){} // TODO: implement
+};
+
+class ClassRef: public Var { // Var which is also a class
+	Expr * target; // Member of the referenced class - must be static
+public:
+	ClassRef(char *, bool, Expr *);
 	virtual ~ClassRef();
 	virtual void Translate();
 	virtual Node *Optimize();
@@ -49,13 +61,23 @@ public:
 };
 
 class ObjRef: public Var { // Var which is also an object
-	Var * target; // Member of the referenced object
+	Expr * target; // Member of the referenced object
 public:
-	ObjRef(Var *);
+	ObjRef(const PrvekTab *, Expr *, bool, Expr *);
 	virtual ~ObjRef();
 	virtual void Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);
+};
+
+class MethodRef: public Expr {
+	char * name;
+public:
+	MethodRef(char *);
+	virtual ~MethodRef();
+	virtual void Translate(){} // TODO: implement
+	virtual Node *Optimize(){ return this; } // TODO: implement
+	virtual void Print(int){} // TODO: implement
 };
 
 class Numb: public Expr {
@@ -226,9 +248,12 @@ public:
 };*/
 
 class Method: public Statm {
+	char * name;
+	bool isStatic;
+	int numArgs;
 	StatmList * body;
 public:
-	Method(StatmList *);
+	Method(char *, bool, int, StatmList *);
 	virtual ~Method();
 	virtual void Translate();
 	virtual void Print(int);

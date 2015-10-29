@@ -107,6 +107,7 @@ ClassEnv * hledejClass(char * id) {
 }
 
 MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
+	// TODO: if (ce == CLASS_ANY)
 	MethodEnv * me = ce->methods;
 
 	while (me) {
@@ -118,28 +119,33 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
 	return NULL;
 }
 
+#define FIND_SYM(first) {\
+	syms = first; \
+	while (syms) { \
+		if(!strcmp(id, syms->ident)) { \
+			return syms; \
+		} \
+		syms = syms->dalsi; \
+	} \
+}
+
 PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me) {
 	PrvekTab * syms;
-	if (me) { // Try to search through local vars first
-		syms = me->syms;
-
-		while (syms) {
-			if(!strcmp(id, syms->ident)) {
-				return syms;
-			}
-			syms = syms->dalsi;
-		}
+	if (me) {
+		FIND_SYM(me->syms);	// Try to search through local vars first
+		FIND_SYM(me->args); // Then try method args
 	}
 
 	// If we get here, we try class members
-	syms = ce->syms;
-
-	while (syms) {
-		if(!strcmp(id, syms->ident)) {
-			return syms;
+	if (ce == CLASS_ANY) {
+		ClassEnv * tc = TabClass;
+		while (tc) {
+			FIND_SYM(tc->syms);
+			tc = tc->next;
 		}
-		syms = syms->dalsi;
 	}
+
+	FIND_SYM(ce->syms);
 	return NULL;
 }
 
@@ -213,14 +219,16 @@ void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth
 			addr = mth->arg_addr_next;
 			mth->arg_addr_next++;
 			sc = SC_ARG;
+
+			mth->args = new PrvekTab(id, IdProm, sc, addr, mth->args);
 		}
 		else {
 			addr = mth->local_addr_next;
 			mth->local_addr_next++;
 			sc = SC_LOCAL;
-		}
 
-		mth->syms = new PrvekTab(id, IdProm, sc, addr, mth->syms);
+			mth->syms = new PrvekTab(id, IdProm, sc, addr, mth->syms);
+		}
 	}
 	else { // Class or instance
 		int addr;

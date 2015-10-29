@@ -116,7 +116,7 @@ void TypRec() {
 	}
 }
 
-CRecord *ZbRecord() {
+/*CRecord *ZbRecord() {
 	if (Symb.type == COMMA) {
 		Srovnani(COMMA);
 
@@ -137,22 +137,6 @@ CRecord * Record() {
 	CRecord *record = new CRecord(id, ZbRecord());
 	Srovnani(RCURLY);
 	return record;
-}
-
-/*void TypVar(char *id) {
-	switch (Symb.type) {
-	case kwINTEGER:
-		Srovnani(kwINTEGER);
-		deklProm(id);
-		break;
-	case kwRECORD:
-		Srovnani(kwRECORD);
-		deklRecord(id, Record());
-		break;
-	default:
-		ChybaExpanze("DeklProm", Symb.type);
-		break;
-	}
 }*/
 
 // Returns true if the Type is primitive (integer, char, ...)
@@ -349,21 +333,23 @@ Statm * ClenTridy(Env env) {
 }
 
 Statm * Metoda(Env env, bool isStatic) {
+	char mth_id[MAX_IDENT_LEN];
 	char id[MAX_IDENT_LEN];
 	bool isConstructor = false;
+	int numArgs = 0;
 
-	Srovnani_IDENT(id);
+	Srovnani_IDENT(mth_id);
 
-	if(env.clsEnv && !strcmp(id, env.clsEnv->className)){
+	if(env.clsEnv && !strcmp(mth_id, env.clsEnv->className)){
 		isConstructor = true;
-		//printf("Found constructor %s.\n", id);
+		//printf("Found constructor %s.\n", mth_id);
 	}
 
 	if(isConstructor && isStatic) {
 		Chyba("Konstruktor nesmi byt staticky.");
 	}
 
-	MethodEnv * mthEnv = deklMethod(id, isConstructor, isStatic, env.clsEnv);
+	MethodEnv * mthEnv = deklMethod(mth_id, isConstructor, isStatic, env.clsEnv);
 	env.mthEnv = mthEnv;
 
 	Srovnani(LPAR);
@@ -371,13 +357,14 @@ Statm * Metoda(Env env, bool isStatic) {
 	while (Symb.type != RPAR) {
 		Srovnani_IDENT(id);
 		deklProm(id, true, false, env.clsEnv, env.mthEnv);
+		numArgs++;
 		if (Symb.type != RPAR) {
 			Srovnani(COMMA);
 		}
 	}
 	Srovnani(RPAR);
 
-	return new Method(SlozPrikaz(env));
+	return new Method(mth_id, isStatic, numArgs, SlozPrikaz(env));
 }
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {
@@ -416,8 +403,8 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	{
 		Symb = readLexem();
 		*cond = new Bop(op, VarOrConst(id, offset, env), Vyraz(env));
-		// TODO: This can be optimized with AssignWithBop
-		*counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset, env), new Numb(1)));
+		//*counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset, env), new Numb(1)));
+		*counter = new AssignWithBop(op_c, new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Numb(1));
 		Srovnani(RPAR);
 		break;
 	}
@@ -452,14 +439,79 @@ Expr * ArrayOffset(Env env, char * id) {
    return NULL;
 }
 
-Statm * Assignment(Env env) {
+Expr * ZbIdent(Env env, bool rvalue) {
 	char id[MAX_IDENT_LEN];
+	PrvekTab * p;
+	ClassEnv * c;
+	MethodEnv * m;
 
 	Srovnani_IDENT(id);
 	Expr * offset = ArrayOffset(env, id);
-	Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
+
+	switch (Symb.type) {
+	case DOT: // ref
+		p = hledejMember(id, env.clsEnv, env.mthEnv);
+		if (!rvalue && p->druh != IdProm) {
+			Chyba("Na leve strane musi byt promenna.");
+		}
+
+		if (p) { // obj ref
+			env.clsEnv = CLASS_ANY;
+			env.mthEnv = NULL;
+			return new ObjRef(p, offset, rvalue, ZbIdent(env, rvalue));
+		}
+
+		c = hledejClass(id);
+		if (c) { // class ref
+			if (offset) {
+				Chyba("Ke tride nelze pristupovat jako k poli");
+			}
+			env.clsEnv = c;
+			env.mthEnv = NULL;
+			return new ClassRef(id, rvalue, ZbIdent(env, rvalue));
+		}
+		Chyba("Ocekava se deklarovany objekt nebo trida.");
+		break;
+	case LPAR: // call
+		m = hledejMethod(id, env.clsEnv);
+		if (m) {
+			if (env.clsEnv != CLASS_ANY && !m->isStatic) {
+				Chyba("Volana metoda musi byt staticka.");
+			}
+			return new MethodRef(id);
+		}
+		Chyba("Volana metoda neexistuje.");
+	default: // var/const
+		if (rvalue) {
+			return VarOrConst(id, offset, env);
+		}
+		return new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
+	}
+
+	return NULL;
+}
+
+Expr * Ident(Env env, bool rvalue) {
+	Expr * e = ZbIdent(env, rvalue);
+
+	if (Symb.type == LPAR) {
+		return new Call(e); // TODO: parse arguments
+	}
+
+	return e;
+}
+
+Statm * Assignment(Env env, Var * lvalue) {
+	Var * var;
 	Expr * e;
-	//Srovnani(ASSIGN);
+	if (!lvalue) {
+		e = Ident(env, false);
+		var = dynamic_cast<Var*>(e); // var
+		if (!var) {
+			Chyba("Ocekava se prirazeni.");
+		}
+	}
+
 	switch (Symb.type) {
 	case ASSIGN:
 		Symb = readLexem();
@@ -468,33 +520,55 @@ Statm * Assignment(Env env) {
 	case ADD_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz(env);
-		return new Assign(var, new Bop(Plus, VarOrConst(id, offset, env), e)); //TODO: Use AssignWithBop here to optimize the op
+		//return new Assign(var, new Bop(Plus, VarOrConst(id, offset, env), e));
+		return new AssignWithBop(Plus, var, e);
 	case SUB_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz(env);
-		return new Assign(var, new Bop(Minus, VarOrConst(id, offset, env), e));
+		//return new Assign(var, new Bop(Minus, VarOrConst(id, offset, env), e));
+		return new AssignWithBop(Minus, var, e);
 	case MUL_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz(env);
-		return new Assign(var, new Bop(Times, VarOrConst(id, offset, env), e));
+		//return new Assign(var, new Bop(Times, VarOrConst(id, offset, env), e));
+		return new AssignWithBop(Times, var, e);
 	case DIV_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz(env);
-		return new Assign(var, new Bop(Divide, VarOrConst(id, offset, env), e));
+		//return new Assign(var, new Bop(Divide, VarOrConst(id, offset, env), e));
+		return new AssignWithBop(Divide, var, e);
 	case MOD_ASSIGN:
 		Symb = readLexem();
 		e = Vyraz(env);
-		return new Assign(var, new Bop(Modulo, VarOrConst(id, offset, env), e));
+		//return new Assign(var, new Bop(Modulo, VarOrConst(id, offset, env), e));
+		return new AssignWithBop(Modulo, var, e);
 	case INCREMENT:
 		Symb = readLexem();
-		return new Assign(var, new Bop(Plus, VarOrConst(id, offset, env), new Numb(1)));
+		//return new Assign(var, new Bop(Plus, VarOrConst(id, offset, env), new Numb(1)));
+		return new AssignWithBop(Plus, var, new Numb(1));
 	case DECREMENT:
 		Symb = readLexem();
-		return new Assign(var, new Bop(Minus, VarOrConst(id, offset, env), new Numb(1)));
+		//return new Assign(var, new Bop(Minus, VarOrConst(id, offset, env), new Numb(1)));
+		return new AssignWithBop(Minus, var, new Numb(1));
 	default:
 		ChybaExpanze("Assignment", Symb.type);
 		return NULL;
 	}
+}
+
+Statm * AssignmentOrCall(Env env) {
+	char id[MAX_IDENT_LEN];
+
+	// TODO: parse ident
+	/*Srovnani_IDENT(id);
+	Expr * offset = ArrayOffset(env, id);
+	Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);*/
+	Expr * e = Ident(env, false);
+	Var * var = dynamic_cast<Var*>(e); // var
+	if (!var) {
+		return dynamic_cast<Statm*>(e); // call
+	}
+	return Assignment(env, var);
 }
 
 Statm * Prikaz(Env env, Context ctxt) {
@@ -509,12 +583,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Symb = readLexem();
 		return new Return(Vyraz(env));
 	case IDENT: {
-		return Assignment(env);
-		/*char id[MAX_IDENT_LEN];
-		Srovnani_IDENT(id);
-		Var *var = new Var(adrProm(id), ArrayOffset(id), false);
-		Srovnani(ASSIGN);
-		return new Assign(var, Vyraz());*/
+		return AssignmentOrCall(env);
 	}
 	case kwWRITE:
 		Symb = readLexem();
@@ -522,6 +591,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 	case kwREAD:
 		Symb = readLexem();
 		char id[MAX_IDENT_LEN];
+		// TODO: parse ident
 		Srovnani_IDENT(id);
 		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), ArrayOffset(env, id), false);
 		return new Read(var);
@@ -545,6 +615,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		char id[MAX_IDENT_LEN];
 		Symb = readLexem();
 		Srovnani(LPAR);
+		// TODO: parse ident
 		Srovnani_IDENT(id);
 
 		Expr * offset = ArrayOffset(env, id);
@@ -562,7 +633,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		if(ctxt == C_CYCLE){
 			return new Break();
 		}
-		Chyba("Prikaz break je platny pouze uvnitr cyklu nebo prikazu switch.");
+		Chyba("Prikaz break je platny pouze uvnitr cyklu.");
 		return new Empty;
 	}
 
@@ -761,20 +832,6 @@ Expr * ZbTermu(Env env, Expr * du) {
 	}
 }
 
-/*Expr * RecordFaktor(char *id) {
-	PrvekTab *prvek = hledejId(id);
-	char idMember[MAX_IDENT_LEN];
-	Srovnani_IDENT(idMember);
-	for (CRecord *record = prvek->record; record != NULL;
-			record = record->m_Next) {
-		if (strcmp(record->m_Ident, idMember) == 0) {
-			return new Var(record->m_Val, true);
-		}
-	}
-	fprintf(stderr, "Unknown record member!\n");
-	exit(1);
-}*/
-
 Expr * Faktor(Env env) {
 	Expr * offset;
 
@@ -790,13 +847,14 @@ Expr * Faktor(Env env) {
 	switch (Symb.type) {
 	case IDENT:
 		char id[MAX_IDENT_LEN];
+		// TODO: parse ident
 		Srovnani_IDENT(id);
 		offset = ArrayOffset(env, id);
-		if (Symb.type == DOT) {
+		/*if (Symb.type == DOT) {
 			Srovnani(DOT);
 			//return RecordFaktor(id);
 			ChybaExpanze("Faktor", Symb.type);
-		}
+		}*/
 		return VarOrConst(id, offset, env);
 	case NUMB:
 		int hodn;

@@ -17,6 +17,50 @@ Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
 	strcpy(name, sym->ident);
 }
 
+Var::Var(char * n, bool rv) {
+	name = new char[strlen(n) + 1];
+	strcpy(name, n);
+	rvalue = rv;
+}
+
+Var::~Var() {
+	delete offset;
+	delete [] name;
+}
+
+Call::Call(Expr * m) {
+	method = m;
+}
+
+Call::~Call() {
+	delete method;
+}
+
+ClassRef::ClassRef(char * n, bool rv, Expr * t) : Var(n, rv){
+	target = t;
+}
+
+ClassRef::~ClassRef() {
+	delete target;
+}
+
+ObjRef::ObjRef(const PrvekTab * sym, Expr * o, bool rv, Expr * t) : Var(sym, o, rv) {
+	target = t;
+}
+
+ObjRef::~ObjRef() {
+	delete target;
+}
+
+MethodRef::MethodRef(char * n) {
+	name = new char[strlen(n) + 1];
+	strcpy(name, n);
+}
+
+MethodRef::~MethodRef() {
+	delete [] name;
+}
+
 /*Var::Var(const char * n, int a, Expr * o, bool rv) {
 	addr = a;
 	offset = o;
@@ -24,11 +68,6 @@ Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
 	name = new char[strlen(n) + 1];
 	strcpy(name, n);
 }*/
-
-Var::~Var() {
-	delete offset;
-	delete [] name;
-}
 
 Numb::Numb(int v) {
 	value = v;
@@ -174,12 +213,17 @@ ClassList::~ClassList() {
 	delete next;
 }
 
-Method::Method(StatmList * b) {
+Method::Method(char * n, bool sttc, int nArgs, StatmList * b) {
+	name = new char[strlen(n) + 1];
+	isStatic = sttc;
+	numArgs = nArgs;
 	body = b;
+	strcpy(name, n);
 }
 
 Method::~Method() {
 	delete body;
+	delete [] name;
 }
 
 Return::Return(Expr * e) {
@@ -197,6 +241,16 @@ Node *Var::Optimize() {
 		offset = (Expr*)(offset->Optimize());
 	}
 	return this;
+}
+
+Node * ClassRef::Optimize() {
+	target = (Expr*)(target->Optimize());
+	return this;
+}
+
+Node * ObjRef::Optimize() {
+	target = (Var*)(target->Optimize());
+	return Var::Optimize();
 }
 
 Node *Bop::Optimize() {
@@ -402,6 +456,15 @@ void Var::Translate() {
 
 	if (rvalue)
 		Gener(DR);
+}
+
+void ClassRef::Translate() {
+	target->Translate();
+}
+
+void ObjRef::Translate() {
+	Var::Translate();
+	target->Translate();
 }
 
 void Numb::Translate() {
@@ -824,6 +887,14 @@ void Var::Print(int ident) {
 	if (this->offset) {
 		this->offset->Print(ident + 1);
 	}
+}
+
+void ClassRef::Print(int ident) {
+	target->Print(ident);
+}
+
+void ObjRef::Print(int ident) {
+	target->Print(ident);
 }
 
 void Numb::Print(int ident) {
