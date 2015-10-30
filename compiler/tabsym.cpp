@@ -116,7 +116,7 @@ ClassEnv * hledejClass(char * id) {
 	} \
 }
 
-MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
+MethodEnv * hledejMethod(char * id, ClassEnv * ce, bool recursive) {
 	MethodEnv * me;
 
 	if(ce == CLASS_ANY) {
@@ -129,7 +129,7 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
 
 	FIND_METHOD(ce->methods);
 
-	if (ce->parent) {
+	if (recursive && ce->parent) {
 		return hledejMethod(id, ce->parent);
 	}
 	return NULL;
@@ -145,12 +145,14 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce) {
 	} \
 }
 
-PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me) {
+PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me, bool recursive) {
 	PrvekTab * syms;
 	if (me) {
 		FIND_SYM(me->syms);	// Try to search through local vars first
 		FIND_SYM(me->args); // Then try method args
 	}
+
+	if (!recursive) return NULL;
 
 	// If we get here, we try class members
 	if (ce == CLASS_ANY) {
@@ -196,7 +198,7 @@ MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * c
 		return cls->constructor;
 	}
 
-	MethodEnv * me = hledejMethod(mth, cls);
+	MethodEnv * me = hledejMethod(mth, cls, false);
 
 	if (me) {
 		Chyba(mth, "druha deklarace");
@@ -207,7 +209,7 @@ MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * c
 }
 
 void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth) {
-	PrvekTab *p = hledejMember(id, cls, mth);
+	PrvekTab *p = hledejMember(id, cls, mth, false);
 	if (p) {
 		Chyba(id, "druha deklarace");
 	}
@@ -226,7 +228,7 @@ void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth
 }
 
 void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth) {
-	PrvekTab *p = hledejMember(id, cls, mth);
+	PrvekTab *p = hledejMember(id, cls, mth, false);
 	if (p) {
 		Chyba(id, "druha deklarace");
 	}
@@ -271,7 +273,7 @@ void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth
 
 // Static array - TODO: remove, it is broken
 void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
-	PrvekTab *p = hledejMember(id, cls, mth);
+	PrvekTab *p = hledejMember(id, cls, mth, false);
 	if (p) {
 		Chyba(id, "druha deklarace");
 	}
@@ -286,43 +288,6 @@ void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth
 		cls->obj_addr_next += posledni - prvni + 1;
 	}
 }
-
-/*void deklRecord(char *id, CRecord *record) {
-	PrvekTab *p = hledejId(id);
-	if (p) {
-		Chyba(id, "druha deklarace");
-		return;
-	}
-
-	TabSym = new PrvekTab(id, IdRecord, 0, TabSym, record);
-}*/
-
-/*int adrProm(char *id) {
-	PrvekTab *p = hledejId(id);
-	if (!p) {
-		Chyba(id, "neni deklarovan");
-		return 0;
-	} else if (p->druh == IdRecord) {
-		Srovnani(DOT);
-
-		char idMember[MAX_IDENT_LEN];
-		Srovnani_IDENT(idMember);
-
-		for (CRecord *r = p->record; r != NULL; r = r->m_Next) {
-			if (strcmp(r->m_Ident, idMember) == 0) {
-				return r->m_Val;
-			}
-		}
-
-		printf("member of %s not found\n", p->ident);
-		exit(1);
-
-	} else if (p->druh != IdProm) {
-		Chyba(id, "neni identifikatorem promenne");
-		return 0;
-	} else
-		return p->hodn;
-}*/
 
 PrvekTab * adrSym(char *id, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejMember(id, cls, mth); // local, instance or class var

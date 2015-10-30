@@ -104,8 +104,8 @@ void deklProm(char *, int, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 
 PrvekTab *hledejId(char *); // TODO: remove this
 ClassEnv * hledejClass(char *);
-MethodEnv * hledejMethod(char *, ClassEnv *);
-PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *);
+MethodEnv * hledejMethod(char *, ClassEnv *, bool = true);
+PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *, bool = true);
 
 PrvekTab * adrSym(char*, ClassEnv *, MethodEnv *);
 PrvekTab * adrProm(char*, ClassEnv *, MethodEnv *);

@@ -1,6 +1,16 @@
 class Object {
+	static const a = 5
+
 	method1() {
 		return new Object()
+	}
+
+	method2() {
+		var method1 = 0
+		var a = 1
+		method1()
+		a = 2
+		//this.a = 42 // does not compile
 	}
 }
 
@@ -22,5 +32,9 @@ class Test: Object {
 
 	static main(args) {
 		return method1(7, 2)
+	}
+
+	getRef() {
+		return this
 	}
 }

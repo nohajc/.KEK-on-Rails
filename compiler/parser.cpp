@@ -446,6 +446,18 @@ Expr * ZbIdent(Env env, bool rvalue) {
 	ClassEnv * c;
 	MethodEnv * m;
 
+	if (env.mthEnv && Symb.type == kwTHIS) { // self ref
+		Symb = readLexem();
+
+		if (Symb.type == DOT) {
+			Symb = readLexem();
+			env.mthEnv = NULL;
+			return ZbIdent(env, rvalue);
+		}
+		// self ref by itself
+		return new Var("this", rvalue); // Special Var. Could we do it better?
+	}
+
 	Srovnani_IDENT(id);
 	Expr * offset = ArrayOffset(env, id);
 
@@ -630,6 +642,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 	case kwRETURN:
 		Symb = readLexem();
 		return new Return(Vyraz(env));
+	case kwTHIS:
 	case IDENT: {
 		return AssignmentOrCall(env);
 	}
@@ -897,6 +910,7 @@ Expr * Faktor(Env env) {
 
 	switch (Symb.type) {
 	case IDENT:
+	case kwTHIS:
 		//char id[MAX_IDENT_LEN];
 		/*Srovnani_IDENT(id);
 		offset = ArrayOffset(env, id);
