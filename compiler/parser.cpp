@@ -455,7 +455,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			return ZbIdent(env, rvalue);
 		}
 		// self ref by itself
-		return new Var("this", rvalue); // Special Var. Could we do it better?
+		return new SelfRef(rvalue);
 	}
 
 	Srovnani_IDENT(id);

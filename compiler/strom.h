@@ -80,6 +80,12 @@ public:
 	virtual void Print(int);
 };
 
+class SelfRef: public Var {
+public:
+	SelfRef(bool);
+	virtual void Translate(){} // TODO: implement
+};
+
 class MethodRef: public Expr {
 	char * name;
 public:

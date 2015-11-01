@@ -73,6 +73,8 @@ ObjRef::~ObjRef() {
 	delete target;
 }
 
+SelfRef::SelfRef(bool rv) : Var("this", rv) {}
+
 MethodRef::MethodRef(char * n) {
 	name = new char[strlen(n) + 1];
 	strcpy(name, n);
