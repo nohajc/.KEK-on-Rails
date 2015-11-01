@@ -74,6 +74,9 @@ ObjRef::~ObjRef() {
 }
 
 SelfRef::SelfRef(bool rv) : Var("this", rv) {}
+ParentRef::ParentRef(bool rv, Expr * t) : Var("super", rv) {
+	target = t;
+}
 
 MethodRef::MethodRef(char * n) {
 	name = new char[strlen(n) + 1];
@@ -961,6 +964,19 @@ void MethodRef::Print(int ident) {
 	printfi(ident, "MethodRef\n");
 
 	printfi(ident, "name: %s\n", name);
+}
+
+void SelfRef::Print(int ident) {
+	printfi(ident, "SelfRef\n");
+}
+
+void ParentRef::Print(int ident) {
+	printfi(ident, "ParentRef\n");
+
+	printfi(ident, "target:\n");
+	if (this->target) {
+		target->Print(ident + 1);
+	}
 }
 
 void New::Print(int ident) {

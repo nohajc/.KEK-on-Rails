@@ -457,6 +457,23 @@ Expr * ZbIdent(Env env, bool rvalue) {
 		// self ref by itself
 		return new SelfRef(rvalue);
 	}
+	if(env.mthEnv && Symb.type == kwSUPER) { // parent ref
+		Symb = readLexem();
+
+		if (!env.clsEnv->parent) {
+			Chyba("Reference na neexistujici rodicovskou tridu.");
+		}
+
+		if (Symb.type == DOT) {
+			Symb = readLexem();
+			env.clsEnv = env.clsEnv->parent;
+			return new ParentRef(rvalue, ZbIdent(env, rvalue));
+		}
+		if (Symb.type == LPAR) {
+			return new MethodRef(env.clsEnv->parent->className);
+		}
+		Chyba("Ocekavano volani rodicovske metody nebo konstruktoru.");
+	}
 
 	Srovnani_IDENT(id);
 	Expr * offset = ArrayOffset(env, id);
@@ -641,8 +658,13 @@ Statm * Prikaz(Env env, Context ctxt) {
 		return Dekl(env, false);
 	case kwRETURN:
 		Symb = readLexem();
+		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
+			Symb = readLexem();
+			return new Return(new Empty);
+		}
 		return new Return(Vyraz(env));
 	case kwTHIS:
+	case kwSUPER:
 	case IDENT: {
 		return AssignmentOrCall(env);
 	}

@@ -84,6 +84,15 @@ class SelfRef: public Var {
 public:
 	SelfRef(bool);
 	virtual void Translate(){} // TODO: implement
+	virtual void Print(int);
+};
+
+class ParentRef: public Var {
+	Expr * target;
+public:
+	ParentRef(bool, Expr *);
+	virtual void Translate(){} // TODO: implement
+	virtual void Print(int);
 };
 
 class MethodRef: public Expr {

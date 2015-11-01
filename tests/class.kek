@@ -11,6 +11,7 @@ class Object {
 		method1()
 		a = 2
 		//this.a = 42 // does not compile
+		return
 	}
 }
 
@@ -20,18 +21,21 @@ class Test: Object {
 	static var sv
 
 	Test() { // Constructor
+		super()
 	}
 
 	/*Test(c) {
 		c++
 	}*/
 
-	static method1(a, b) {
+	method1(a, b) {
+		super.method1()
 		return a + b
 	}
 
 	static main(args) {
-		return method1(7, 2)
+		var t = new Test()
+		return t.method1(7, 2)
 	}
 
 	getRef() {
