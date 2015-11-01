@@ -288,8 +288,9 @@ class Method: public Statm {
 	bool isStatic;
 	int numArgs;
 	StatmList * body;
+	unsigned int * bc_entrypoint; // Points to symbol table MethodEnv object
 public:
-	Method(char *, bool, int, StatmList *);
+	Method(char *, bool, int, unsigned int *, StatmList *);
 	virtual ~Method();
 	virtual void Translate();
 	virtual void Print(int);

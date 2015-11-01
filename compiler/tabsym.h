@@ -58,6 +58,7 @@ struct MethodEnv {
 	MethodEnv * next;
 	int arg_addr_next; // Arguments address counter
 	int local_addr_next; // Local vars address counter
+	unsigned int bc_entrypoint; // Bytecode address
 
 	MethodEnv(char * name, bool sttc, MethodEnv * n = NULL);
 	~MethodEnv();

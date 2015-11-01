@@ -365,7 +365,7 @@ Statm * Metoda(Env env, bool isStatic) {
 	}
 	Srovnani(RPAR);
 
-	return new Method(mth_id, isStatic, numArgs, SlozPrikaz(env));
+	return new Method(mth_id, isStatic, numArgs, &mthEnv->bc_entrypoint, SlozPrikaz(env));
 }
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {

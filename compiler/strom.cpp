@@ -239,11 +239,12 @@ ClassList::~ClassList() {
 	delete next;
 }
 
-Method::Method(char * n, bool sttc, int nArgs, StatmList * b) {
+Method::Method(char * n, bool sttc, int nArgs, unsigned int * bc_ep, StatmList * b) {
 	name = new char[strlen(n) + 1];
 	isStatic = sttc;
 	numArgs = nArgs;
 	body = b;
+	bc_entrypoint = bc_ep;
 	strcpy(name, n);
 }
 

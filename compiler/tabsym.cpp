@@ -43,15 +43,16 @@ PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
 ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 	className = new char[strlen(name) + 1];
 	strcpy(className, name);
-	if (par) {
-		parent = par;
-	}
-	else{
-		parent = NULL;
-	}
+	parent = par;
 	next = n;
-	class_addr_next = 0; // TODO: set first addr to begin after the parent class' members
-	obj_addr_next = 0;
+	if (parent) {
+		class_addr_next = parent->class_addr_next;
+		obj_addr_next = parent->obj_addr_next;
+	}
+	else {
+		class_addr_next = 0;
+		obj_addr_next = 0;	
+	}
 	syms = NULL;
 	methods = NULL;
 	constructor = NULL;
@@ -308,7 +309,6 @@ PrvekTab * adrProm(char *id, ClassEnv * cls, MethodEnv * mth) {
 	return p;
 }
 
-// TODO: fix this to use env and search in the right place
 int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably also remove this - first index of array will always be zero
 {
 	PrvekTab *p = hledejMember(id, cls, mth);
@@ -321,7 +321,6 @@ int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably als
 	return p->prvni;
 }
 
-// TODO: fix this to use env and search in the right place
 /*DruhId idPromKonst(char *id, int *v, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejMember(id, cls, mth);
 	if (!p) {
