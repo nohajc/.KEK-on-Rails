@@ -13,7 +13,7 @@ class Object {
 		//this.a = 42 // does not compile
 		return
 	}
-}
+};
 
 class Test: Object {
 	var v1, v2
@@ -41,4 +41,4 @@ class Test: Object {
 	getRef() {
 		return this
 	}
-}
+};

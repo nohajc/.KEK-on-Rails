@@ -626,10 +626,10 @@ Expr * ConstructorCall(Env env) {
 	char id[MAX_IDENT_LEN];
 
 	Srovnani_IDENT(id);
-	ce = hledejClass(id);
+	/*ce = hledejClass(id);
 	if (!ce) {
 		Chyba("Neexistujici konstruktor.");
-	}
+	}*/
 
 	Srovnani(LPAR);
 	ArgList * a = Args(env);
