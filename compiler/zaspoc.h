@@ -38,6 +38,8 @@ enum TypInstr {
 	        creates a new object and returns its address */
 };
 
+typedef enum TypInstr bc_t;
+
 enum Operator {
 	Plus,
 	Minus,
