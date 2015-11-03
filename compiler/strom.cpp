@@ -475,14 +475,14 @@ Node *ClassList::Optimize() {
 // definice metody Translate
 
 void Var::Translate() {
-	Gener(TA, addr);
+	Gener(LDC, addr);
 	if(offset){
 		offset->Translate();
 		Gener(BOP, Plus);
 	}
 
 	if (rvalue)
-		Gener(DR);
+		Gener(LD);
 }
 
 void ClassRef::Translate() {
@@ -495,7 +495,7 @@ void ObjRef::Translate() {
 }
 
 void Numb::Translate() {
-	Gener(TC, value);
+	Gener(LDC, value);
 }
 
 void Bop::Translate() {
@@ -523,7 +523,7 @@ void Assign::Translate() {
 void AssignWithBop::Translate() {
 	var->Translate();
 	Gener(DUP);
-	Gener(DR);
+	Gener(LD);
 	expr->Translate();
 	Gener(BOP, op);
 	Gener(ST);
@@ -541,7 +541,7 @@ void Read::Translate() {
 
 void If::Translate() {
 	cond->Translate();
-	int a1 = Gener(IFJ);
+	int a1 = Gener(IFNJ);
 	thenstm->Translate();
 	if (elsestm) {
 		int a2 = Gener(JU);
@@ -555,7 +555,7 @@ void If::Translate() {
 void While::Translate() {
 	int a1 = GetIC();
 	cond->Translate();
-	int a2 = Gener(IFJ);
+	int a2 = Gener(IFNJ);
 
 	int b1 = GetIC();
 	body->Translate();
@@ -570,7 +570,7 @@ void For::Translate() {
 	init->Translate();
 	int a1 = GetIC();
 	cond->Translate();
-	int a2 = Gener(IFJ);
+	int a2 = Gener(IFNJ);
 
 	int b1 = GetIC();
 	body->Translate();
@@ -833,7 +833,7 @@ void Case::Translate() {
 
 				/* if the bop made false from negation, so true from what we
 				 * need, jump before block! */
-				jumpBeforeBlock[jbbp++] = Gener(IFJ);
+				jumpBeforeBlock[jbbp++] = Gener(IFNJ);
 
 				break;
 			}
@@ -844,14 +844,14 @@ void Case::Translate() {
 				rangeLo->Translate();
 
 				/* if test of low rage fails, jump over the test of high range */
-				int loRangeFail = Gener(IFJ);
+				int loRangeFail = Gener(IFNJ);
 
 				/* I need a negation of <= */
 				Expr *rangeHi = new Bop(Greater, this->expr,
 						caseBlockScope->hi);
 				rangeHi->Translate();
 
-				jumpBeforeBlock[jbbp++] = Gener(IFJ);
+				jumpBeforeBlock[jbbp++] = Gener(IFNJ);
 
 				/* */
 				PutIC(loRangeFail);

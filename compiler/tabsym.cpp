@@ -71,6 +71,7 @@ MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
 	local_addr_next = 0;
 	args = NULL;
 	syms = NULL;
+	bc_entrypoint = 0; /* TODO FIXME */
 }
 
 MethodEnv::~MethodEnv() {

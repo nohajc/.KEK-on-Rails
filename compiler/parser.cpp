@@ -517,6 +517,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			return new MethodRef(id);
 		}
 		Chyba("Volana metoda neexistuje.");
+		break;
 	default: // var/const
 		if (rvalue) {
 			return VarOrConst(id, offset, env);

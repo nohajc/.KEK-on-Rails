@@ -4,8 +4,40 @@
 #define _ZASPOC_
 
 enum TypInstr {
-	TA, TC, BOP, UNM, DR, ST, IFJ, JU, WRT, RD, DUP, SWAP, NOT, STOP
+	LDC, /* arg: number, load constant (f.ex. a number) */
+	BOP, /**/
+	UNM, /**/
+	LD, /* load */
+	ST, /* store */
+	IFNJ, /* if zero, jump */
+	JU, /* jump */
+	WRT, /* write */
+	RD, /* read */
+	DUP, /* duplicate the top of the stack */
+	SWAP, /* swap the first two items on the stack */
+	NOT, /* not */
+	STOP, /* terminate */
+
+	RET, /* */
+
+	CALL, /* arg: index to const table */
+	CALLE, /* call external. arg: index to const table,
+	          start search at the given pointer */
+
+	PUSH_C, /* arg: index to const table (f.ex. string) */
+	PUSH_ARG, /* arg: index */
+	PUSH_LOC, /* arg: index to local variable table */
+	PUSH_IV, /* push instance variable, arg: index */
+	PUSH_CV, /* push class variable, arg: index */
+	PUSH_IVE, /* iv external. push instance variable, arg: index */
+	PUSH_CVE, /* cv external. push class variable, arg: index */
+	PUSH_SELF, /* push self class reference */
+	PUSH_SUPER, /* push parent's class reference */
+
+	NEW, /* arg: index to constant table.
+	        creates a new object and returns its address */
 };
+
 enum Operator {
 	Plus,
 	Minus,

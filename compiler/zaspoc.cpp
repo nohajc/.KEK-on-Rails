@@ -50,11 +50,8 @@ void Print() {
 	for (;;) {
 		printf("%3d: ", ic);
 		switch (p[ic].typ) {
-		case TA:
-			printf("TA  %d\n", p[ic].opd);
-			break;
-		case TC:
-			printf("TC  %d\n", p[ic].opd);
+		case LDC:
+			printf("LDC %d\n", p[ic].opd);
 			break;
 		case BOP:
 			printf("BOP %d\n", p[ic].opd);
@@ -62,14 +59,14 @@ void Print() {
 		case UNM:
 			printf("UNM\n");
 			break;
-		case DR:
-			printf("DR\n");
+		case LD:
+			printf("LD\n");
 			break;
 		case ST:
 			printf("ST\n");
 			break;
-		case IFJ:
-			printf("IFJ %d\n", p[ic].opd);
+		case IFNJ:
+			printf("IFNJ %d\n", p[ic].opd);
 			break;
 		case JU:
 			printf("JU  %d\n", p[ic].opd);
@@ -105,10 +102,7 @@ void Run() {
 	for (;;) {
 		instr = p[ic++];
 		switch (instr.typ) {
-		case TA:
-			z[++v] = instr.opd;
-			break;
-		case TC:
+		case LDC:
 			z[++v] = instr.opd;
 			break;
 		case BOP: {
@@ -178,7 +172,7 @@ void Run() {
 		case NOT:
 			z[v] = !z[v];
 			break;
-		case DR:
+		case LD:
 			z[v] = m[z[v]];
 			break;
 		case ST: {
@@ -187,7 +181,7 @@ void Run() {
 			m[adr] = val;
 			break;
 		}
-		case IFJ:
+		case IFNJ:
 			if (!z[v--])
 				ic = instr.opd;
 			break;
