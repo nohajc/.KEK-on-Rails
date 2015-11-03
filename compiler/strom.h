@@ -45,7 +45,6 @@ public:
 	ArgList(Expr *, ArgList *);
 	virtual ~ArgList();
 	virtual void Translate(){} // TODO: implement
-	virtual Node *Optimize(){ return this; } // TODO: implement
 	virtual void Print(int);
 };
 
@@ -56,7 +55,6 @@ public:
 	Call(Expr *, ArgList *);
 	virtual ~Call();
 	virtual void Translate(){} // TODO: implement
-	virtual Node *Optimize(){ return this; } // TODO: implement
 	virtual void Print(int);
 };
 
@@ -101,7 +99,6 @@ public:
 	MethodRef(char *);
 	virtual ~MethodRef();
 	virtual void Translate(){} // TODO: implement
-	virtual Node *Optimize(){ return this; } // TODO: implement
 	virtual void Print(int);
 };
 
@@ -112,7 +109,6 @@ public:
 	New(MethodRef *, ArgList *);
 	virtual ~New();
 	virtual void Translate(){} // TODO: implement
-	virtual Node *Optimize(){ return this; } // TODO: implement
 	virtual void Print(int);
 };
 

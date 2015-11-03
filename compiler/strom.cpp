@@ -13,6 +13,7 @@ Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
 	addr = sym->hodn;
 	offset = o;
 	rvalue = rv;
+	sc = sym->sc;
 	name = new char[strlen(sym->ident) + 1];
 	strcpy(name, sym->ident);
 }
