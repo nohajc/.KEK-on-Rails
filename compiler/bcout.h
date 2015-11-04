@@ -79,6 +79,8 @@ int bco_wd2(bcout_t *bco, bc_t bc, uint32_t arg0, uint32_t);
 /* save a constant and get its offset */
 int bco_int(bcout_t *bco, int i);
 int bco_str(bcout_t *bco, const char *str);
+int bco_sym(bcout_t *bco, const char *str);
+int bco_arr(bcout_t *bco, constant_item_t *arr);
 
 int bco_find_int(bcout_t *bco, int i);
 int bco_find_str(bcout_t *bco, const char *str);
