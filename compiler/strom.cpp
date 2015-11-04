@@ -647,7 +647,7 @@ Expr *VarOrConst(char *id, Expr * offset, Env env)
    //DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
    DruhId druh = p->druh;
 
-   switch (druh) {
+   switch (druh) { // TODO: This is not safe. We should work with consts the same way as with Vars
    case IdProm:
       return new Var(p, offset, true);
    case IdConstNum:

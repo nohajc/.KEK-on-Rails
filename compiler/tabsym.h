@@ -35,9 +35,9 @@ struct PrvekTab {
 	char *ident;
 	DruhId druh;
 	Scope sc;
-	int hodn;
+	int hodn; // TODO: hodn will always be address (even for consts)
 	//int prvni, posledni;
-	char * str_val;
+	char * str_val; // TODO: here will be a pointer to constant pool (in case of ConstNum, ConstStr)
 
 	//CRecord *record;
 	PrvekTab *dalsi;

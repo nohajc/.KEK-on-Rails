@@ -225,7 +225,7 @@ void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth
 	}
 
 	// Constant value doesn't need memory space - it will be inlined
-	// Shouldn't we change it?
+	// Shouldn't we change it? YES! TODO: give memory to constant symbols - they will point to constant pool
 	if (mth) {
 		mth->syms = new PrvekTab(id, IdConstNum, SC_LOCAL, val, mth->syms);
 	}
@@ -244,7 +244,7 @@ void deklKonst(char *id, char * val, bool isStatic, ClassEnv * cls, MethodEnv * 
 	}
 
 	// Constant value doesn't need memory space - it will be inlined
-	// Shouldn't we change it?
+	// Shouldn't we change it? YES! TODO: give memory to constant symbols - they will point to constant pool
 	if (mth) {
 		mth->syms = new PrvekTab(id, IdConstStr, SC_LOCAL, val, mth->syms);
 	}
