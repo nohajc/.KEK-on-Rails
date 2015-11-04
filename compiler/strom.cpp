@@ -2,6 +2,7 @@
 
 #include "strom.h"
 #include "tabsym.h"
+#include "bcout.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -475,7 +476,7 @@ Node *ClassList::Optimize() {
 
 // definice metody Translate
 
-void Var::Translate() {
+void Var::Translate() { // TODO
 	Gener(LDC, addr);
 	if(offset){
 		offset->Translate();
@@ -488,15 +489,19 @@ void Var::Translate() {
 
 void ClassRef::Translate() {
 	target->Translate();
+	 // TODO
 }
 
 void ObjRef::Translate() {
 	Var::Translate();
 	target->Translate();
+	 // TODO
 }
 
 void Numb::Translate() {
 	Gener(LDC, value);
+	// TODO: create int object in constant table
+	// Gener PUSH_C
 }
 
 void Bop::Translate() {
@@ -616,6 +621,7 @@ void ClassList::Translate() {
 }
 
 void Method::Translate() {
+	 // TODO
 	body->Translate();
 }
 

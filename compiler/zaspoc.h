@@ -34,6 +34,13 @@ enum TypInstr {
 	PUSH_SELF, /* push self class reference */
 	PUSH_SUPER, /* push parent's class reference */
 
+	POP_ARG,
+	POP_LOC,
+	POP_IV,
+	POP_CV,
+	POP_IVE,
+	POP_CVE,
+
 	NEW, /* arg: index to constant table.
 	        creates a new object and returns its address */
 };
