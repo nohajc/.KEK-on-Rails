@@ -204,6 +204,8 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 		Var * var;
 		Expr * e;
 
+		deklProm(id, false, isStatic, env.clsEnv, env.mthEnv);
+
 		if (Symb.type == ASSIGN) {
 			Symb = readLexem();
 			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
