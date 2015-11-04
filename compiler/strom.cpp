@@ -1015,7 +1015,7 @@ void Numb::Print(int ident) {
 }
 
 void String::Print(int ident) {
-	printfi(ident, "String [value=%s]\n", this->value);
+	printfi(ident, "String [value=\"%s\"]\n", this->value);
 }
 
 void Bop::Print(int ident) {
