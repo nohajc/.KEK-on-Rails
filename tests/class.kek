@@ -35,7 +35,7 @@ class Test: Object {
 
 	static main(args) {
 		var t = new Test()
-		return t.method1(7, 2)
+		return t.method1(7, "Hello world")
 	}
 
 	getRef() {
