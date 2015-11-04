@@ -1,12 +1,9 @@
 #include <assert.h>
 #include <string.h>
-<<<<<<< HEAD
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-=======
 #include <stdlib.h>
->>>>>>> 91ae9eb596600e5e874bd82ca7920a53d49cf58c
 
 #include "bcout.h"
 

@@ -8,9 +8,9 @@
 #ifndef COMPILER_BCOUT_H_
 #define COMPILER_BCOUT_H_
 
-<<<<<<< HEAD
+
 #define DEBUG 1
-=======
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -55,7 +55,6 @@ typedef enum _bc {
 	NEW /* arg: index to constant table.
 	        creates a new object and returns its address */
 } bc_t;
->>>>>>> 91ae9eb596600e5e874bd82ca7920a53d49cf58c
 
 typedef enum _constant_type {
 	INT, STRING, SYMBOL, ARR
