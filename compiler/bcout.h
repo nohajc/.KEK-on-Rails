@@ -49,6 +49,9 @@ typedef enum _bc {
 	POP_IVE,
 	POP_CVE,
 
+	IDX, /* return an item on the index. args: none. takes obj pointer
+	and the index from the stack */
+
 	NEW /* arg: index to constant table.
 	        creates a new object and returns its address */
 } bc_t;
