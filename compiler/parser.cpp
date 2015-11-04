@@ -88,12 +88,20 @@ StatmList * Dekl(Env env, bool isStatic) {
 
 StatmList * DeklKonst(Env env, bool isStatic) {
 	char id[MAX_IDENT_LEN];
+	char str[MAX_IDENT_LEN];
 	int hod;
+
 	Symb = readLexem();
 	Srovnani_IDENT(id);
 	Srovnani(ASSIGN);
-	Srovnani_NUMB(&hod);
-	deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+	if(Symb.type == NUMB){
+		Srovnani_NUMB(&hod);
+		deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+	}
+	else{
+		Srovnani_STR(str);
+		deklKonst(id, str, isStatic, env.clsEnv, env.mthEnv);
+	}
 	ZbDeklKonst(env, isStatic);
 	if(Symb.type == SEMICOLON){
 		Srovnani(SEMICOLON);
@@ -107,12 +115,20 @@ StatmList * DeklKonst(Env env, bool isStatic) {
 void ZbDeklKonst(Env env, bool isStatic) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
+		char str[MAX_IDENT_LEN];
 		int hod;
+
 		Symb = readLexem();
 		Srovnani_IDENT(id);
 		Srovnani(ASSIGN);
-		Srovnani_NUMB(&hod);
-		deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+		if(Symb.type == NUMB){
+			Srovnani_NUMB(&hod);
+			deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+		}
+		else{
+			Srovnani_STR(str);
+			deklKonst(id, str, isStatic, env.clsEnv, env.mthEnv);
+		}
 		ZbDeklKonst(env, isStatic);
 	}
 }
@@ -147,52 +163,16 @@ CRecord * Record() {
 	return record;
 }*/
 
-// Returns true if the Type is primitive (integer, char, ...)
-bool Typ(Env env, char *id, bool isStatic) { // TODO: remove static array declaration
-	/*if (Symb.type == COLON) {
-		Srovnani(COLON);
-
-		TypVar(id);
-	} else {
-		deklProm(id);
-	}*/
-	if(Symb.type == LBRAC){ // TODO: Change static arrays to dynamic
-      Numb *n_prvni, *n_posledni;
-
-      Symb = readLexem();
-      //Srovnani_NUMB(&prvni);
-      n_prvni = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
-      if(!n_prvni) ChybaDekl();
-
-      Srovnani(DOUBLE_DOT);
-
-      //Srovnani_NUMB(&posledni);
-      n_posledni = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
-      if(!n_posledni) ChybaDekl();
-      
-      Srovnani(RBRAC);
-      deklProm(id, n_prvni->Value(), n_posledni->Value(), env.clsEnv, env.mthEnv);
-      delete n_prvni;
-      delete n_posledni;
-      return false;
-   }
-   else{
-      deklProm(id, false, isStatic, env.clsEnv, env.mthEnv);
-      return true;
-   }
-}
-
 StatmList * DeklProm(Env env, bool isStatic) {
 	char id[MAX_IDENT_LEN];
 	Symb = readLexem();
 	Srovnani_IDENT(id);
-	bool prim = Typ(env, id, isStatic);
 	Statm * st;
 	StatmList * ret;
 	Var * var;
 	Expr * e;
 
-	if (prim && Symb.type == ASSIGN) {
+	if (Symb.type == ASSIGN) {
 		Symb = readLexem();
 		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
 		e = Vyraz(env);
@@ -218,12 +198,11 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 		char id[MAX_IDENT_LEN];
 		Symb = readLexem();
 		Srovnani_IDENT(id);
-		bool prim = Typ(env, id, isStatic);
 		Statm * st;
 		Var * var;
 		Expr * e;
 
-		if (prim && Symb.type == ASSIGN) {
+		if (Symb.type == ASSIGN) {
 			Symb = readLexem();
 			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
 			e = Vyraz(env);
@@ -431,15 +410,15 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	*body = Prikaz(env, C_CYCLE);
 }
 
-Expr * ArrayOffset(Env env, char * id) {
+Expr * ArrayOffset(Env env, char * id) { // TODO: fix this
    if (Symb.type == LBRAC) {
-      int offset = prvniIdxProm(id, env.clsEnv, env.mthEnv);
+      //int offset = prvniIdxProm(id, env.clsEnv, env.mthEnv);
 
       Symb = readLexem();
       Expr * e = Vyraz(env);
-      if (offset) {
+      /*if (offset) {
          e = new Bop(Minus, e, new Numb(offset));
-      }
+      }*/
 
       Srovnani(RBRAC);
       return e;
@@ -964,6 +943,10 @@ Expr * Faktor(Env env) {
 		Srovnani(RPAR);
 		return su;
 	}
+	case LBRAC:
+		Symb = readLexem(); // TODO: array initializer
+		Srovnani(RBRAC);
+		return new New(new MethodRef("Array"), NULL);
 	default:
 		ChybaExpanze("Faktor", Symb.type);
 		return 0;

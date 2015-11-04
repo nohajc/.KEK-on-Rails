@@ -25,12 +25,20 @@ PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n) {
 	strcpy(ident, i);
 	druh = d; hodn = h; dalsi = n;
 	sc = s;
-
-	prvni = 0;
-	pole = false;
+	str_val = NULL;
 }
 
-PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
+PrvekTab::PrvekTab(char *i, DruhId d, Scope s, const char * val, PrvekTab *n) {
+	ident = new char[strlen(i)+1];
+	strcpy(ident, i);
+	druh = d; dalsi = n;
+	sc = s;
+
+	str_val = new char[strlen(val)+1];
+	strcpy(str_val, val);
+}
+
+/*PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
    ident = new char[strlen(i)+1];
    strcpy(ident, i);
    druh = d; hodn = h; dalsi = n;
@@ -38,7 +46,7 @@ PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
    prvni = f;
    posledni = l;
    pole = true;
-}
+}*/
 
 ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 	className = new char[strlen(name) + 1];
@@ -219,10 +227,29 @@ void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth
 	// Constant value doesn't need memory space - it will be inlined
 	// Shouldn't we change it?
 	if (mth) {
-		mth->syms = new PrvekTab(id, IdKonst, SC_LOCAL, val, mth->syms);
+		mth->syms = new PrvekTab(id, IdConstNum, SC_LOCAL, val, mth->syms);
 	}
 	else if (isStatic) {
-		cls->syms = new PrvekTab(id, IdKonst, SC_CLASS, val, cls->syms);
+		cls->syms = new PrvekTab(id, IdConstNum, SC_CLASS, val, cls->syms);
+	}
+	else {
+		Chyba(id, "Konstantni clen tridy musi byt staticky.");
+	}
+}
+
+void deklKonst(char *id, char * val, bool isStatic, ClassEnv * cls, MethodEnv * mth) {
+	PrvekTab *p = hledejMember(id, cls, mth, false);
+	if (p) {
+		Chyba(id, "druha deklarace");
+	}
+
+	// Constant value doesn't need memory space - it will be inlined
+	// Shouldn't we change it?
+	if (mth) {
+		mth->syms = new PrvekTab(id, IdConstStr, SC_LOCAL, val, mth->syms);
+	}
+	else if (isStatic) {
+		cls->syms = new PrvekTab(id, IdConstStr, SC_CLASS, val, cls->syms);
 	}
 	else {
 		Chyba(id, "Konstantni clen tridy musi byt staticky.");
@@ -274,7 +301,7 @@ void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth
 }
 
 // Static array - TODO: remove, it is broken
-void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
+/*void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth){
 	PrvekTab *p = hledejMember(id, cls, mth, false);
 	if (p) {
 		Chyba(id, "druha deklarace");
@@ -289,7 +316,7 @@ void deklProm(char *id, int prvni, int posledni, ClassEnv * cls, MethodEnv * mth
 		cls->syms = new PrvekTab(id, IdProm, cls->obj_addr_next, prvni, posledni, cls->syms);
 		cls->obj_addr_next += posledni - prvni + 1;
 	}
-}
+}*/
 
 PrvekTab * adrSym(char *id, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejMember(id, cls, mth); // local, instance or class var
@@ -310,7 +337,7 @@ PrvekTab * adrProm(char *id, ClassEnv * cls, MethodEnv * mth) {
 	return p;
 }
 
-int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably also remove this - first index of array will always be zero
+/*int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably also remove this - first index of array will always be zero
 {
 	PrvekTab *p = hledejMember(id, cls, mth);
 	if (!p) {
@@ -320,7 +347,7 @@ int prvniIdxProm(char *id, ClassEnv * cls, MethodEnv * mth) // Will probably als
 		Chyba(id, "neni identifikatorem promenne");
 	}
 	return p->prvni;
-}
+}*/
 
 /*DruhId idPromKonst(char *id, int *v, ClassEnv * cls, MethodEnv * mth) {
 	PrvekTab *p = hledejMember(id, cls, mth);

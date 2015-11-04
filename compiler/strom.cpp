@@ -490,11 +490,11 @@ void Var::Translate() { // TODO
 	Gener(LDC, addr);
 	if(offset){
 		offset->Translate();
-		Gener(BOP, Plus);
+		Gener(BOP, Plus); // TODO: IDX instr. instead of BOP
 	}
 
 	if (rvalue)
-		Gener(LD);
+		Gener(LD); // TODO: Consider different scopes
 }
 
 void ClassRef::Translate() {
@@ -650,8 +650,10 @@ Expr *VarOrConst(char *id, Expr * offset, Env env)
    switch (druh) {
    case IdProm:
       return new Var(p, offset, true);
-   case IdKonst:
+   case IdConstNum:
       return new Numb(p->hodn);
+   case IdConstStr:
+   	  return new String(p->str_val);
    default:
       return 0;
    }

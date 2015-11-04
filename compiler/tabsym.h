@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 enum DruhId {
-	Nedef, IdProm, IdKonst
+	Nedef, IdProm, IdConstNum, IdConstStr
 };
 
 enum Scope {
@@ -35,18 +35,19 @@ struct PrvekTab {
 	char *ident;
 	DruhId druh;
 	Scope sc;
-	int hodn; // TODO: this will be a pointer (var can also be an obj ref)
-	bool pole;
-	int prvni, posledni;
+	int hodn;
+	//int prvni, posledni;
+	char * str_val;
 
 	//CRecord *record;
 	PrvekTab *dalsi;
 	//PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r);
 
-	// Variable
+	// Variable / constant int
 	PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n);
-	// Static array
-	PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n);
+	// const str
+	PrvekTab(char *i, DruhId d, Scope s, const char * val, PrvekTab *n);
+	//PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n);
 	~PrvekTab();
 };
 
@@ -98,9 +99,11 @@ static int volna_adr;*/
 
 ClassEnv * deklClass(char *, char * = NULL);
 MethodEnv * deklMethod(char *, bool constructor = false, bool isStatic = false, ClassEnv * cls = NULL);
+// const int
 void deklKonst(char *, int, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
+// const string
+void deklKonst(char *, char *, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, bool arg = false, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
-void deklProm(char *, int, int, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 //void deklRecord(char *, CRecord *);
 
 PrvekTab *hledejId(char *); // TODO: remove this
