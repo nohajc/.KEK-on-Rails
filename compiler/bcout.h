@@ -87,6 +87,6 @@ int bco_find_str(bcout_t *bco, const char *str);
 
 /******************************************************************************/
 
-extern bcout_t bcout_g;
+extern bcout_t *bcout_g;
 
 #endif /* COMPILER_BCOUT_H_ */
