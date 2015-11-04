@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 struct Instr {
-	TypInstr typ;
+	bc_t typ;
 	int opd;
 	Label lab;
 };
@@ -20,7 +20,7 @@ static int m[MaxProm];         // pamet promennych
 static Instr p[MaxProg];       // pamet programu;
 static int ic;                 // citac instrukci
 
-int Gener(TypInstr ti, int opd, Label lab) {
+int Gener(bc_t ti, int opd, Label lab) {
 	p[ic].typ = ti;
 	p[ic].opd = opd;
 	p[ic].lab = lab;

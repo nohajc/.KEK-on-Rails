@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "strom.h"
 #include "zaspoc.h"
+#include "bcout.h"
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -33,6 +34,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	prog = (Prog*) (prog->Optimize());
+
+	bcout_g = bcout_init();
+
 	prog->Translate();
 	Print();
 	Run();

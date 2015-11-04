@@ -9,7 +9,8 @@ OBJS=\
 	strom.o \
 	tabsym.o \
 	vstup.o \
-	zaspoc.o
+	zaspoc.o \
+	bcout.o
 
 scheme: $(OBJS)
 	$(CXX) -o main $(OBJS)
