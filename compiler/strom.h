@@ -20,6 +20,9 @@ public:
 class Expr: public Node {
 };
 
+class Const: public Expr {
+};
+
 class Statm: public Expr {
 };
 
@@ -112,12 +115,20 @@ public:
 	virtual void Print(int);
 };
 
-class Numb: public Expr {
+class Numb: public Const {
 	int value;
 public:
 	Numb(int);
 	virtual void Translate();
 	int Value();
+	virtual void Print(int);
+};
+
+class String: public Const {
+	char * value;
+public:
+	String(const char *);
+	virtual void Translate();
 	virtual void Print(int);
 };
 

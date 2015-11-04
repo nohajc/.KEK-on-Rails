@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "bcout.h"
 
@@ -62,7 +63,7 @@ void *ct_malloc(bcout_t *bco, size_t obj_size) {
 
 	if (bco->const_table_cnt + obj_size <= bco->const_table_size) {
 		bco->const_table_size *= 2;
-		bco->const_table = realloc(bco->const_table, bco->const_table_size);
+		bco->const_table = (uint8_t*)realloc(bco->const_table, bco->const_table_size);
 		assert(bco->const_table);
 	}
 
