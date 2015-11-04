@@ -9,9 +9,17 @@ bcout_t *bcout_init() {
 	bco = (bcout_t *) malloc(sizeof(bcout_t));
 	assert(bco);
 
+	/* alocate array for bytecode */
 	bco->bc_arr_size = 4096;
 	bco->bc_arr_cnt = 0;
 	bco->bc_arr = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t *));
+	assert(bco->bc_arr);
+
+	/* alocate array for bytecode */
+	bco->const_table_size = 4096;
+	bco->const_table_cnt = 0;
+	bco->const_table = (uint8_t *) malloc(
+			bco->const_table_size * sizeof(uint8_t *));
 	assert(bco->bc_arr);
 
 	bco->items_size = 4096;
