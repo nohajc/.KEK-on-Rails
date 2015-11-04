@@ -92,7 +92,7 @@ typedef struct _bcout {
 
 	int items_cnt;
 	int items_size;
-	constant_item_t *items; /* this will point to const_table */
+	constant_item_t **items; /* this will point to const_table */
 
 } bcout_t;
 
@@ -125,7 +125,7 @@ uint32_t bco_wd1(bcout_t *bco, bc_t bc, uint32_t arg);
 uint32_t bco_wd2(bcout_t *bco, bc_t bc, uint32_t arg0, uint32_t);
 
 /* save a constant and get its offset */
-uint32_t bco_int(bcout_t *bco, int i);
+uint32_t bco_int(bcout_t *bco, int v);
 uint32_t bco_str(bcout_t *bco, const char *str);
 uint32_t bco_sym(bcout_t *bco, const char *str);
 uint32_t bco_arr(bcout_t *bco, constant_item_t *arr);

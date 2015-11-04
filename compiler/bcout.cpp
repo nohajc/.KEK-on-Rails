@@ -11,7 +11,7 @@ bcout_t *bcout_g;
 /******************************************************************************/
 #if DEBUG
 
-void bco_debug(const char *format, va_list ap) {
+void bco_debug(const char *format, ...) {
 	va_list args;
 	fprintf(stderr, "bco: ");
 	va_start(args, format);
@@ -166,7 +166,7 @@ void *ct_malloc(bcout_t *bco, size_t obj_size) {
  * constant_int_t *j = (constant_int_t *)(bco->const_table + i));
  *
  */
-int bco_int(bcout_t *bco, int v) {
+uint32_t bco_int(bcout_t *bco, int v) {
 	constant_int_t *ci;
 	int found;
 
@@ -184,7 +184,7 @@ int bco_int(bcout_t *bco, int v) {
 	return ((uint8_t *) ci - bco->const_table);
 }
 
-int bco_str(bcout_t *bco, const char *str) {
+uint32_t bco_str(bcout_t *bco, const char *str) {
 	constant_string_t *cs;
 	size_t len;
 	int found;
@@ -206,11 +206,11 @@ int bco_str(bcout_t *bco, const char *str) {
 	return ((uint8_t *) cs - bco->const_table);
 }
 
-int bco_find_int(bcout_t *bco, int v) {
+uint32_t bco_find_int(bcout_t *bco, int v) {
 	int i;
 
 	for (i = 0; i < bco->items_cnt; i++) {
-		if (bco->items[i].type == INT && bco->items[i].ci.value == v) {
+		if (bco->items[i]->type == INT && bco->items[i]->ci.value == v) {
 			return ((uint8_t *) bco->items[i] - bco->const_table);
 		}
 	}
@@ -218,12 +218,12 @@ int bco_find_int(bcout_t *bco, int v) {
 	return (-1);
 }
 
-int bco_find_str(bcout_t *bco, const char *str) {
+uint32_t bco_find_str(bcout_t *bco, const char *str) {
 	int i;
 
 	for (i = 0; i < bco->items_cnt; i++) {
-		if (bco->items[i].type == STRING
-				&& strcmp(bco->items[i].cs.string, str) == 0) {
+		if (bco->items[i]->type == STRING
+				&& strcmp(bco->items[i]->cs.string, str) == 0) {
 			return ((uint8_t *) bco->items[i] - bco->const_table);
 		}
 	}
