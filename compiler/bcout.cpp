@@ -63,30 +63,90 @@ void bcout_free(bcout_t *bco) {
 	free(bco);
 }
 
-void bcout_items_resize(bcout_t *bco) {
-	bco->items_size *= 2;
-	bco->items = (constant_item_t **) realloc(bco->items,
-			bco->items_size * sizeof(constant_item_t *));
-	assert(bco->items);
+/******************************************************************************/
+/* bytecode utils */
+
+/* check, if we can add 'size' to the array. if not, realloc */
+void bc_arr_realloc(bcout_t *bco, size_t size) {
+	if (bco->bc_arr_size < bco->bc_arr_cnt + size) {
+		bco->bc_arr_size *= 2;
+		bco->bc_arr = (uint8_t *) realloc(bco->bc_arr,
+				bco->bc_arr_size * sizeof(uint8_t *));
+		assert(bco->bc_arr);
+	}
 }
 
-void bcout_items_add(bcout_t *bco, constant_item_t *i) {
-	if (bco->items_cnt >= bco->items_size) {
-		bcout_items_resize(bco);
-	}
-	bco->items[bco->items_cnt++] = i;
+/* write an uint8 to the bc_arr */
+uint32_t bco_w8(bcout_t *bco, uint8_t uint8) {
+	bc_arr_realloc(bco, sizeof(uint8_t));
+	bco->bc_arr[bco->bc_arr_cnt++] = uint8;
+	return (bco->bc_arr_cnt - 1);
+}
+
+/* write an uint16 (as two uint8) to the bc_arr */
+uint32_t bco_w16(bcout_t *bco, uint16_t uint16) {
+	bc_arr_realloc(bco, sizeof(uint16_t));
+
+	bco->bc_arr[bco->bc_arr_cnt++] = uint16 & 0xff;
+	bco->bc_arr[bco->bc_arr_cnt++] = uint16 >> 8;
+	return (bco->bc_arr_cnt - 2);
+}
+
+/* write an uint32 (as four uint8) to the bc_arr */
+uint32_t bco_w32(bcout_t *bco, uint32_t uint32) {
+	bc_arr_realloc(bco, sizeof(uint32_t));
+
+	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0x000000ff);
+	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0x0000ff00) >> 8;
+	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0x00ff0000) >> 16;
+	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0xff000000) >> 24;
+	return (bco->bc_arr_cnt - 4);
+}
+
+/* FIXME: the name of this method is probably not good */
+uint32_t bco_w0(bcout_t *bco, bc_t bc) {
+	return (bco_w8(bco, bc));
+}
+
+uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg) {
+	uint32_t ip;
+
+	ip = bco_w8(bco, bc);
+	(void) bco_w16(bco, arg);
+	return (ip);
+}
+
+uint32_t bco_ww2(bcout_t *bco, bc_t bc, uint16_t arg0, uint16_t arg1) {
+	uint32_t ip;
+
+	ip = bco_w8(bco, bc);
+	(void) bco_w16(bco, arg0);
+	(void) bco_w16(bco, arg1);
+	return (ip);
 }
 
 /******************************************************************************/
+/* constat table utils */
+
+void bcout_items_add(bcout_t *bco, constant_item_t *i) {
+	if (bco->items_size <= bco->items_cnt) {
+		bco->items_size *= 2;
+		bco->items = (constant_item_t **) realloc(bco->items,
+				bco->items_size * sizeof(constant_item_t *));
+		assert(bco->items);
+	}
+	bco->items[bco->items_cnt++] = i;
+}
 
 void *ct_malloc(bcout_t *bco, size_t obj_size) {
 	void *ptr; /* pointer to the beginning of the allocated data */
 
 	ptr = bco->const_table + bco->bc_arr_cnt;
 
-	if (bco->const_table_cnt + obj_size >= bco->const_table_size) {
+	if (bco->const_table_size <= bco->const_table_cnt + obj_size) {
 		bco->const_table_size *= 2;
-		bco->const_table = (uint8_t*)realloc(bco->const_table, bco->const_table_size);
+		bco->const_table = (uint8_t*) realloc(bco->const_table,
+				bco->const_table_size);
 		assert(bco->const_table);
 	}
 
@@ -111,7 +171,7 @@ int bco_int(bcout_t *bco, int v) {
 	int found;
 
 	found = bco_find_int(bco, v);
-	if (found) {
+	if (-1 < found) {
 		return (found);
 	}
 
@@ -130,7 +190,7 @@ int bco_str(bcout_t *bco, const char *str) {
 	int found;
 
 	found = bco_find_str(bco, str);
-	if (found) {
+	if (-1 < found) {
 		return (found);
 	}
 
@@ -146,7 +206,6 @@ int bco_str(bcout_t *bco, const char *str) {
 	return ((uint8_t *) cs - bco->const_table);
 }
 
-/* tady to vraci spatne */
 int bco_find_int(bcout_t *bco, int v) {
 	int i;
 
@@ -156,20 +215,19 @@ int bco_find_int(bcout_t *bco, int v) {
 		}
 	}
 
-	return (0);
+	return (-1);
 }
 
-/* TODO: check for length first? */
 int bco_find_str(bcout_t *bco, const char *str) {
 	int i;
 
 	for (i = 0; i < bco->items_cnt; i++) {
 		if (bco->items[i].type == STRING
 				&& strcmp(bco->items[i].cs.string, str) == 0) {
-			return (i);
+			return ((uint8_t *) bco->items[i] - bco->const_table);
 		}
 	}
 
-	return (0);
+	return (-1);
 }
 
