@@ -3,6 +3,8 @@
 
 #include "bcout.h"
 
+bcout_t bcout_g;
+
 bcout_t *bcout_init() {
 	bcout_t *bco;
 
@@ -22,6 +24,7 @@ bcout_t *bcout_init() {
 			bco->const_table_size * sizeof(uint8_t *));
 	assert(bco->bc_arr);
 
+	/* array of pointers to const_table */
 	bco->items_size = 4096;
 	bco->items_cnt = 0;
 	bco->items = (constant_item_t **) malloc(
@@ -52,18 +55,18 @@ void bcout_items_add(bcout_t *bco, constant_item_t **i) {
 
 /******************************************************************************/
 
-int bco_w0(bcout_t *bco, bc_t bc) {
-	return (0);
+void *const_table_ptr(bcout_t *bco, size_t obj_size) {
+
+	size_t new_cnt = bco->bc_arr_cnt + obj_size;
+
+	size_t ptr = bco->bc_arr_cnt;
+	bco->bc_arr_cnt += obj_size;
+
+	return (ptr);
 }
 
-int bco_w1(bcout_t *bco, bc_t bc, uint8_t arg) {
-	return (0);
-}
-
-int bco_w2(bcout_t *bco, bc_t bc, uint8_t arg0, uint8_t arg1) {
-	return (0);
-}
-
+/* create an integer, save it into the constant table and create
+ * a pointer in the items array */
 int bco_int(bcout_t *bco, int v) {
 	constant_int_t *ci;
 	int found;
@@ -73,15 +76,21 @@ int bco_int(bcout_t *bco, int v) {
 		return (found);
 	}
 
+
+
+
 	ci = (constant_int_t *) malloc(sizeof(constant_int_t));
 	assert(ci);
 	ci->type = INT;
 	ci->value = v;
 
+
+
 	bcout_items_add(bco, (constant_item_t **) &ci);
 
 	return (0);
 }
+
 
 int bco_str(bcout_t *bco, const char *str) {
 	constant_string_t *cs;

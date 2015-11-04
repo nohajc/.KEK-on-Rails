@@ -34,11 +34,11 @@ typedef union _constant_item {
 
 typedef struct _bcout {
 
-	int bc_arr_cnt;
+	size_t bc_arr_cnt;
 	size_t bc_arr_size;
 	uint8_t *bc_arr; /* bytecode array */
 
-	int const_table_cnt;
+	size_t const_table_cnt;
 	size_t const_table_size;
 	uint8_t *const_table;
 
@@ -86,5 +86,7 @@ int bco_find_int(bcout_t *bco, int i);
 int bco_find_str(bcout_t *bco, const char *str);
 
 /******************************************************************************/
+
+extern bcout_t bcout_g;
 
 #endif /* COMPILER_BCOUT_H_ */
