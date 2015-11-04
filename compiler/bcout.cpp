@@ -3,7 +3,7 @@
 
 #include "bcout.h"
 
-bcout_t bcout_g;
+bcout_t *bcout_g;
 
 bcout_t *bcout_init() {
 	bcout_t *bco;
@@ -14,7 +14,7 @@ bcout_t *bcout_init() {
 	/* alocate array for bytecode */
 	bco->bc_arr_size = 4096;
 	bco->bc_arr_cnt = 0;
-	bco->bc_arr = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t *));
+	bco->bc_arr = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
 	assert(bco->bc_arr);
 
 	/* alocate array for bytecode */
@@ -55,15 +55,23 @@ void bcout_items_add(bcout_t *bco, constant_item_t **i) {
 
 /******************************************************************************/
 
-void *const_table_ptr(bcout_t *bco, size_t obj_size) {
+void *ct_malloc(bcout_t *bco, size_t obj_size) {
+	void *ptr; /* pointer to the beginning of the allocated data */
 
-	size_t new_cnt = bco->bc_arr_cnt + obj_size;
+	ptr = bco->const_table + bco->bc_arr_cnt;
 
-	size_t ptr = bco->bc_arr_cnt;
+	if (bco->const_table_cnt + obj_size <= bco->const_table_size) {
+		bco->const_table_size *= 2;
+		bco->const_table = realloc(bco->const_table, bco->const_table_size);
+		assert(bco->const_table);
+	}
+
 	bco->bc_arr_cnt += obj_size;
 
 	return (ptr);
 }
+
+/******************************************************************************/
 
 /* create an integer, save it into the constant table and create
  * a pointer in the items array */
@@ -76,21 +84,14 @@ int bco_int(bcout_t *bco, int v) {
 		return (found);
 	}
 
-
-
-
-	ci = (constant_int_t *) malloc(sizeof(constant_int_t));
-	assert(ci);
+	ci = (constant_int_t *) ct_malloc(bco, sizeof(constant_int_t));
 	ci->type = INT;
 	ci->value = v;
-
-
 
 	bcout_items_add(bco, (constant_item_t **) &ci);
 
 	return (0);
 }
-
 
 int bco_str(bcout_t *bco, const char *str) {
 	constant_string_t *cs;
