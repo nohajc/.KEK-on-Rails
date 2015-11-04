@@ -23,6 +23,7 @@ Var::Var(char * n, bool rv) {
 	name = new char[strlen(n) + 1];
 	strcpy(name, n);
 	rvalue = rv;
+	offset = NULL;
 }
 
 Var::~Var() {
@@ -99,6 +100,15 @@ MethodRef::~MethodRef() {
 
 Numb::Numb(int v) {
 	value = v;
+}
+
+String::String(const char * v) {
+	value = new char[strlen(v) + 1];
+	strcpy(value, v);
+}
+
+String::~String() {
+	delete [] value;
 }
 
 int Numb::Value() {
@@ -1000,6 +1010,10 @@ void New::Print(int ident) {
 
 void Numb::Print(int ident) {
 	printfi(ident, "Numb [value=%d]\n", this->value);
+}
+
+void String::Print(int ident) {
+	printfi(ident, "String [value=%s]\n", this->value);
 }
 
 void Bop::Print(int ident) {

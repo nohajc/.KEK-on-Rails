@@ -128,7 +128,8 @@ class String: public Const {
 	char * value;
 public:
 	String(const char *);
-	virtual void Translate();
+	virtual ~String();
+	virtual void Translate(){} // TODO: implement
 	virtual void Print(int);
 };
 

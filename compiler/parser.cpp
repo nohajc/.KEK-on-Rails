@@ -42,6 +42,14 @@ void Srovnani_IDENT(char *id) {
 		ChybaSrovnani(IDENT);
 }
 
+void Srovnani_STR(char *id) {
+	if (Symb.type == STR) {
+		strcpy(id, Symb.ident);
+		Symb = readLexem();
+	} else
+		ChybaSrovnani(IDENT);
+}
+
 void Srovnani_NUMB(int *h) {
 	if (Symb.type == NUMB) {
 		*h = Symb.number;
@@ -921,6 +929,7 @@ Expr * ZbTermu(Env env, Expr * du) {
 
 Expr * Faktor(Env env) {
 	Expr * offset;
+	char id[MAX_IDENT_LEN];
 
 	if (Symb.type == MINUS) {
 		Symb = readLexem();
@@ -943,6 +952,9 @@ Expr * Faktor(Env env) {
 		int hodn;
 		Srovnani_NUMB(&hodn);
 		return new Numb(hodn);
+	case STR:
+		Srovnani_STR(id);
+		return new String(id);
 	case kwNEW:
 		Symb = readLexem();
 		return ConstructorCall(env);

@@ -235,6 +235,10 @@ LexicalSymbol readLexemInternal(void) {
 		data.type = XOR;
 		readInput();
 		return data;
+	case '\"':
+		delkaId = 0;
+		readInput();
+		goto q8;
 	default:;
 	}
 
@@ -433,6 +437,20 @@ LexicalSymbol readLexemInternal(void) {
 		break;
 	default:
 		return data;
+	}
+
+	q8:
+	switch (character) {
+	case '\"':
+		data.ident[delkaId] = 0;
+		data.type = STR;
+		readInput();
+		return data;
+	default:
+		data.ident[delkaId] = character;
+		delkaId++;
+		readInput();
+		goto q8;
 	}
 }
 

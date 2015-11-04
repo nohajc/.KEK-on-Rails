@@ -10,6 +10,7 @@
 typedef enum {
 	IDENT,
 	NUMB,
+	STR,
 	PLUS,
 	MINUS,
 	TIMES,
