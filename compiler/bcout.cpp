@@ -106,6 +106,14 @@ uint32_t bco_w0(bcout_t *bco, bc_t bc) {
 	return (bco_w8(bco, bc));
 }
 
+uint32_t bco_wb1(bcout_t *bco, bc_t bc, uint8_t arg) {
+	uint32_t ip;
+
+	ip = bco_w8(bco, bc);
+	(void) bco_w8(bco, arg);
+	return (ip);
+}
+
 uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg) {
 	uint32_t ip;
 

@@ -608,7 +608,7 @@ uint32_t String::Translate() {
 uint32_t Bop::Translate() {
 	left->Translate();
 	right->Translate();
-	//bco_wb1(bcout_g, BOP, op); //TODO: uncomment
+	bco_wb1(bcout_g, BOP, op);
 	return 0;
 }
 
@@ -636,7 +636,7 @@ uint32_t AssignWithBop::Translate() {
 	bco_w0(bcout_g, DUP);
 	bco_w0(bcout_g, LD);
 	expr->Translate();
-	//bco_wb1(bcout_g, BOP, op); //TODO: uncomment
+	bco_wb1(bcout_g, BOP, op);
 	bco_w0(bcout_g, ST);
 	return 0;
 }
