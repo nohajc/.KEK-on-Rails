@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 enum DruhId {
 	Nedef, IdProm, IdConstNum, IdConstStr
@@ -31,22 +32,31 @@ public:
 
 struct ClassEnv;
 
+// At runtime, all symbols should be in arrays instead of linked lists. We want to have random access by addr indices.
 struct PrvekTab {
 	char *ident;
 	DruhId druh;
 	Scope sc;
-	int hodn; // TODO: hodn will always be address (even for consts)
+	int addr; // address within method/class (even for consts)
 	//int prvni, posledni;
-	char * str_val; // TODO: here will be a pointer to constant pool (in case of ConstNum, ConstStr)
+	uint32_t const_ptr; // index to constant pool (in case of ConstNum, ConstStr) - replaced by pointer at runtime
+
+	// value - for compiler use only (const inlining)
+	union {
+		int num;
+		char * str;
+	} val;
 
 	//CRecord *record;
 	PrvekTab *dalsi;
 	//PrvekTab(char *i, DruhId d, int h, PrvekTab *n, CRecord *r);
 
-	// Variable / constant int
-	PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n);
+	// variable / constant int
+	PrvekTab(char *i, DruhId d, Scope s, int a, PrvekTab *n);
+	// const int
+	PrvekTab(char *i, DruhId d, Scope s, int a, int v, PrvekTab *n);
 	// const str
-	PrvekTab(char *i, DruhId d, Scope s, const char * val, PrvekTab *n);
+	PrvekTab(char *i, DruhId d, Scope s, int a, const char * v, PrvekTab *n);
 	//PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n);
 	~PrvekTab();
 };
@@ -94,8 +104,6 @@ struct Env {
 
 static ClassEnv * TabClass = NULL;
 
-/*static PrvekTab * TabSym; // TODO: remove this
-static int volna_adr;*/
 
 ClassEnv * deklClass(char *, char * = NULL);
 MethodEnv * deklMethod(char *, bool constructor = false, bool isStatic = false, ClassEnv * cls = NULL);
@@ -104,9 +112,7 @@ void deklKonst(char *, int, bool isStatic = false, ClassEnv * cls = NULL, Method
 // const string
 void deklKonst(char *, char *, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, bool arg = false, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
-//void deklRecord(char *, CRecord *);
 
-PrvekTab *hledejId(char *); // TODO: remove this
 ClassEnv * hledejClass(char *);
 MethodEnv * hledejMethod(char *, ClassEnv *, bool = true);
 PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *, bool = true);
@@ -114,7 +120,6 @@ PrvekTab * hledejMember(char *, ClassEnv *, MethodEnv *, bool = true);
 PrvekTab * adrSym(char*, ClassEnv *, MethodEnv *);
 PrvekTab * adrProm(char*, ClassEnv *, MethodEnv *);
 int prvniIdxProm(char *, ClassEnv *, MethodEnv *);
-//DruhId idPromKonst(char *, int *, ClassEnv *, MethodEnv *);
 
 void symCleanup();
 

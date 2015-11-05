@@ -18,7 +18,9 @@ class Object {
 class Test: Object {
 	var v1, v2
 	static const c1 = 42
+	static const str = "Cool"
 	static var sv
+	var im
 
 	Test() { // Constructor
 		super()
@@ -39,6 +41,11 @@ class Test: Object {
 	}
 
 	getRef() {
+		const im = 97
+		this.im = 23
+		v2 = im
+		v1 = str
+
 		return this
 	}
 };

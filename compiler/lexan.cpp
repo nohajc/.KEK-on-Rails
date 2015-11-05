@@ -439,7 +439,7 @@ LexicalSymbol readLexemInternal(void) {
 		return data;
 	}
 
-	q8:
+	q8: // TODO: escaping
 	switch (character) {
 	case '\"':
 		data.ident[delkaId] = 0;

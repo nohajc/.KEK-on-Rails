@@ -11,7 +11,7 @@
 // konstruktory a destruktory
 
 Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
-	addr = sym->hodn;
+	addr = sym->addr;
 	offset = o;
 	rvalue = rv;
 	sc = sym->sc;
@@ -642,21 +642,25 @@ void Return::Translate() {
 
 Expr *VarOrConst(char *id, Expr * offset, Env env)
 {
-   int v;
-   PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
-   //DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
-   DruhId druh = p->druh;
+	int v;
+	PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
+	//DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
+	DruhId druh = p->druh;
 
-   switch (druh) { // TODO: This is not safe. We should work with consts the same way as with Vars
-   case IdProm:
-      return new Var(p, offset, true);
-   case IdConstNum:
-      return new Numb(p->hodn);
-   case IdConstStr:
-   	  return new String(p->str_val);
-   default:
-      return 0;
-   }
+	if (!env.self) { // We can inline local constants only
+		return new Var(p, offset, true);
+	}
+
+	switch (druh) {
+	case IdProm:
+		return new Var(p, offset, true);
+	case IdConstNum:
+		return new Numb(p->val.num);
+	case IdConstStr:
+		return new String(p->val.str);
+	default:
+		return 0;
+	}
 }
 
 CaseBlockScope::CaseBlockScope(CaseBlockScope *next_) {

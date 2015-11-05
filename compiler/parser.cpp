@@ -175,6 +175,10 @@ StatmList * DeklProm(Env env, bool isStatic) {
 	deklProm(id, false, isStatic, env.clsEnv, env.mthEnv);
 
 	if (Symb.type == ASSIGN) {
+		if (!env.mthEnv) {
+			Chyba("Nelze prirazovat do promenne mimo metodu.");
+		}
+
 		Symb = readLexem();
 		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
 		e = Vyraz(env);
@@ -207,6 +211,10 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 		deklProm(id, false, isStatic, env.clsEnv, env.mthEnv);
 
 		if (Symb.type == ASSIGN) {
+			if (!env.mthEnv) {
+				Chyba("Nelze prirazovat do promenne mimo metodu.");
+			}
+
 			Symb = readLexem();
 			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
 			e = Vyraz(env);
@@ -414,21 +422,16 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	*body = Prikaz(env, C_CYCLE);
 }
 
-Expr * ArrayOffset(Env env, char * id) { // TODO: fix this
-   if (Symb.type == LBRAC) {
-      //int offset = prvniIdxProm(id, env.clsEnv, env.mthEnv);
+Expr * ArrayOffset(Env env, char * id) {
+	if (Symb.type == LBRAC) {
+		Symb = readLexem();
+		Expr * e = Vyraz(env);
 
-      Symb = readLexem();
-      Expr * e = Vyraz(env);
-      /*if (offset) {
-         e = new Bop(Minus, e, new Numb(offset));
-      }*/
+		Srovnani(RBRAC);
+		return e;
+	}
 
-      Srovnani(RBRAC);
-      return e;
-   }
-
-   return NULL;
+	return NULL;
 }
 
 Expr * ZbIdent(Env env, bool rvalue) {

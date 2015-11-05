@@ -3,6 +3,7 @@
 #include "tabsym.h"
 #include "lexan.h"
 #include "parser.h"
+#include "bcout.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -20,22 +21,30 @@ CRecord::CRecord(char *ident, CRecord *next) {
 	this->m_Next = next;
 }*/
 
-PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int h, PrvekTab *n) {
+PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, PrvekTab *n) {
 	ident = new char[strlen(i)+1];
 	strcpy(ident, i);
-	druh = d; hodn = h; dalsi = n;
+	druh = d; addr = a; dalsi = n;
 	sc = s;
-	str_val = NULL;
 }
 
-PrvekTab::PrvekTab(char *i, DruhId d, Scope s, const char * val, PrvekTab *n) {
+PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, int v, PrvekTab *n) {
 	ident = new char[strlen(i)+1];
 	strcpy(ident, i);
-	druh = d; dalsi = n;
+	druh = d; addr = a; dalsi = n;
 	sc = s;
+	val.num = v;
+	//const_ptr = bco_int(bcout_g, v); TODO: uncomment
+}
 
-	str_val = new char[strlen(val)+1];
-	strcpy(str_val, val);
+PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, const char * v, PrvekTab *n) {
+	ident = new char[strlen(i)+1];
+	strcpy(ident, i);
+	druh = d; addr = a; dalsi = n;
+	sc = s;
+	val.str = new char[strlen(v)+1];
+	strcpy(val.str, v);
+	//const_ptr = bco_str(bcout_g, v); TODO: uncomment
 }
 
 /*PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
@@ -93,6 +102,9 @@ static void Chyba(char *id, char *txt) {
 
 PrvekTab::~PrvekTab() {
 	delete [] ident;
+	if (druh == IdConstStr) {
+		delete [] val.str;
+	}
 }
 
 /*PrvekTab *hledejId(char *id) {
@@ -224,13 +236,19 @@ void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth
 		Chyba(id, "druha deklarace");
 	}
 
-	// Constant value doesn't need memory space - it will be inlined
-	// Shouldn't we change it? YES! TODO: give memory to constant symbols - they will point to constant pool
 	if (mth) {
-		mth->syms = new PrvekTab(id, IdConstNum, SC_LOCAL, val, mth->syms);
+		int addr;
+		addr = mth->local_addr_next;
+		mth->local_addr_next++;
+
+		mth->syms = new PrvekTab(id, IdConstNum, SC_LOCAL, addr, val, mth->syms);
 	}
 	else if (isStatic) {
-		cls->syms = new PrvekTab(id, IdConstNum, SC_CLASS, val, cls->syms);
+		int addr;
+		addr = cls->class_addr_next;
+		cls->class_addr_next++;
+
+		cls->syms = new PrvekTab(id, IdConstNum, SC_CLASS, addr, val, cls->syms);
 	}
 	else {
 		Chyba(id, "Konstantni clen tridy musi byt staticky.");
@@ -243,13 +261,19 @@ void deklKonst(char *id, char * val, bool isStatic, ClassEnv * cls, MethodEnv * 
 		Chyba(id, "druha deklarace");
 	}
 
-	// Constant value doesn't need memory space - it will be inlined
-	// Shouldn't we change it? YES! TODO: give memory to constant symbols - they will point to constant pool
 	if (mth) {
-		mth->syms = new PrvekTab(id, IdConstStr, SC_LOCAL, val, mth->syms);
+		int addr;
+		addr = mth->local_addr_next;
+		mth->local_addr_next++;
+
+		mth->syms = new PrvekTab(id, IdConstStr, SC_LOCAL, addr, val, mth->syms);
 	}
 	else if (isStatic) {
-		cls->syms = new PrvekTab(id, IdConstStr, SC_CLASS, val, cls->syms);
+		int addr;
+		addr = cls->class_addr_next;
+		cls->class_addr_next++;
+
+		cls->syms = new PrvekTab(id, IdConstStr, SC_CLASS, addr, val, cls->syms);
 	}
 	else {
 		Chyba(id, "Konstantni clen tridy musi byt staticky.");

@@ -23,6 +23,9 @@ int main(int argc, char *argv[]) {
 		printf("Chyba pri vytvareni syntaktickeho analyzatoru.\n");
 		return 0;
 	}
+
+	bcout_g = bcout_init();
+
 	Prog *prog = Program();
 	if(!prog){
 		printf("Vstupni soubor je prazdny.\n");
@@ -34,8 +37,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	prog = (Prog*) (prog->Optimize());
-
-	bcout_g = bcout_init();
 
 	prog->Translate();
 	Print();
