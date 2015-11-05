@@ -41,9 +41,10 @@ ArgList::~ArgList() {
 	delete next;
 }
 
-Call::Call(Expr * m, ArgList * a) {
+Call::Call(Expr * m, ArgList * a, bool e) {
 	method = m;
 	args = a;
+	external = e;
 }
 
 Call::~Call() {

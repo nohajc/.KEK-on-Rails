@@ -53,9 +53,10 @@ public:
 
 class Call: public Statm {
 	Expr * method;
+	bool external;
 	ArgList * args;
 public:
-	Call(Expr *, ArgList *);
+	Call(Expr *, ArgList *, bool);
 	virtual ~Call();
 	virtual void Translate(){} // TODO: implement
 	virtual void Print(int);

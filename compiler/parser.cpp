@@ -434,7 +434,7 @@ Expr * ArrayOffset(Env env, char * id) {
 	return NULL;
 }
 
-Expr * ZbIdent(Env env, bool rvalue) {
+Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	char id[MAX_IDENT_LEN];
 	PrvekTab * p;
 	ClassEnv * c;
@@ -446,7 +446,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.mthEnv = NULL;
-			return ZbIdent(env, rvalue);
+			return ZbIdent(env, rvalue, external);
 		}
 		// self ref by itself
 		return new SelfRef(rvalue);
@@ -461,7 +461,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.clsEnv = env.clsEnv->parent;
-			return new ParentRef(rvalue, ZbIdent(env, rvalue));
+			return new ParentRef(rvalue, ZbIdent(env, rvalue, external));
 		}
 		if (Symb.type == LPAR) {
 			return new MethodRef(env.clsEnv->parent->className);
@@ -484,7 +484,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			env.self = false;
 			env.clsEnv = CLASS_ANY;
 			env.mthEnv = NULL;
-			return new ObjRef(p, offset, rvalue, ZbIdent(env, rvalue));
+			return new ObjRef(p, offset, rvalue, ZbIdent(env, rvalue, external));
 		}
 
 		c = hledejClass(id);
@@ -495,7 +495,7 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			env.self = false;
 			env.clsEnv = c;
 			env.mthEnv = NULL;
-			return new ClassRef(id, rvalue, ZbIdent(env, rvalue));
+			return new ClassRef(id, rvalue, ZbIdent(env, rvalue, external));
 		}
 		Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;
@@ -508,11 +508,23 @@ Expr * ZbIdent(Env env, bool rvalue) {
 			if (env.self && env.mthEnv && env.mthEnv->isStatic && !m->isStatic) {
 				Chyba("Instancni metodu nelze volat ze statickeho kontextu.");
 			}
+			if (env.self) {
+				external = false;
+			}
+			else {
+				external = true;
+			}
 			return new MethodRef(id);
 		}
 		Chyba("Volana metoda neexistuje.");
 		break;
 	default: // var/const
+		if (env.self) {
+			external = false;
+		}
+		else {
+			external = true;
+		}
 		if (rvalue) {
 			return VarOrConst(id, offset, env);
 		}
@@ -544,14 +556,15 @@ ArgList * Args(Env env) {
 }
 
 Expr * Ident(Env env, bool rvalue) {
-	Expr * e = ZbIdent(env, rvalue);
+	bool external;
+	Expr * e = ZbIdent(env, rvalue, external);
 
 	if (Symb.type == LPAR) {
 		Symb = readLexem();
 		ArgList * a = Args(env);
 		Srovnani(RPAR);
 
-		return new Call(e, a);
+		return new Call(e, a, external);
 	}
 
 	return e;
