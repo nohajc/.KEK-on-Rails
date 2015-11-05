@@ -439,13 +439,45 @@ LexicalSymbol readLexemInternal(void) {
 		return data;
 	}
 
-	q8: // TODO: escaping
+	q8:
 	switch (character) {
 	case '\"':
 		data.ident[delkaId] = 0;
 		data.type = STR;
 		readInput();
 		return data;
+	case '\\':
+		readInput();
+		goto q9;
+	default:
+		data.ident[delkaId] = character;
+		delkaId++;
+		readInput();
+		goto q8;
+	}
+
+	q9:
+	switch (character) {
+	case 'n':
+		data.ident[delkaId] = '\n';
+		delkaId++;
+		readInput();
+		goto q8;
+	case 't':
+		data.ident[delkaId] = '\t';
+		delkaId++;
+		readInput();
+		goto q8;
+	case 'b':
+		data.ident[delkaId] = '\b';
+		delkaId++;
+		readInput();
+		goto q8;
+	case 'r':
+		data.ident[delkaId] = '\r';
+		delkaId++;
+		readInput();
+		goto q8;
 	default:
 		data.ident[delkaId] = character;
 		delkaId++;
