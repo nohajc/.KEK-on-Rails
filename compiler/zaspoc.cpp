@@ -45,9 +45,10 @@ int GetIC() {
 }
 
 void Print() {
-	int ic = 0;
+	int icount = ic;
+
 	printf("\nVypis programu\n");
-	for (;;) {
+	for (ic = 0; ic < icount; ++ic) {
 		printf("%3d: ", ic);
 		switch (p[ic].typ) {
 		case LDC:

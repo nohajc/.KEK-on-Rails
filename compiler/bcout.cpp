@@ -87,8 +87,8 @@ uint32_t bco_w8(bcout_t *bco, uint8_t uint8) {
 uint32_t bco_w16(bcout_t *bco, uint16_t uint16) {
 	bc_arr_realloc(bco, sizeof(uint16_t));
 
-	bco->bc_arr[bco->bc_arr_cnt++] = uint16 & 0xff;
-	bco->bc_arr[bco->bc_arr_cnt++] = uint16 >> 8;
+	*(uint16_t*) &bco->bc_arr[bco->bc_arr_cnt] = uint16;
+	bco->bc_arr_cnt += 2;
 	return (bco->bc_arr_cnt - 2);
 }
 
@@ -96,10 +96,8 @@ uint32_t bco_w16(bcout_t *bco, uint16_t uint16) {
 uint32_t bco_w32(bcout_t *bco, uint32_t uint32) {
 	bc_arr_realloc(bco, sizeof(uint32_t));
 
-	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0x000000ff);
-	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0x0000ff00) >> 8;
-	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0x00ff0000) >> 16;
-	bco->bc_arr[bco->bc_arr_cnt++] = (uint32 & 0xff000000) >> 24;
+	*(uint32_t*) &bco->bc_arr[bco->bc_arr_cnt] = uint32;
+	bco->bc_arr_cnt += 4;
 	return (bco->bc_arr_cnt - 4);
 }
 
@@ -206,6 +204,37 @@ uint32_t bco_str(bcout_t *bco, const char *str) {
 	return ((uint8_t *) cs - bco->const_table);
 }
 
+uint32_t bco_sym(bcout_t *bco, const char *str) {
+	constant_string_t *cs;
+	size_t len;
+	int found;
+
+	found = bco_find_sym(bco, str);
+	if (-1 < found) {
+		return (found);
+	}
+
+	len = strlen(str);
+
+	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
+	cs->type = SYMBOL;
+	cs->length = len;
+	strcpy(cs->string, str);
+
+	bcout_items_add(bco, (constant_item_t *) cs);
+
+	return ((uint8_t *) cs - bco->const_table);
+}
+
+size_t bco_get_ip(bcout_t *bco) {
+	return bco->bc_arr_cnt;
+}
+
+void bco_fix_forward_jmpw(bcout_t *bco, size_t idx) {
+	*(uint16_t*) &bco->bc_arr[idx + 1] = (uint16_t) idx;
+}
+
+
 uint32_t bco_find_int(bcout_t *bco, int v) {
 	int i;
 
@@ -231,3 +260,15 @@ uint32_t bco_find_str(bcout_t *bco, const char *str) {
 	return (-1);
 }
 
+uint32_t bco_find_sym(bcout_t *bco, const char *str) {
+	int i;
+
+	for (i = 0; i < bco->items_cnt; i++) {
+		if (bco->items[i]->type == SYMBOL
+				&& strcmp(bco->items[i]->cs.string, str) == 0) {
+			return ((uint8_t *) bco->items[i] - bco->const_table);
+		}
+	}
+
+	return (-1);
+}

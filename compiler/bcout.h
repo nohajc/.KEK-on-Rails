@@ -32,6 +32,7 @@ typedef enum _bc {
 	RET, /* */
 
 	CALL, /* arg: index to const table */
+	CALLS, /* arg: index to const table, calls method of the superclass */
 	CALLE, /* call external. arg: index to const table,
 	          start search at the given pointer */
 
@@ -43,14 +44,7 @@ typedef enum _bc {
 	PUSH_IVE, /* iv external. push instance variable, arg: index */
 	PUSH_CVE, /* cv external. push class variable, arg: index */
 	PUSH_SELF, /* push self class reference */
-	PUSH_SUPER, /* push parent's class reference */
-
-	POP_ARG,
-	POP_LOC,
-	POP_IV,
-	POP_CV,
-	POP_IVE,
-	POP_CVE,
+	CLASSREF,
 
 	IDX, /* return an item on the index. args: none. takes obj pointer
 	and the index from the stack */
@@ -130,11 +124,15 @@ uint32_t bco_str(bcout_t *bco, const char *str);
 uint32_t bco_sym(bcout_t *bco, const char *str);
 uint32_t bco_arr(bcout_t *bco, constant_item_t *arr);
 
+/* helper functions */
+size_t bco_get_ip(bcout_t *bco);
+void bco_fix_forward_jmpw(bcout_t *bco, size_t idx);
 
 /******************************************************************************/
 /* innner helper functions */
 uint32_t bco_find_int(bcout_t *bco, int i);
 uint32_t bco_find_str(bcout_t *bco, const char *str);
+uint32_t bco_find_sym(bcout_t *bco, const char *str);
 void bco_debug(const char *format, va_list ap);
 /******************************************************************************/
 

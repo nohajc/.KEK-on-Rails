@@ -492,37 +492,38 @@ Node *ClassList::Optimize() {
 uint32_t Var::Translate() {
 	switch (sc) {
 	case SC_LOCAL:
-		//bco_ww1(bcout_g, PUSH_LOC, addr); // TODO: uncomment
+		bco_ww1(bcout_g, PUSH_LOC, addr);
 		break;
 	case SC_ARG:
-		//bco_ww1(bcout_g, PUSH_ARG, addr); // TODO: uncomment
+		bco_ww1(bcout_g, PUSH_ARG, addr);
 		break;
 	case SC_INSTANCE:
 		if (external) {
-			//uint32_t iv_name_idx = bco_sym(bcout_g, name); // TODO: uncomment
-			//bco_ww1(bcout_g, PUSH_IVE, iv_name_idx); // TODO: uncomment
+			uint32_t iv_name_idx = bco_sym(bcout_g, name);
+			bco_ww1(bcout_g, PUSH_IVE, iv_name_idx);
 		}
 		else {
-			//bco_ww1(bcout_g, PUSH_IV, addr); // TODO: uncomment
+			bco_ww1(bcout_g, PUSH_IV, addr);
 		}
 		break;
 	case SC_CLASS:
 		if (external) {
-			//bco_ww1(bcout_g, PUSH_CVE, addr); // TODO: uncomment
+			bco_ww1(bcout_g, PUSH_CVE, addr);
 		}
 		else {
-			//bco_ww1(bcout_g, PUSH_CV, addr); // TODO: uncomment
+			bco_ww1(bcout_g, PUSH_CV, addr);
 		}
 		break;
 	}
 
 	if(offset){
 		offset->Translate();
-		//bco_w0(bcout_g, IDX); // TODO: uncomment
+		bco_w0(bcout_g, IDX);
 	}
 
-	/*if (rvalue)  // No dereference needed. We always work with pointers to objects.
-		Gener(LD); */
+	if (rvalue) { // Dereference
+		bco_w0(bcout_g, LD);
+	}
 
 	return 0;
 }
@@ -547,21 +548,21 @@ uint32_t Call::Translate() {
 	mth_idx = method->Translate(); // Puts classref, objref (for CALLE) or nothing on the stack
 
 	if (dynamic_cast<ParentRef*>(method)) {
-		//bco_ww2(bcout_g, CALLS, (uint16_t)mth_idx, (uint16_t)arg_count); //TODO: uncomment
+		bco_ww2(bcout_g, CALLS, (uint16_t)mth_idx, (uint16_t)arg_count);
 	}
 	else if (external) {
-		//bco_ww2(bcout_g, CALLE, (uint16_t)mth_idx, (uint16_t)arg_count); //TODO: uncomment
+		bco_ww2(bcout_g, CALLE, (uint16_t)mth_idx, (uint16_t)arg_count);
 	}
 	else {
-		//bco_ww2(bcout_g, CALL, (uint16_t)mth_idx, (uint16_t)arg_count); //TODO: uncomment
+		bco_ww2(bcout_g, CALL, (uint16_t)mth_idx, (uint16_t)arg_count);
 	}
 
 	return 0;
 }
 
 uint32_t ClassRef::Translate() {
-	//uint32_t sym_idx = bco_sym(bcout_g, name); //TODO: uncomment
-	//bco_ww1(bcout_g, CLASSREF, (uint16_t)sym_idx); //TODO: uncomment
+	uint32_t sym_idx = bco_sym(bcout_g, name);
+	bco_ww1(bcout_g, CLASSREF, (uint16_t)sym_idx);
 
 	return target->Translate();
 }
@@ -572,7 +573,7 @@ uint32_t ObjRef::Translate() {
 }
 
 uint32_t SelfRef::Translate() {
-	//bco_w0(bcout_g, PUSH_SELF); //TODO: uncomment
+	bco_w0(bcout_g, PUSH_SELF);
 	return 0;
 }
 
@@ -581,25 +582,25 @@ uint32_t ParentRef::Translate() {
 }
 
 uint32_t MethodRef::Translate() {
-	//return bco_sym(bcout_g, name); //TODO: uncomment
+	return bco_sym(bcout_g, name);
 }
 
 uint32_t New::Translate() {
 	uint32_t cons_idx = constructor->Translate();
-	//bco_ww1(bcout_g, NEW, cons_idx); //TODO: uncomment
+	bco_ww1(bcout_g, NEW, cons_idx);
 	return 0;
 }
 
 uint32_t Numb::Translate() {
-	//uint32_t num_idx = bco_int(bcout_g, value); TODO: uncomment
-	//bco_ww1(bcout_g, PUSH_C, num_idx); // TODO: optimize?
+	uint32_t num_idx = bco_int(bcout_g, value);
+	bco_ww1(bcout_g, PUSH_C, num_idx); // TODO: optimize?
 
 	return 0;
 }
 
 uint32_t String::Translate() {
-	//uint32_t str_idx = bco_str(bcout_g, value); TODO: uncomment
-	//bco_ww1(bcout_g, PUSH_C, str_idx); TODO: uncomment
+	uint32_t str_idx = bco_str(bcout_g, value);
+	bco_ww1(bcout_g, PUSH_C, str_idx);
 
 	return 0;
 }
@@ -607,97 +608,99 @@ uint32_t String::Translate() {
 uint32_t Bop::Translate() {
 	left->Translate();
 	right->Translate();
-	Gener(BOP, op);
+	//bco_wb1(bcout_g, BOP, op); //TODO: uncomment
 	return 0;
 }
 
 uint32_t UnMinus::Translate() {
 	expr->Translate();
-	Gener(UNM);
+	bco_w0(bcout_g, UNM);
 	return 0;
 }
 
 uint32_t Not::Translate() {
 	expr->Translate();
-	Gener(NOT);
+	bco_w0(bcout_g, NOT);
 	return 0;
 }
 
 uint32_t Assign::Translate() {
 	var->Translate();
 	expr->Translate();
-	Gener(ST);
+	bco_w0(bcout_g, ST);
 	return 0;
 }
 
 uint32_t AssignWithBop::Translate() {
 	var->Translate();
-	Gener(DUP);
-	Gener(LD);
+	bco_w0(bcout_g, DUP);
+	bco_w0(bcout_g, LD);
 	expr->Translate();
-	Gener(BOP, op);
-	Gener(ST);
+	//bco_wb1(bcout_g, BOP, op); //TODO: uncomment
+	bco_w0(bcout_g, ST);
 	return 0;
 }
 
 uint32_t Write::Translate() {
 	expr->Translate();
-	Gener(WRT);
+	bco_w0(bcout_g, WRT);
 	return 0;
 }
 
 uint32_t Read::Translate() {
 	var->Translate();
-	Gener(RD);
+	bco_w0(bcout_g, RD);
 	return 0;
 }
 
 uint32_t If::Translate() {
 	cond->Translate();
-	int a1 = Gener(IFNJ);
+	int a1 = bco_ww1(bcout_g, IFNJ, 0);
 	thenstm->Translate();
 	if (elsestm) {
-		int a2 = Gener(JU);
-		PutIC(a1);
+		int a2 = bco_ww1(bcout_g, JU, 0);
+		bco_fix_forward_jmpw(bcout_g, a1);
 		elsestm->Translate();
-		PutIC(a2);
-	} else
-		PutIC(a1);
+		bco_fix_forward_jmpw(bcout_g, a2);
+	}
+	else {
+		bco_fix_forward_jmpw(bcout_g, a1);
+	}
 
 	return 0;
 }
 
 uint32_t While::Translate() {
-	int a1 = GetIC();
+	int a1 = bco_get_ip(bcout_g);
 	cond->Translate();
-	int a2 = Gener(IFNJ);
+	int a2 = bco_ww1(bcout_g, IFNJ, 0);
 
-	int b1 = GetIC();
+	int b1 = bco_get_ip(bcout_g);
 	body->Translate();
-	int b2 = GetIC();
+	int b2 = bco_get_ip(bcout_g);
 	
-	Gener(JU, a1);
-	resolveBreak(b1, b2);
-	PutIC(a2);
+	bco_ww1(bcout_g, JU, a1);
+	//resolveBreak(b1, b2); TODO
+	bco_fix_forward_jmpw(bcout_g, a2);
 
 	return 0;
 }
 
 uint32_t For::Translate() {
 	init->Translate();
-	int a1 = GetIC();
+	int a1 = bco_get_ip(bcout_g);
 	cond->Translate();
-	int a2 = Gener(IFNJ);
+	int a2 = bco_ww1(bcout_g, IFNJ, 0);
 
-	int b1 = GetIC();
+	int b1 = bco_get_ip(bcout_g);
 	body->Translate();
-	int b2 = GetIC();
+	int b2 = bco_get_ip(bcout_g);
 
 	counter->Translate();
 
-	Gener(JU, a1);
-	resolveBreak(b1, b2);
-	PutIC(a2);
+	bco_ww1(bcout_g, JU, a1);
+	//resolveBreak(b1, b2); TODO
+	bco_fix_forward_jmpw(bcout_g, a2);
 
 	return 0;
 }
@@ -719,7 +722,6 @@ uint32_t Break::Translate() {
 
 uint32_t Prog::Translate() {
 	lst->Translate();
-	Gener(STOP);
 	return 0;
 }
 
@@ -740,14 +742,14 @@ uint32_t ClassList::Translate() {
 }
 
 uint32_t Method::Translate() {
-	 // TODO
+	*bc_entrypoint = bco_get_ip(bcout_g);
 	body->Translate();
 	return 0;
 }
 
 uint32_t Return::Translate() {
 	expr->Translate();
-	//bco_w0(bcout_g, RET); // TODO: uncomment
+	bco_w0(bcout_g, RET);
 	return 0;
 }
 
@@ -936,7 +938,7 @@ uint32_t Case::Translate() {
 			switch (caseBlockScope->type) {
 			case 0: /* else*/{
 				/* just jump, else don't need any BOP */
-				jumpBeforeBlock[jbbp++] = Gener(JU);
+				jumpBeforeBlock[jbbp++] = bco_ww1(bcout_g, JU, 0);
 				break;
 			}
 			case 1: /* number */{
@@ -946,7 +948,7 @@ uint32_t Case::Translate() {
 
 				/* if the bop made false from negation, so true from what we
 				 * need, jump before block! */
-				jumpBeforeBlock[jbbp++] = Gener(IFNJ);
+				jumpBeforeBlock[jbbp++] = bco_ww1(bcout_g, IFNJ, 0);
 
 				break;
 			}
@@ -957,17 +959,17 @@ uint32_t Case::Translate() {
 				rangeLo->Translate();
 
 				/* if test of low rage fails, jump over the test of high range */
-				int loRangeFail = Gener(IFNJ);
+				int loRangeFail = bco_ww1(bcout_g, IFNJ, 0);
 
 				/* I need a negation of <= */
 				Expr *rangeHi = new Bop(Greater, this->expr,
 						caseBlockScope->hi);
 				rangeHi->Translate();
 
-				jumpBeforeBlock[jbbp++] = Gener(IFNJ);
+				jumpBeforeBlock[jbbp++] = bco_ww1(bcout_g, IFNJ, 0);
 
 				/* */
-				PutIC(loRangeFail);
+				bco_fix_forward_jmpw(bcout_g, loRangeFail);
 
 				break;
 			}
@@ -978,11 +980,11 @@ uint32_t Case::Translate() {
 		}
 
 		/* if we get here, we have not matched any scope! */
-		int jumpOver = Gener(JU);
+		int jumpOver = bco_ww1(bcout_g, JU, 0);
 
 		/* if something matches, jump before the block */
 		for (int i = 0; i < jbbp; i = i + 1) {
-			PutIC(jumpBeforeBlock[i]);
+			bco_fix_forward_jmpw(bcout_g, jumpBeforeBlock[i]);
 		}
 		jbbp = 0;
 
@@ -991,16 +993,16 @@ uint32_t Case::Translate() {
 
 		/* if we have matched and block was run, jump to the end of the case */
 		if (nextBlock->next != NULL) {
-			finalJumps[fjp++] = Gener(JU);
+			finalJumps[fjp++] = bco_ww1(bcout_g, JU, 0);
 		}
 
 		/*  */
-		PutIC(jumpOver);
+		bco_fix_forward_jmpw(bcout_g, jumpOver);
 	}
 
 	/* after every matched scope, hop/skip/jump to the end of the case */
 	for (int i = 0; i < fjp; i = i + 1) {
-		PutIC(finalJumps[i]);
+		bco_fix_forward_jmpw(bcout_g, finalJumps[i]);
 	}
 
 	return 0;
