@@ -180,7 +180,7 @@ StatmList * DeklProm(Env env, bool isStatic) {
 		}
 
 		Symb = readLexem();
-		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
+		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false, false);
 		e = Vyraz(env);
 		st = new Assign(var, e);
 	}
@@ -216,7 +216,7 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 			}
 
 			Symb = readLexem();
-			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false);
+			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false, false);
 			e = Vyraz(env);
 			st = new Assign(var, e);
 		}
@@ -434,11 +434,39 @@ Expr * ArrayOffset(Env env, char * id) {
 	return NULL;
 }
 
+Expr *VarOrConst(char *id, Expr * offset, Env env)
+{
+	int v;
+	PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
+	//DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
+	DruhId druh = p->druh;
+
+	if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
+		Chyba("Prvek tridy musi byt staticky.");
+	}
+
+	if (!env.self) { // We can inline local constants only
+		return new Var(p, offset, true, true);
+	}
+
+	switch (druh) {
+	case IdProm:
+		return new Var(p, offset, true, false);
+	case IdConstNum:
+		return new Numb(p->val.num);
+	case IdConstStr:
+		return new String(p->val.str);
+	default:
+		return 0;
+	}
+}
+
 Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	char id[MAX_IDENT_LEN];
 	PrvekTab * p;
 	ClassEnv * c;
 	MethodEnv * m;
+	bool curr_self;
 
 	if (env.mthEnv && Symb.type == kwTHIS) { // self ref
 		Symb = readLexem();
@@ -476,15 +504,25 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	case DOT: // ref
 		Symb = readLexem();
 		p = hledejMember(id, env.clsEnv, env.mthEnv);
-		if (!rvalue && p->druh != IdProm) {
-			Chyba("Na leve strane musi byt promenna.");
-		}
 
 		if (p) { // obj ref
+			if (!rvalue && p->druh != IdProm) {
+				Chyba("Na leve strane musi byt promenna.");
+			}
+
+			if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
+				Chyba("Prvek tridy musi byt staticky.");
+			}
+
+			curr_self = env.self;
 			env.self = false;
 			env.clsEnv = CLASS_ANY;
 			env.mthEnv = NULL;
-			return new ObjRef(p, offset, rvalue, ZbIdent(env, rvalue, external));
+			return new ObjRef(p, offset, rvalue, !curr_self, ZbIdent(env, rvalue, external));
+		}
+
+		if (!env.mthEnv) {
+			Chyba("Ocekava se deklarovany objekt.");
 		}
 
 		c = hledejClass(id);
@@ -508,27 +546,22 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 			if (env.self && env.mthEnv && env.mthEnv->isStatic && !m->isStatic) {
 				Chyba("Instancni metodu nelze volat ze statickeho kontextu.");
 			}
-			if (env.self) {
-				external = false;
-			}
-			else {
-				external = true;
-			}
+			external = !env.self;
 			return new MethodRef(id);
 		}
 		Chyba("Volana metoda neexistuje.");
 		break;
 	default: // var/const
-		if (env.self) {
-			external = false;
-		}
-		else {
-			external = true;
-		}
+		external = !env.self;
 		if (rvalue) {
 			return VarOrConst(id, offset, env);
 		}
-		return new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);
+
+		p = adrProm(id, env.clsEnv, env.mthEnv);
+		if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
+			Chyba("Prvek tridy musi byt staticky.");
+		}
+		return new Var(p, offset, false, external);
 	}
 
 	return NULL;

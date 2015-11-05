@@ -52,6 +52,7 @@ Expr *ZbTermu(Env, Expr*);
 Expr *Faktor(Env);
 Expr * ConstructorCall(Env env);
 
+Expr *VarOrConst(char*, Expr * offset, Env env);
 ClassList * SeznamTrid();
 ClassList * ZbTrid();
 Class * Trida();

@@ -5,13 +5,14 @@
 
 #include "zaspoc.h"
 #include "tabsym.h"
+#include <stdint.h>
 
 class Node {
 public:
 	virtual Node *Optimize() {
 		return this;
 	}
-	virtual void Translate() = 0;
+	virtual uint32_t Translate() = 0;
 	virtual ~Node() {
 	}
 	virtual void Print(int) = 0;
@@ -32,11 +33,12 @@ class Var: public Expr {
 	Expr * offset;
 	bool rvalue;
 	Scope sc;
+	bool external;
 public:
-	Var(const PrvekTab *, Expr *, bool);
+	Var(const PrvekTab *, Expr *, bool rv, bool e);
 	Var(char * n, bool rv);
 	virtual ~Var();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);
 };
@@ -47,8 +49,9 @@ class ArgList: public Expr {
 public:
 	ArgList(Expr *, ArgList *);
 	virtual ~ArgList();
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate();
 	virtual void Print(int);
+	int Count();
 };
 
 class Call: public Statm {
@@ -58,7 +61,7 @@ class Call: public Statm {
 public:
 	Call(Expr *, ArgList *, bool);
 	virtual ~Call();
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -67,7 +70,7 @@ class ClassRef: public Var { // Var which is also a class
 public:
 	ClassRef(char *, bool, Expr *);
 	virtual ~ClassRef();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);
 };
@@ -75,9 +78,9 @@ public:
 class ObjRef: public Var { // Var which is also an object
 	Expr * target; // Member of the referenced object
 public:
-	ObjRef(const PrvekTab *, Expr *, bool, Expr *);
+	ObjRef(const PrvekTab *, Expr *, bool, bool, Expr *);
 	virtual ~ObjRef();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);
 };
@@ -85,7 +88,7 @@ public:
 class SelfRef: public Var {
 public:
 	SelfRef(bool);
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate(){} // TODO: implement
 	virtual void Print(int);
 };
 
@@ -93,7 +96,7 @@ class ParentRef: public Var {
 	Expr * target;
 public:
 	ParentRef(bool, Expr *);
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate(){} // TODO: implement
 	virtual void Print(int);
 };
 
@@ -102,7 +105,7 @@ class MethodRef: public Expr {
 public:
 	MethodRef(char *);
 	virtual ~MethodRef();
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate(){} // TODO: implement
 	virtual void Print(int);
 };
 
@@ -112,7 +115,7 @@ class New: public Expr {
 public:
 	New(MethodRef *, ArgList *);
 	virtual ~New();
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate(){} // TODO: implement
 	virtual void Print(int);
 };
 
@@ -120,7 +123,7 @@ class Numb: public Const {
 	int value;
 public:
 	Numb(int);
-	virtual void Translate();
+	virtual uint32_t Translate();
 	int Value();
 	virtual void Print(int);
 };
@@ -130,7 +133,7 @@ class String: public Const {
 public:
 	String(const char *);
 	virtual ~String();
-	virtual void Translate(){} // TODO: implement
+	virtual uint32_t Translate(){} // TODO: implement
 	virtual void Print(int);
 };
 
@@ -141,7 +144,7 @@ public:
 	Bop(Operator, Expr*, Expr*);
 	virtual ~Bop();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -151,7 +154,7 @@ public:
 	UnMinus(Expr *e);
 	virtual ~UnMinus();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -161,7 +164,7 @@ public:
 	Not(Expr *e);
 	virtual ~Not();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -172,7 +175,7 @@ public:
 	Assign(Var*, Expr*);
 	virtual ~Assign();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -184,7 +187,7 @@ public:
 	AssignWithBop(Operator, Var *, Expr *);
 	virtual ~AssignWithBop();
 	virtual Node * Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -194,7 +197,7 @@ public:
 	Write(Expr*);
 	virtual ~Write();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -204,7 +207,7 @@ public:
 	Read(Var *);
 	virtual ~Read();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -216,7 +219,7 @@ public:
 	If(Expr*, Statm*, Statm*);
 	virtual ~If();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -227,7 +230,7 @@ public:
 	While(Expr*, Statm*);
 	virtual ~While();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -240,7 +243,7 @@ public:
    For(Statm*, Expr*, Statm*, Statm*);
    virtual ~For();
    virtual Node *Optimize();
-   virtual void Translate();
+   virtual uint32_t Translate();
    virtual void Print(int);
 };
 
@@ -251,19 +254,19 @@ public:
 	StatmList(Statm*, StatmList*);
 	virtual ~StatmList();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
 class Break: public Statm {
 public:
 	virtual ~Break(){}
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
 class Empty: public Statm {
-	virtual void Translate() {
+	virtual uint32_t Translate() {
 	}
 	virtual void Print(int);
 };
@@ -274,7 +277,7 @@ public:
 	Class(StatmList*);
 	virtual ~Class();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -285,7 +288,7 @@ public:
 	ClassList(Class*, ClassList*);
 	virtual ~ClassList();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -301,7 +304,7 @@ class Method: public Statm {
 public:
 	Method(char *, bool, int, unsigned int *, StatmList *);
 	virtual ~Method();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -310,7 +313,7 @@ class Return: public Statm {
 public:
 	Return(Expr *);
 	virtual ~Return();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -320,11 +323,9 @@ public:
 	Prog(ClassList*);
 	virtual ~Prog();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
-
-Expr *VarOrConst(char*, Expr * offset, Env env);
 
 /* <nesro> */
 
@@ -351,7 +352,7 @@ public:
 	CaseBlock();
 	CaseBlock(Statm *, CaseBlock *, CaseBlockScope *);
 	~CaseBlock();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -362,7 +363,7 @@ public:
 	Case(Expr *, CaseBlock *);
 	virtual ~Case();
 	virtual Node *Optimize();
-	virtual void Translate();
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 

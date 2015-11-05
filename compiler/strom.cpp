@@ -10,11 +10,12 @@
 
 // konstruktory a destruktory
 
-Var::Var(const PrvekTab * sym, Expr * o, bool rv) {
+Var::Var(const PrvekTab * sym, Expr * o, bool rv, bool e) {
 	addr = sym->addr;
 	offset = o;
 	rvalue = rv;
 	sc = sym->sc;
+	external = e;
 	name = new char[strlen(sym->ident) + 1];
 	strcpy(name, sym->ident);
 }
@@ -24,6 +25,7 @@ Var::Var(char * n, bool rv) {
 	strcpy(name, n);
 	rvalue = rv;
 	offset = NULL;
+	external = false;
 }
 
 Var::~Var() {
@@ -69,7 +71,7 @@ ClassRef::~ClassRef() {
 	delete target;
 }
 
-ObjRef::ObjRef(const PrvekTab * sym, Expr * o, bool rv, Expr * t) : Var(sym, o, rv) {
+ObjRef::ObjRef(const PrvekTab * sym, Expr * o, bool rv, bool e, Expr * t) : Var(sym, o, rv, e) {
 	target = t;
 }
 
@@ -487,7 +489,7 @@ Node *ClassList::Optimize() {
 
 // definice metody Translate
 
-void Var::Translate() { // TODO
+uint32_t Var::Translate() { // TODO
 	Gener(LDC, addr);
 	if(offset){
 		offset->Translate();
@@ -495,49 +497,70 @@ void Var::Translate() { // TODO
 	}
 
 	if (rvalue)
-		Gener(LD); // TODO: Consider different scopes
+		Gener(LD); // TODO: Consider different scopes and type of ref (internal/external)
+
+	return 0;
 }
 
-void ClassRef::Translate() {
-	target->Translate();
-	 // TODO
+uint32_t ArgList::Translate() {
+	ArgList * a = this;
+	do {
+		a->arg->Translate();
+		a = a->next;
+	} while (a);
+
+	return 0;
 }
 
-void ObjRef::Translate() {
+uint32_t Call::Translate() {
+	if (args) {
+		args->Translate(); // Puts arguments on the stack
+	}
+	method->Translate(); // Puts classref, objref (for CALLE) or nothing on the stack
+
+	return 0;
+}
+
+uint32_t ClassRef::Translate() {
+	// TODO: create const symbol from ref name and generate PUSH_CV or PUSH_CVE
+
+	return target->Translate();
+}
+
+uint32_t ObjRef::Translate() {
 	Var::Translate();
-	target->Translate();
-	 // TODO
+	return target->Translate();
 }
 
-void Numb::Translate() {
+uint32_t Numb::Translate() {
 	Gener(LDC, value);
 	// TODO: create int object in constant table
 	// Gener PUSH_C
 }
 
-void Bop::Translate() {
+uint32_t Bop::Translate() {
 	left->Translate();
 	right->Translate();
 	Gener(BOP, op);
 }
 
-void UnMinus::Translate() {
+uint32_t UnMinus::Translate() {
 	expr->Translate();
 	Gener(UNM);
 }
 
-void Not::Translate() {
+uint32_t Not::Translate() {
 	expr->Translate();
 	Gener(NOT);
 }
 
-void Assign::Translate() {
+uint32_t Assign::Translate() {
 	var->Translate();
 	expr->Translate();
 	Gener(ST);
 }
 
-void AssignWithBop::Translate() {
+uint32_t AssignWithBop::Translate() {
 	var->Translate();
 	Gener(DUP);
 	Gener(LD);
@@ -546,17 +569,17 @@ void AssignWithBop::Translate() {
 	Gener(ST);
 }
 
-void Write::Translate() {
+uint32_t Write::Translate() {
 	expr->Translate();
 	Gener(WRT);
 }
 
-void Read::Translate() {
+uint32_t Read::Translate() {
 	var->Translate();
 	Gener(RD);
 }
 
-void If::Translate() {
+uint32_t If::Translate() {
 	cond->Translate();
 	int a1 = Gener(IFNJ);
 	thenstm->Translate();
@@ -569,7 +592,7 @@ void If::Translate() {
 		PutIC(a1);
 }
 
-void While::Translate() {
+uint32_t While::Translate() {
 	int a1 = GetIC();
 	cond->Translate();
 	int a2 = Gener(IFNJ);
@@ -583,7 +606,7 @@ void While::Translate() {
 	PutIC(a2);
 }
 
-void For::Translate() {
+uint32_t For::Translate() {
 	init->Translate();
 	int a1 = GetIC();
 	cond->Translate();
@@ -600,7 +623,7 @@ void For::Translate() {
 	PutIC(a2);
 }
 
-void StatmList::Translate() {
+uint32_t StatmList::Translate() {
 	StatmList *s = this;
 	do {
 		s->statm->Translate();
@@ -608,22 +631,22 @@ void StatmList::Translate() {
 	} while (s);
 }
 
-void Break::Translate() {
+uint32_t Break::Translate() {
 	Gener(JU, 0, UBRK);
 }
 
-void Prog::Translate() {
+uint32_t Prog::Translate() {
 	lst->Translate();
 	Gener(STOP);
 }
 
-void Class::Translate() {
+uint32_t Class::Translate() {
 	if (stm) {
 		stm->Translate();
 	}
 }
 
-void ClassList::Translate() {
+uint32_t ClassList::Translate() {
 	ClassList * lst = this;
 	do {
 		lst->cls->Translate();
@@ -631,37 +654,14 @@ void ClassList::Translate() {
 	} while (lst);
 }
 
-void Method::Translate() {
+uint32_t Method::Translate() {
 	 // TODO
 	body->Translate();
 }
 
-void Return::Translate() {
+uint32_t Return::Translate() {
 	expr->Translate();
 	// TODO: implement
-}
-
-Expr *VarOrConst(char *id, Expr * offset, Env env)
-{
-	int v;
-	PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
-	//DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
-	DruhId druh = p->druh;
-
-	if (!env.self) { // We can inline local constants only
-		return new Var(p, offset, true);
-	}
-
-	switch (druh) {
-	case IdProm:
-		return new Var(p, offset, true);
-	case IdConstNum:
-		return new Numb(p->val.num);
-	case IdConstStr:
-		return new String(p->val.str);
-	default:
-		return 0;
-	}
 }
 
 CaseBlockScope::CaseBlockScope(CaseBlockScope *next_) {
@@ -714,7 +714,7 @@ CaseBlock::~CaseBlock() {
 	delete this->scope;
 }
 
-void CaseBlock::Translate() {
+uint32_t CaseBlock::Translate() {
 	if (this->statmList != NULL) {
 		this->statmList->Translate();
 	} else {
@@ -831,7 +831,7 @@ Node * Case::Optimize() {
 	return this;
 }
 
-void Case::Translate() {
+uint32_t Case::Translate() {
 	int finalJumps[1000];
 	int fjp = 0;
 
@@ -1254,4 +1254,15 @@ void Case::Print(int ident) {
 	if (this->caseBlock) {
 		this->caseBlock->Print(ident + 1);
 	}
+}
+
+int ArgList::Count() {
+	ArgList * a = this;
+	int count = 0;
+
+	do {
+		count++;
+		a = a->next;
+	} while (a);
+	return count;
 }

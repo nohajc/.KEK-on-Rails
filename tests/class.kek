@@ -49,3 +49,9 @@ class Test: Object {
 		return this
 	}
 };
+
+class Loader {
+	Loader() {
+		Test.main()
+	}
+}
