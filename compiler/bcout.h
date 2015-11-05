@@ -8,6 +8,9 @@
 #ifndef COMPILER_BCOUT_H_
 #define COMPILER_BCOUT_H_
 
+
+#define DEBUG 1
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -109,27 +112,30 @@ void bcout_free(bcout_t *bco);
 */
 
 /* bco write (args: byte) */
-int bco_w0(bcout_t *bco, bc_t bc);
-int bco_wb1(bcout_t *bco, bc_t bc, uint8_t arg);
-int bco_wb2(bcout_t *bco, bc_t bc, uint8_t arg0, uint8_t arg1);
+uint32_t bco_w0(bcout_t *bco, bc_t bc);
+uint32_t bco_wb1(bcout_t *bco, bc_t bc, uint8_t arg);
+uint32_t bco_wb2(bcout_t *bco, bc_t bc, uint8_t arg0, uint8_t arg1);
 
 /* bco write (args: word) */
-int bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg);
-int bco_ww2(bcout_t *bco, bc_t bc, uint16_t arg0, uint16_t arg1);
+uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg);
+uint32_t bco_ww2(bcout_t *bco, bc_t bc, uint16_t arg0, uint16_t arg1);
 
 /* bco write (args: double word) */
-int bco_wd1(bcout_t *bco, bc_t bc, uint32_t arg);
-int bco_wd2(bcout_t *bco, bc_t bc, uint32_t arg0, uint32_t);
+uint32_t bco_wd1(bcout_t *bco, bc_t bc, uint32_t arg);
+uint32_t bco_wd2(bcout_t *bco, bc_t bc, uint32_t arg0, uint32_t);
 
 /* save a constant and get its offset */
-int bco_int(bcout_t *bco, int i);
-int bco_str(bcout_t *bco, const char *str);
-int bco_sym(bcout_t *bco, const char *str);
-int bco_arr(bcout_t *bco, constant_item_t *arr);
+uint32_t bco_int(bcout_t *bco, int v);
+uint32_t bco_str(bcout_t *bco, const char *str);
+uint32_t bco_sym(bcout_t *bco, const char *str);
+uint32_t bco_arr(bcout_t *bco, constant_item_t *arr);
 
-int bco_find_int(bcout_t *bco, int i);
-int bco_find_str(bcout_t *bco, const char *str);
 
+/******************************************************************************/
+/* innner helper functions */
+uint32_t bco_find_int(bcout_t *bco, int i);
+uint32_t bco_find_str(bcout_t *bco, const char *str);
+void bco_debug(const char *format, va_list ap);
 /******************************************************************************/
 
 extern bcout_t *bcout_g;
