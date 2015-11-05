@@ -12,7 +12,7 @@ enum DruhId {
 };
 
 enum Scope {
-	SC_GLOBAL, // Only class names are global - you can globally reference a static class member
+	//SC_GLOBAL, // Only class names are global - you can globally reference a static class member
 	SC_LOCAL,
 	SC_ARG,
 	SC_INSTANCE, // instance variable

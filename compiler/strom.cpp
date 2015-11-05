@@ -489,15 +489,40 @@ Node *ClassList::Optimize() {
 
 // definice metody Translate
 
-uint32_t Var::Translate() { // TODO
-	Gener(LDC, addr);
-	if(offset){
-		offset->Translate();
-		Gener(BOP, Plus); // TODO: IDX instr. instead of BOP
+uint32_t Var::Translate() {
+	switch (sc) {
+	case SC_LOCAL:
+		//bco_ww1(bcout_g, PUSH_LOC, addr); // TODO: uncomment
+		break;
+	case SC_ARG:
+		//bco_ww1(bcout_g, PUSH_ARG, addr); // TODO: uncomment
+		break;
+	case SC_INSTANCE:
+		if (external) {
+			//uint32_t iv_name_idx = bco_sym(bcout_g, name); // TODO: uncomment
+			//bco_ww1(bcout_g, PUSH_IVE, iv_name_idx); // TODO: uncomment
+		}
+		else {
+			//bco_ww1(bcout_g, PUSH_IV, addr); // TODO: uncomment
+		}
+		break;
+	case SC_CLASS:
+		if (external) {
+			//bco_ww1(bcout_g, PUSH_CVE, addr); // TODO: uncomment
+		}
+		else {
+			//bco_ww1(bcout_g, PUSH_CV, addr); // TODO: uncomment
+		}
+		break;
 	}
 
-	if (rvalue)
-		Gener(LD); // TODO: Consider different scopes and type of ref (internal/external)
+	if(offset){
+		offset->Translate();
+		//bco_w0(bcout_g, IDX); // TODO: uncomment
+	}
+
+	/*if (rvalue)  // No dereference needed. We always work with pointers to objects.
+		Gener(LD); */
 
 	return 0;
 }
@@ -513,16 +538,30 @@ uint32_t ArgList::Translate() {
 }
 
 uint32_t Call::Translate() {
+	uint32_t mth_idx;
+	int arg_count = args ? args->Count() : 0;
+
 	if (args) {
 		args->Translate(); // Puts arguments on the stack
 	}
-	method->Translate(); // Puts classref, objref (for CALLE) or nothing on the stack
+	mth_idx = method->Translate(); // Puts classref, objref (for CALLE) or nothing on the stack
+
+	if (dynamic_cast<ParentRef*>(method)) {
+		//bco_ww2(bcout_g, CALLS, (uint16_t)mth_idx, (uint16_t)arg_count); //TODO: uncomment
+	}
+	else if (external) {
+		//bco_ww2(bcout_g, CALLE, (uint16_t)mth_idx, (uint16_t)arg_count); //TODO: uncomment
+	}
+	else {
+		//bco_ww2(bcout_g, CALL, (uint16_t)mth_idx, (uint16_t)arg_count); //TODO: uncomment
+	}
 
 	return 0;
 }
 
 uint32_t ClassRef::Translate() {
-	// TODO: create const symbol from ref name and generate PUSH_CV or PUSH_CVE
+	//uint32_t sym_idx = bco_sym(bcout_g, name); //TODO: uncomment
+	//bco_ww1(bcout_g, CLASSREF, (uint16_t)sym_idx); //TODO: uncomment
 
 	return target->Translate();
 }
@@ -532,32 +571,63 @@ uint32_t ObjRef::Translate() {
 	return target->Translate();
 }
 
+uint32_t SelfRef::Translate() {
+	//bco_w0(bcout_g, PUSH_SELF); //TODO: uncomment
+	return 0;
+}
+
+uint32_t ParentRef::Translate() {
+	return target->Translate();
+}
+
+uint32_t MethodRef::Translate() {
+	//return bco_sym(bcout_g, name); //TODO: uncomment
+}
+
+uint32_t New::Translate() {
+	uint32_t cons_idx = constructor->Translate();
+	//bco_ww1(bcout_g, NEW, cons_idx); //TODO: uncomment
+	return 0;
+}
+
 uint32_t Numb::Translate() {
-	Gener(LDC, value);
-	// TODO: create int object in constant table
-	// Gener PUSH_C
+	//uint32_t num_idx = bco_int(bcout_g, value); TODO: uncomment
+	//bco_ww1(bcout_g, PUSH_C, num_idx); // TODO: optimize?
+
+	return 0;
+}
+
+uint32_t String::Translate() {
+	//uint32_t str_idx = bco_str(bcout_g, value); TODO: uncomment
+	//bco_ww1(bcout_g, PUSH_C, str_idx); TODO: uncomment
+
+	return 0;
 }
 
 uint32_t Bop::Translate() {
 	left->Translate();
 	right->Translate();
 	Gener(BOP, op);
+	return 0;
 }
 
 uint32_t UnMinus::Translate() {
 	expr->Translate();
 	Gener(UNM);
+	return 0;
 }
 
 uint32_t Not::Translate() {
 	expr->Translate();
 	Gener(NOT);
+	return 0;
 }
 
 uint32_t Assign::Translate() {
 	var->Translate();
 	expr->Translate();
 	Gener(ST);
+	return 0;
 }
 
 uint32_t AssignWithBop::Translate() {
@@ -567,16 +637,19 @@ uint32_t AssignWithBop::Translate() {
 	expr->Translate();
 	Gener(BOP, op);
 	Gener(ST);
+	return 0;
 }
 
 uint32_t Write::Translate() {
 	expr->Translate();
 	Gener(WRT);
+	return 0;
 }
 
 uint32_t Read::Translate() {
 	var->Translate();
 	Gener(RD);
+	return 0;
 }
 
 uint32_t If::Translate() {
@@ -590,6 +663,8 @@ uint32_t If::Translate() {
 		PutIC(a2);
 	} else
 		PutIC(a1);
+
+	return 0;
 }
 
 uint32_t While::Translate() {
@@ -604,6 +679,8 @@ uint32_t While::Translate() {
 	Gener(JU, a1);
 	resolveBreak(b1, b2);
 	PutIC(a2);
+
+	return 0;
 }
 
 uint32_t For::Translate() {
@@ -621,6 +698,8 @@ uint32_t For::Translate() {
 	Gener(JU, a1);
 	resolveBreak(b1, b2);
 	PutIC(a2);
+
+	return 0;
 }
 
 uint32_t StatmList::Translate() {
@@ -629,21 +708,26 @@ uint32_t StatmList::Translate() {
 		s->statm->Translate();
 		s = s->next;
 	} while (s);
+
+	return 0;
 }
 
 uint32_t Break::Translate() {
 	Gener(JU, 0, UBRK);
+	return 0;
 }
 
 uint32_t Prog::Translate() {
 	lst->Translate();
 	Gener(STOP);
+	return 0;
 }
 
 uint32_t Class::Translate() {
 	if (stm) {
 		stm->Translate();
 	}
+	return 0;
 }
 
 uint32_t ClassList::Translate() {
@@ -652,16 +736,19 @@ uint32_t ClassList::Translate() {
 		lst->cls->Translate();
 		lst = lst->next;
 	} while (lst);
+	return 0;
 }
 
 uint32_t Method::Translate() {
 	 // TODO
 	body->Translate();
+	return 0;
 }
 
 uint32_t Return::Translate() {
 	expr->Translate();
-	// TODO: implement
+	//bco_w0(bcout_g, RET); // TODO: uncomment
+	return 0;
 }
 
 CaseBlockScope::CaseBlockScope(CaseBlockScope *next_) {
@@ -719,6 +806,8 @@ uint32_t CaseBlock::Translate() {
 		this->statmList->Translate();
 	} else {
 	}
+
+	return 0;
 }
 
 Case::Case(Expr *expr_, CaseBlock *caseBlock_) {
@@ -913,6 +1002,8 @@ uint32_t Case::Translate() {
 	for (int i = 0; i < fjp; i = i + 1) {
 		PutIC(finalJumps[i]);
 	}
+
+	return 0;
 }
 
 /******************************************************************************/

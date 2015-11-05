@@ -28,6 +28,7 @@ class Statm: public Expr {
 };
 
 class Var: public Expr {
+protected:
 	char * name;
 	int addr;
 	Expr * offset;
@@ -88,7 +89,7 @@ public:
 class SelfRef: public Var {
 public:
 	SelfRef(bool);
-	virtual uint32_t Translate(){} // TODO: implement
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -96,7 +97,7 @@ class ParentRef: public Var {
 	Expr * target;
 public:
 	ParentRef(bool, Expr *);
-	virtual uint32_t Translate(){} // TODO: implement
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -105,7 +106,7 @@ class MethodRef: public Expr {
 public:
 	MethodRef(char *);
 	virtual ~MethodRef();
-	virtual uint32_t Translate(){} // TODO: implement
+	virtual uint32_t Translate(); // returns index of the function name in constant table
 	virtual void Print(int);
 };
 
@@ -115,7 +116,7 @@ class New: public Expr {
 public:
 	New(MethodRef *, ArgList *);
 	virtual ~New();
-	virtual uint32_t Translate(){} // TODO: implement
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -133,7 +134,7 @@ class String: public Const {
 public:
 	String(const char *);
 	virtual ~String();
-	virtual uint32_t Translate(){} // TODO: implement
+	virtual uint32_t Translate();
 	virtual void Print(int);
 };
 
@@ -266,8 +267,7 @@ public:
 };
 
 class Empty: public Statm {
-	virtual uint32_t Translate() {
-	}
+	virtual uint32_t Translate() { return 0; }
 	virtual void Print(int);
 };
 

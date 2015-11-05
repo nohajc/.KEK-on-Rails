@@ -403,7 +403,7 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	{
 		Symb = readLexem();
 		*cond = new Bop(op, VarOrConst(id, offset, env), Vyraz(env));
-		//*counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset, env), new Numb(1)));
+		// *counter = new Assign(new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Bop(op_c, VarOrConst(id, offset, env), new Numb(1)));
 		*counter = new AssignWithBop(op_c, new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false), new Numb(1));
 		Srovnani(RPAR);
 		break;

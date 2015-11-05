@@ -1,6 +1,6 @@
 class Prime {
 	static const n = 100, sqrtn = 10
-	var i, j, isprime = []
+	var i, j, isprime
 
 	prepare() {
 		//for (i = 2 to n) isprime[i] = 1
@@ -20,6 +20,7 @@ class Prime {
 	}
 
 	Prime() {
+		isprime = []
 		//prepare((i + j) / 2, n, prepare())
 		prepare()
 		/*

@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
 	prog->Translate();
 	Print();
-	Run();
+	//Run();
 	printf("Konec\n");
 	closeInput();
 	delete prog;
