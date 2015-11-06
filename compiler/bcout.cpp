@@ -95,6 +95,9 @@ bcout_t *bcout_init() {
 			bco->items_size * sizeof(constant_item_t *));
 	assert(bco->items);
 
+	/* Create constant singletons */
+	bco_nil(bco);
+
 	return (bco);
 }
 

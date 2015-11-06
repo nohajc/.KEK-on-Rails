@@ -601,6 +601,13 @@ uint32_t String::Translate() {
 	return 0;
 }
 
+uint32_t Nil::Translate() {
+	uint32_t nil_idx = bco_nil(bcout_g);
+	bco_ww1(bcout_g, PUSH_C, nil_idx);
+
+	return 0;
+}
+
 uint32_t Bop::Translate() {
 	left->Translate();
 	right->Translate();
@@ -744,12 +751,7 @@ uint32_t Method::Translate() {
 }
 
 uint32_t Return::Translate() {
-	if (expr) {
-		expr->Translate();
-	}
-	else {
-		//bco_ww1(bcout_g, PUSH_C, bco_nil(bcout_g)); //TODO: uncomment
-	}
+	expr->Translate();
 	bco_w0(bcout_g, RET);
 	return 0;
 }
@@ -1115,6 +1117,10 @@ void Numb::Print(int ident) {
 
 void String::Print(int ident) {
 	printfi(ident, "String [value=\"%s\"]\n", this->value);
+}
+
+void Nil::Print(int ident) {
+	printfi(ident, "Nil\n");
 }
 
 void Bop::Print(int ident) {

@@ -9,11 +9,13 @@ unlet b:current_syntax
 syn keyword kekIdentifier	var
 syn keyword kekTypedef		super this
 syn keyword kekStatement	read write
+syn keyword kekConstant		nil
 
 " Default highlighting
 
 hi def link kekIdentifier	Identifier
 hi def link kekTypedef		Typedef
 hi def link kekStatement	Statement
+hi def link kekConstant		Constant
 
 let b:current_syntax = "kek"

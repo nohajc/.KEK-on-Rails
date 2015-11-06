@@ -138,6 +138,11 @@ public:
 	virtual void Print(int);
 };
 
+class Nil: public Const {
+	virtual uint32_t Translate();
+	virtual void Print(int);
+};
+
 class Bop: public Expr {
 	Operator op;
 	Expr *left, *right;
