@@ -221,7 +221,7 @@ void bcout_items_add(bcout_t *bco, constant_item_t *i) {
 void *ct_malloc(bcout_t *bco, size_t obj_size) {
 	void *ptr; /* pointer to the beginning of the allocated data */
 
-	ptr = bco->const_table + bco->bc_arr_cnt;
+	ptr = bco->const_table + bco->const_table_cnt;
 
 	if (bco->const_table_size <= bco->const_table_cnt + obj_size) {
 		bco->const_table_size *= 2;
