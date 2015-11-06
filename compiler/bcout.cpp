@@ -13,17 +13,38 @@ bcout_t *bcout_g;
 
 void bco_debug(const char *format, ...) {
 	va_list args;
-	fprintf(stderr, "bco: ");
+	//fprintf(stderr, "bco: ");
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 	fflush(stderr);
+}
+
+void bco_print_const(bcout_t *bco, uint8_t idx) {
+	constant_item_t* item = (constant_item_t*) (bco->const_table + idx);
+	switch (item->type) {
+	case KEK_NIL:
+		bco_debug("nil");
+		break;
+	case KEK_INT:
+		bco_debug("%d", item->ci.value);
+		break;
+	case KEK_STR:
+		bco_debug("\"%s\"", item->cs.string);
+		break;
+	case KEK_SYM:
+		bco_debug("%s", item->cs.string);
+		break;
+	}
 }
 
 #else
 
 void bco_debug(const char *format, ...) {
+}
+
+void bco_print_const(bcout_t *bco, uint8_t idx) {
 }
 
 #endif
@@ -163,7 +184,7 @@ uint32_t bco_w32(bcout_t *bco, uint32_t uint32) {
 uint32_t bco_w0(bcout_t *bco, bc_t bc) {
 	uint32_t ip = bco_w8(bco, bc);
 
-	bco_debug("%3d: %s", ip, op_str[bc]);
+	bco_debug("%3d: %s\n", ip, op_str[bc]);
 	return (ip);
 }
 
@@ -173,7 +194,10 @@ uint32_t bco_wb1(bcout_t *bco, bc_t bc, uint8_t arg) {
 	ip = bco_w8(bco, bc);
 	(void) bco_w8(bco, arg);
 
-	bco_debug("%3d: %s %u", ip, op_str[bc], arg);
+	bco_debug("%3d: %s %u ", ip, op_str[bc], arg);
+	bco_debug("(");
+	bco_print_const(bco, arg);
+	bco_debug(")\n");
 	return (ip);
 }
 
@@ -183,7 +207,10 @@ uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg) {
 	ip = bco_w8(bco, bc);
 	(void) bco_w16(bco, arg);
 
-	bco_debug("%3d: %s %u", ip, op_str[bc], arg);
+	bco_debug("%3d: %s %u ", ip, op_str[bc], arg);
+	bco_debug("(");
+	bco_print_const(bco, arg);
+	bco_debug(")\n");
 	return (ip);
 }
 
@@ -193,7 +220,10 @@ uint32_t bco_ww1_labeled(bcout_t *bco, bc_t bc, uint16_t arg, label_t lab){
 	ip = bco_w8_labeled(bco, bc, lab);
 	(void) bco_w16(bco, arg);
 
-	bco_debug("%3d: %s %u", ip, op_str[bc], arg);
+	bco_debug("%3d: %s %u ", ip, op_str[bc], arg);
+	bco_debug("(");
+	bco_print_const(bco, arg);
+	bco_debug(")\n");
 	return (ip);
 }
 
@@ -204,7 +234,12 @@ uint32_t bco_ww2(bcout_t *bco, bc_t bc, uint16_t arg0, uint16_t arg1) {
 	(void) bco_w16(bco, arg0);
 	(void) bco_w16(bco, arg1);
 
-	bco_debug("%3d: %s %u %u", ip, op_str[bc], arg0, arg1);
+	bco_debug("%3d: %s %u %u ", ip, op_str[bc], arg0, arg1);
+	bco_debug("(");
+	bco_print_const(bco, arg0);
+	bco_debug(" ");
+	bco_print_const(bco, arg1);
+	bco_debug(")\n");
 	return (ip);
 }
 
