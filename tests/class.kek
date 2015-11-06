@@ -31,7 +31,7 @@ class Test: Object {
 	}*/
 
 	method1(a, b) {
-		super.method1()
+		var obj = super.method1()
 		return a + b
 	}
 

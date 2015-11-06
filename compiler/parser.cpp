@@ -976,6 +976,7 @@ Expr * Faktor(Env env) {
 	switch (Symb.type) {
 	case IDENT:
 	case kwTHIS:
+	case kwSUPER:
 		//char id[MAX_IDENT_LEN];
 		/*Srovnani_IDENT(id);
 		offset = ArrayOffset(env, id);
