@@ -13,7 +13,7 @@ OBJS=\
 scheme: $(OBJS)
 	$(CXX) -o main $(OBJS)
 
-$(OBJS): lexan.h parser.h strom.h tabsym.h vstup.h
+$(OBJS): lexan.h parser.h strom.h tabsym.h vstup.h bcout.h
 
 clean:
 	rm $(OBJS)

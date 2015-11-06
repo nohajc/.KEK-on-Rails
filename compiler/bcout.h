@@ -47,6 +47,7 @@ typedef enum _label {
 } label_t;
 
 typedef enum _bc {
+	UNDEF,
 	BOP, /**/
 	UNM, /**/
 	LD, /* load */
@@ -93,6 +94,8 @@ typedef enum _bc {
 	NEW /* arg: index to constant table.
 	        creates a new object and returns its address */
 } bc_t;
+
+extern const char *op_str[];
 
 typedef enum _constant_type {
 	INT, STRING, SYMBOL, ARR

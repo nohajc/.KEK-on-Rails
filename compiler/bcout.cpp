@@ -23,11 +23,49 @@ void bco_debug(const char *format, ...) {
 
 #else
 
-void bco_debug(const char *format, va_list ap) {
+void bco_debug(const char *format, ...) {
 }
 
 #endif
 /******************************************************************************/
+
+const char *op_str[] = {
+	"UNDEF",
+	"BOP",
+	"UNM",
+	"LD",
+	"ST",
+	"IFNJ",
+	"JU",
+	"WRT",
+	"RD",
+	"DUP",
+	"SWAP",
+	"NOT",
+	"STOP",
+	"RET",
+	"CALL",
+	"CALLS",
+	"CALLE",
+	"PUSH_C",
+	"PUSH_ARG",
+	"PUSH_LOC",
+	"PUSH_IV",
+	"PUSH_CV",
+	"PUSH_IVE",
+	"PUSH_CVE",
+	"PUSH_SELF",
+	"CLASSREF",
+	"PUSHA_ARG",
+	"PUSHA_LOC",
+	"PUSHA_IV",
+	"PUSHA_CV",
+	"PUSHA_IVE",
+	"PUSHA_CVE",
+	"IDX",
+	"IDXA",
+	"NEW"
+};
 
 bcout_t *bcout_init() {
 	bcout_t *bco;
@@ -120,7 +158,10 @@ uint32_t bco_w32(bcout_t *bco, uint32_t uint32) {
 
 /* FIXME: the name of this method is probably not good */
 uint32_t bco_w0(bcout_t *bco, bc_t bc) {
-	return (bco_w8(bco, bc));
+	uint32_t ip = bco_w8(bco, bc);
+
+	bco_debug("%3d: %s", ip, op_str[bc]);
+	return (ip);
 }
 
 uint32_t bco_wb1(bcout_t *bco, bc_t bc, uint8_t arg) {
@@ -128,6 +169,8 @@ uint32_t bco_wb1(bcout_t *bco, bc_t bc, uint8_t arg) {
 
 	ip = bco_w8(bco, bc);
 	(void) bco_w8(bco, arg);
+
+	bco_debug("%3d: %s %u", ip, op_str[bc], arg);
 	return (ip);
 }
 
@@ -136,6 +179,8 @@ uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg) {
 
 	ip = bco_w8(bco, bc);
 	(void) bco_w16(bco, arg);
+
+	bco_debug("%3d: %s %u", ip, op_str[bc], arg);
 	return (ip);
 }
 
@@ -144,6 +189,8 @@ uint32_t bco_ww1_labeled(bcout_t *bco, bc_t bc, uint16_t arg, label_t lab){
 
 	ip = bco_w8_labeled(bco, bc, lab);
 	(void) bco_w16(bco, arg);
+
+	bco_debug("%3d: %s %u", ip, op_str[bc], arg);
 	return (ip);
 }
 
@@ -153,6 +200,8 @@ uint32_t bco_ww2(bcout_t *bco, bc_t bc, uint16_t arg0, uint16_t arg1) {
 	ip = bco_w8(bco, bc);
 	(void) bco_w16(bco, arg0);
 	(void) bco_w16(bco, arg1);
+
+	bco_debug("%3d: %s %u %u", ip, op_str[bc], arg0, arg1);
 	return (ip);
 }
 
@@ -181,7 +230,7 @@ void *ct_malloc(bcout_t *bco, size_t obj_size) {
 		assert(bco->const_table);
 	}
 
-	bco->bc_arr_cnt += obj_size;
+	bco->const_table_cnt += obj_size;
 
 	return (ptr);
 }
