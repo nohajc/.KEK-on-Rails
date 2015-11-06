@@ -8,7 +8,7 @@ unlet b:current_syntax
 " .KEK extensions
 syn keyword kekIdentifier	var
 syn keyword kekTypedef		super this
-syn keyword kekStatement   read write
+syn keyword kekStatement	read write
 
 " Default highlighting
 
