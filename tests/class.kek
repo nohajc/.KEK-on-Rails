@@ -11,7 +11,7 @@ class Object {
 		method1()
 		a = 2
 		//this.a = 42 // does not compile
-		return
+		return nil
 	}
 };
 

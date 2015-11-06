@@ -369,6 +369,7 @@ Statm * Metoda(Env env, bool isStatic) {
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {
 	Srovnani(LCURLY);
+	skipNewlines();
 	Statm *p = Prikaz(env, ctxt);
 	StatmList *su = new StatmList(p, ZbPrikazu(env, ctxt));
 	Srovnani(RCURLY);
@@ -380,8 +381,10 @@ StatmList * ZbPrikazu(Env env, Context ctxt) {
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
 		}
-		Statm *p = Prikaz(env, ctxt);
-		return new StatmList(p, ZbPrikazu(env, ctxt));
+		if (Symb.type != RCURLY) {
+			Statm *p = Prikaz(env, ctxt);
+			return new StatmList(p, ZbPrikazu(env, ctxt));
+		}
 	}
 	return 0;
 }
@@ -702,7 +705,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Symb = readLexem();
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
-			return new Return(new Empty);
+			return new Return(NULL);
 		}
 		return new Return(Vyraz(env));
 	case kwTHIS:

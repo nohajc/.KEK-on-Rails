@@ -744,7 +744,12 @@ uint32_t Method::Translate() {
 }
 
 uint32_t Return::Translate() {
-	expr->Translate();
+	if (expr) {
+		expr->Translate();
+	}
+	else {
+		//bco_ww1(bcout_g, PUSH_C, bco_nil(bcout_g)); //TODO: uncomment
+	}
 	bco_w0(bcout_g, RET);
 	return 0;
 }

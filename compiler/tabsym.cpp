@@ -34,7 +34,7 @@ PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, int v, PrvekTab *n) {
 	druh = d; addr = a; dalsi = n;
 	sc = s;
 	val.num = v;
-	//const_ptr = bco_int(bcout_g, v); TODO: uncomment
+	const_ptr = bco_int(bcout_g, v);
 }
 
 PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, const char * v, PrvekTab *n) {
@@ -44,7 +44,7 @@ PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, const char * v, PrvekTab *
 	sc = s;
 	val.str = new char[strlen(v)+1];
 	strcpy(val.str, v);
-	//const_ptr = bco_str(bcout_g, v); TODO: uncomment
+	const_ptr = bco_str(bcout_g, v);
 }
 
 /*PrvekTab::PrvekTab(char *i, DruhId d, int h, int f, int l, PrvekTab *n){
