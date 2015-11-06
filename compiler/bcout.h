@@ -14,8 +14,39 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
+enum Operator {
+	Plus,
+	Minus,
+	Times,
+	Divide,
+	Modulo,
+	Eq,
+	NotEq,
+	Less,
+	Greater,
+	LessOrEq,
+	GreaterOrEq,
+	LogOr,
+	LogAnd,
+	BitOr,
+	BitAnd,
+	Xor,
+	Lsh,
+	Rsh,
+	Error
+};
+
+/*
+Extra instruction info:
+	NIL - no special meaning
+	BRK - break
+*/
+typedef enum _label {
+	NIL, BRK
+} label_t;
+
 typedef enum _bc {
-	LDC, /* arg: number, load constant (f.ex. a number) */
 	BOP, /**/
 	UNM, /**/
 	LD, /* load */
@@ -46,8 +77,18 @@ typedef enum _bc {
 	PUSH_SELF, /* push self class reference */
 	CLASSREF,
 
-	IDX, /* return an item on the index. args: none. takes obj pointer
+	// When storing new obj ref into a variable, we need its address on stack
+	PUSHA_ARG, /* arg: index */
+	PUSHA_LOC, /* arg: index to local variable table */
+	PUSHA_IV, /* push instance variable, arg: index */
+	PUSHA_CV, /* push class variable, arg: index */
+	PUSHA_IVE, /* iv external. push instance variable, arg: index */
+	PUSHA_CVE, /* cv external. push class variable, arg: index */
+
+	IDX, /* return an item at the index. args: none. takes obj pointer
 	and the index from the stack */
+
+	IDXA, /* return address of an item at index */
 
 	NEW /* arg: index to constant table.
 	        creates a new object and returns its address */
@@ -79,6 +120,7 @@ typedef struct _bcout {
 	size_t bc_arr_cnt;
 	size_t bc_arr_size;
 	uint8_t *bc_arr; /* bytecode array */
+	uint8_t *bc_lab; /* bytecode labels - for internal use only, won't be saved in the binary */
 
 	size_t const_table_cnt;
 	size_t const_table_size;
@@ -112,11 +154,12 @@ uint32_t bco_wb2(bcout_t *bco, bc_t bc, uint8_t arg0, uint8_t arg1);
 
 /* bco write (args: word) */
 uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg);
+uint32_t bco_ww1_labeled(bcout_t *bco, bc_t bc, uint16_t arg, label_t lab);
 uint32_t bco_ww2(bcout_t *bco, bc_t bc, uint16_t arg0, uint16_t arg1);
 
 /* bco write (args: double word) */
 uint32_t bco_wd1(bcout_t *bco, bc_t bc, uint32_t arg);
-uint32_t bco_wd2(bcout_t *bco, bc_t bc, uint32_t arg0, uint32_t);
+uint32_t bco_wd2(bcout_t *bco, bc_t bc, uint32_t arg0, uint32_t arg1);
 
 /* save a constant and get its offset */
 uint32_t bco_int(bcout_t *bco, int v);
@@ -127,6 +170,7 @@ uint32_t bco_arr(bcout_t *bco, constant_item_t *arr);
 /* helper functions */
 size_t bco_get_ip(bcout_t *bco);
 void bco_fix_forward_jmpw(bcout_t *bco, size_t idx);
+void bco_resolve_break(bcout_t *bco, size_t a1, size_t a2);
 
 /******************************************************************************/
 /* innner helper functions */

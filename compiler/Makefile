@@ -9,12 +9,11 @@ OBJS=\
 	strom.o \
 	tabsym.o \
 	vstup.o \
-	zaspoc.o
 
 scheme: $(OBJS)
 	$(CXX) -o main $(OBJS)
 
-$(OBJS): lexan.h parser.h strom.h tabsym.h vstup.h zaspoc.h
+$(OBJS): lexan.h parser.h strom.h tabsym.h vstup.h
 
 clean:
 	rm $(OBJS)

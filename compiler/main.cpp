@@ -4,7 +4,6 @@
 #include "lexan.h"
 #include "parser.h"
 #include "strom.h"
-#include "zaspoc.h"
 #include "bcout.h"
 #include <stdio.h>
 
@@ -39,7 +38,7 @@ int main(int argc, char *argv[]) {
 	prog = (Prog*) (prog->Optimize());
 
 	prog->Translate();
-	Print();
+	//Print();
 	//Run();
 	printf("Konec\n");
 	closeInput();

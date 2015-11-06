@@ -492,37 +492,33 @@ Node *ClassList::Optimize() {
 uint32_t Var::Translate() {
 	switch (sc) {
 	case SC_LOCAL:
-		bco_ww1(bcout_g, PUSH_LOC, addr);
+		bco_ww1(bcout_g, (rvalue || offset ? PUSH_LOC : PUSHA_LOC), addr);
 		break;
 	case SC_ARG:
-		bco_ww1(bcout_g, PUSH_ARG, addr);
+		bco_ww1(bcout_g, (rvalue || offset ? PUSH_ARG : PUSHA_ARG), addr);
 		break;
 	case SC_INSTANCE:
 		if (external) {
 			uint32_t iv_name_idx = bco_sym(bcout_g, name);
-			bco_ww1(bcout_g, PUSH_IVE, iv_name_idx);
+			bco_ww1(bcout_g, (rvalue || offset ? PUSH_IVE : PUSHA_IVE), iv_name_idx);
 		}
 		else {
-			bco_ww1(bcout_g, PUSH_IV, addr);
+			bco_ww1(bcout_g, (rvalue || offset ? PUSH_IV : PUSHA_IV), addr);
 		}
 		break;
 	case SC_CLASS:
 		if (external) {
-			bco_ww1(bcout_g, PUSH_CVE, addr);
+			bco_ww1(bcout_g, (rvalue || offset ? PUSH_CVE : PUSHA_CVE), addr);
 		}
 		else {
-			bco_ww1(bcout_g, PUSH_CV, addr);
+			bco_ww1(bcout_g, (rvalue || offset ? PUSH_CV : PUSHA_CV), addr);
 		}
 		break;
 	}
 
 	if(offset){
 		offset->Translate();
-		bco_w0(bcout_g, IDX);
-	}
-
-	if (rvalue) { // Dereference
-		bco_w0(bcout_g, LD);
+		bco_w0(bcout_g, (rvalue ? IDX : IDXA));
 	}
 
 	return 0;
@@ -680,7 +676,7 @@ uint32_t While::Translate() {
 	int b2 = bco_get_ip(bcout_g);
 	
 	bco_ww1(bcout_g, JU, a1);
-	//resolveBreak(b1, b2); TODO
+	bco_resolve_break(bcout_g, b1, b2);
 	bco_fix_forward_jmpw(bcout_g, a2);
 
 	return 0;
@@ -699,7 +695,7 @@ uint32_t For::Translate() {
 	counter->Translate();
 
 	bco_ww1(bcout_g, JU, a1);
-	//resolveBreak(b1, b2); TODO
+	bco_resolve_break(bcout_g, b1, b2);
 	bco_fix_forward_jmpw(bcout_g, a2);
 
 	return 0;
@@ -716,7 +712,7 @@ uint32_t StatmList::Translate() {
 }
 
 uint32_t Break::Translate() {
-	Gener(JU, 0, UBRK);
+	bco_ww1_labeled(bcout_g, JU, 0, BRK);
 	return 0;
 }
 

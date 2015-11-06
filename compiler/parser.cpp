@@ -489,7 +489,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.clsEnv = env.clsEnv->parent;
-			return new ParentRef(rvalue, ZbIdent(env, rvalue, external));
+			return new ParentRef(true, ZbIdent(env, rvalue, external));
 		}
 		if (Symb.type == LPAR) {
 			external = !env.self;
@@ -519,7 +519,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 			env.self = false;
 			env.clsEnv = CLASS_ANY;
 			env.mthEnv = NULL;
-			return new ObjRef(p, offset, rvalue, !curr_self, ZbIdent(env, rvalue, external));
+			return new ObjRef(p, offset, true, !curr_self, ZbIdent(env, rvalue, external));
 		}
 
 		if (!env.mthEnv) {
@@ -534,7 +534,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 			env.self = false;
 			env.clsEnv = c;
 			env.mthEnv = NULL;
-			return new ClassRef(id, rvalue, ZbIdent(env, rvalue, external));
+			return new ClassRef(id, true, ZbIdent(env, rvalue, external));
 		}
 		Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;

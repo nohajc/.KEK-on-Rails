@@ -3,8 +3,8 @@
 #ifndef _STROM_
 #define _STROM_
 
-#include "zaspoc.h"
 #include "tabsym.h"
+#include "bcout.h"
 #include <stdint.h>
 
 class Node {

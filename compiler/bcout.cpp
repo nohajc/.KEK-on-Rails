@@ -40,6 +40,8 @@ bcout_t *bcout_init() {
 	bco->bc_arr_cnt = 0;
 	bco->bc_arr = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
 	assert(bco->bc_arr);
+	bco->bc_lab = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
+	assert(bco->bc_lab);
 
 	/* alocate array for bytecode */
 	bco->const_table_size = 4096;
@@ -73,13 +75,26 @@ void bc_arr_realloc(bcout_t *bco, size_t size) {
 		bco->bc_arr = (uint8_t *) realloc(bco->bc_arr,
 				bco->bc_arr_size * sizeof(uint8_t *));
 		assert(bco->bc_arr);
+		bco->bc_lab = (uint8_t *) realloc(bco->bc_lab,
+				bco->bc_arr_size * sizeof(uint8_t *));
+		assert(bco->bc_lab);
 	}
 }
 
 /* write an uint8 to the bc_arr */
 uint32_t bco_w8(bcout_t *bco, uint8_t uint8) {
 	bc_arr_realloc(bco, sizeof(uint8_t));
+	bco->bc_lab[bco->bc_arr_cnt] = NIL;
 	bco->bc_arr[bco->bc_arr_cnt++] = uint8;
+
+	return (bco->bc_arr_cnt - 1);
+}
+
+uint32_t bco_w8_labeled(bcout_t *bco, uint8_t uint8, label_t lab) {
+	bc_arr_realloc(bco, sizeof(uint8_t));
+	bco->bc_lab[bco->bc_arr_cnt] = lab;
+	bco->bc_arr[bco->bc_arr_cnt++] = uint8;
+
 	return (bco->bc_arr_cnt - 1);
 }
 
@@ -87,6 +102,7 @@ uint32_t bco_w8(bcout_t *bco, uint8_t uint8) {
 uint32_t bco_w16(bcout_t *bco, uint16_t uint16) {
 	bc_arr_realloc(bco, sizeof(uint16_t));
 
+	*(uint16_t*) &bco->bc_lab[bco->bc_arr_cnt] = NIL;
 	*(uint16_t*) &bco->bc_arr[bco->bc_arr_cnt] = uint16;
 	bco->bc_arr_cnt += 2;
 	return (bco->bc_arr_cnt - 2);
@@ -96,6 +112,7 @@ uint32_t bco_w16(bcout_t *bco, uint16_t uint16) {
 uint32_t bco_w32(bcout_t *bco, uint32_t uint32) {
 	bc_arr_realloc(bco, sizeof(uint32_t));
 
+	*(uint32_t*) &bco->bc_lab[bco->bc_arr_cnt] = NIL;
 	*(uint32_t*) &bco->bc_arr[bco->bc_arr_cnt] = uint32;
 	bco->bc_arr_cnt += 4;
 	return (bco->bc_arr_cnt - 4);
@@ -118,6 +135,14 @@ uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg) {
 	uint32_t ip;
 
 	ip = bco_w8(bco, bc);
+	(void) bco_w16(bco, arg);
+	return (ip);
+}
+
+uint32_t bco_ww1_labeled(bcout_t *bco, bc_t bc, uint16_t arg, label_t lab){
+	uint32_t ip;
+
+	ip = bco_w8_labeled(bco, bc, lab);
 	(void) bco_w16(bco, arg);
 	return (ip);
 }
@@ -242,6 +267,14 @@ void bco_fix_forward_jmpw(bcout_t *bco, size_t idx) {
 	*(uint16_t*) &bco->bc_arr[idx + 1] = (uint16_t) idx;
 }
 
+void bco_resolve_break(bcout_t *bco, size_t a1, size_t a2) {
+	for (size_t i = a1; i < a2; ++i) {
+		if (bco->bc_lab[i] == BRK) {
+			bco_fix_forward_jmpw(bco, i);
+			bco->bc_lab[i] = NIL;
+		}
+	}
+}
 
 uint32_t bco_find_int(bcout_t *bco, int v) {
 	int i;
