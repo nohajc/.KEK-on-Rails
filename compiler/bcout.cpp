@@ -237,6 +237,17 @@ void *ct_malloc(bcout_t *bco, size_t obj_size) {
 
 /******************************************************************************/
 
+uint32_t bco_nil(bcout_t *bco) {
+	constant_nil_t *cn;
+
+	cn = (constant_nil_t *) ct_malloc(bco, sizeof(constant_nil_t));
+	cn->type = KEK_NIL;
+
+	bcout_items_add(bco, (constant_item_t *) cn);
+
+	return ((uint8_t *) cn - bco->const_table);
+}
+
 /* create an integer, save it into the constant table and create
  * a pointer in the items array
  * usage:
@@ -256,7 +267,7 @@ uint32_t bco_int(bcout_t *bco, int v) {
 	}
 
 	ci = (constant_int_t *) ct_malloc(bco, sizeof(constant_int_t));
-	ci->type = INT;
+	ci->type = KEK_INT;
 	ci->value = v;
 
 	bcout_items_add(bco, (constant_item_t *) ci);
@@ -277,7 +288,7 @@ uint32_t bco_str(bcout_t *bco, const char *str) {
 	len = strlen(str);
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
-	cs->type = STRING;
+	cs->type = KEK_STR;
 	cs->length = len;
 	strcpy(cs->string, str);
 
@@ -299,7 +310,7 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 	len = strlen(str);
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
-	cs->type = SYMBOL;
+	cs->type = KEK_SYM;
 	cs->length = len;
 	strcpy(cs->string, str);
 
@@ -329,7 +340,7 @@ uint32_t bco_find_int(bcout_t *bco, int v) {
 	int i;
 
 	for (i = 0; i < bco->items_cnt; i++) {
-		if (bco->items[i]->type == INT && bco->items[i]->ci.value == v) {
+		if (bco->items[i]->type == KEK_INT && bco->items[i]->ci.value == v) {
 			return ((uint8_t *) bco->items[i] - bco->const_table);
 		}
 	}
@@ -341,7 +352,7 @@ uint32_t bco_find_str(bcout_t *bco, const char *str) {
 	int i;
 
 	for (i = 0; i < bco->items_cnt; i++) {
-		if (bco->items[i]->type == STRING
+		if (bco->items[i]->type == KEK_STR
 				&& strcmp(bco->items[i]->cs.string, str) == 0) {
 			return ((uint8_t *) bco->items[i] - bco->const_table);
 		}
@@ -354,7 +365,7 @@ uint32_t bco_find_sym(bcout_t *bco, const char *str) {
 	int i;
 
 	for (i = 0; i < bco->items_cnt; i++) {
-		if (bco->items[i]->type == SYMBOL
+		if (bco->items[i]->type == KEK_SYM
 				&& strcmp(bco->items[i]->cs.string, str) == 0) {
 			return ((uint8_t *) bco->items[i] - bco->const_table);
 		}
