@@ -242,13 +242,21 @@ void *ct_malloc(bcout_t *bco, size_t obj_size) {
 
 uint32_t bco_nil(bcout_t *bco) {
 	constant_nil_t *cn;
+	static int singleton = 0;
+	static uint32_t ret;
 
-	cn = (constant_nil_t *) ct_malloc(bco, sizeof(constant_nil_t));
-	cn->type = KEK_NIL;
+	if (singleton) {
+		return (ret);
+	} else {
+		cn = (constant_nil_t *) ct_malloc(bco, sizeof(constant_nil_t));
+		cn->type = KEK_NIL;
+		ret = ((uint8_t *) cn - bco->const_table);
+		singleton = 1;
+	}
 
-	bcout_items_add(bco, (constant_item_t *) cn);
+	//bcout_items_add(bco, (constant_item_t *) cn);
 
-	return ((uint8_t *) cn - bco->const_table);
+	return (ret);
 }
 
 /* create an integer, save it into the constant table and create
