@@ -705,7 +705,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Symb = readLexem();
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
-			return new Return(new Nil());
+			return new Return(new Nil);
 		}
 		return new Return(Vyraz(env));
 	case kwTHIS:
@@ -994,7 +994,7 @@ Expr * Faktor(Env env) {
 		return new String(id);
 	case kwNIL:
 		Symb = readLexem();
-		return new Nil();
+		return new Nil;
 	case kwNEW:
 		Symb = readLexem();
 		return ConstructorCall(env);

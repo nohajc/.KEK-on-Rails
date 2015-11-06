@@ -746,6 +746,17 @@ uint32_t ClassList::Translate() {
 
 uint32_t Method::Translate() {
 	*bc_entrypoint = bco_get_ip(bcout_g);
+
+	StatmList *s = body;
+	while (s->next) {
+		s = s->next;
+	}
+
+	// Add implicit return if missing
+	if (!dynamic_cast<Return*>(s->statm)) {
+		s->next = new StatmList(new Return(new Nil), NULL);
+	}
+
 	body->Translate();
 	return 0;
 }
