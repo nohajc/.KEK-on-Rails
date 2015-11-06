@@ -71,16 +71,11 @@ Prog *Program() {
 }
 
 StatmList * Dekl(Env env, bool isStatic) {
-	StatmList * p, * d, * k;
 	switch (Symb.type) {
 	case kwVAR:
-		p = DeklProm(env, isStatic);
-		d = Dekl(env, isStatic);
-		return new StatmList(p, d);
+		return DeklProm(env, isStatic);
 	case kwCONST:
-		k = DeklKonst(env, isStatic);
-		d = Dekl(env, isStatic);
-		return new StatmList(k, d);
+		return DeklKonst(env, isStatic);;
 	default:
 		return new StatmList(new Empty, NULL);
 	}
