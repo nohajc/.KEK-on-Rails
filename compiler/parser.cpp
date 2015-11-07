@@ -273,7 +273,7 @@ Class * Trida() {
 
 	env.clsEnv = clsEnv;
 	env.mthEnv = NULL;
-	return new Class(SeznamMetod(env));
+	return new Class(id, SeznamMetod(env));
 }
 
 StatmList * SeznamMetod(Env env) {
@@ -338,10 +338,6 @@ Statm * Metoda(Env env, bool isStatic) {
 	if(env.clsEnv && !strcmp(mth_id, env.clsEnv->className)){
 		isConstructor = true;
 		//printf("Found constructor %s.\n", mth_id);
-	}
-
-	if(isConstructor && isStatic) {
-		Chyba("Konstruktor nesmi byt staticky.");
 	}
 
 	MethodEnv * mthEnv = deklMethod(mth_id, isConstructor, isStatic, env.clsEnv);
@@ -443,6 +439,10 @@ Expr *VarOrConst(char *id, Expr * offset, Env env)
 		Chyba("Prvek tridy musi byt staticky.");
 	}
 
+	if (env.self && env.mthEnv && env.mthEnv->isStatic && p->sc == SC_INSTANCE) {
+		Chyba("Nelze pristupovat k instancni promenne ze statickeho kontextu.");
+	}
+
 	if (!env.self) { // We can inline local constants only
 		return new Var(p, offset, true, true);
 	}
@@ -505,12 +505,16 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		p = hledejMember(id, env.clsEnv, env.mthEnv);
 
 		if (p) { // obj ref
-			if (!rvalue && p->druh != IdProm) {
+			/*if (!rvalue && p->druh != IdProm) {
 				Chyba("Na leve strane musi byt promenna.");
-			}
+			}*/
 
 			if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
 				Chyba("Prvek tridy musi byt staticky.");
+			}
+
+			if (env.self && env.mthEnv && env.mthEnv->isStatic && p->sc == SC_INSTANCE) {
+				Chyba("Nelze pristupovat k instancni promenne ze statickeho kontextu.");
 			}
 
 			curr_self = env.self;
@@ -557,6 +561,15 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		}
 
 		p = adrProm(id, env.clsEnv, env.mthEnv);
+
+		if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
+			Chyba("Prvek tridy musi byt staticky.");
+		}
+
+		if (env.self && env.mthEnv && env.mthEnv->isStatic && p->sc == SC_INSTANCE) {
+			Chyba("Nelze pristupovat k instancni promenne ze statickeho kontextu.");
+		}
+
 		if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
 			Chyba("Prvek tridy musi byt staticky.");
 		}
@@ -693,6 +706,8 @@ Statm * Prikaz(Env env, Context ctxt) {
 	skipNewlines();
 
 	switch (Symb.type) {
+	case kwSTATIC:
+		Chyba("Staticka promenna nemuze byt v metode.");
 	case kwVAR:
 	case kwCONST:
 		return Dekl(env, false);

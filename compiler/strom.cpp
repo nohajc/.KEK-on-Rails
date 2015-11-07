@@ -236,12 +236,15 @@ Prog::~Prog() {
 	symCleanup();
 }
 
-Class::Class(StatmList * s) {
+Class::Class(const char * n, StatmList * s) {
+	name = new char[strlen(n) + 1];
+	strcpy(name, n);
 	stm = s;
 }
 
 Class::~Class() {
 	delete stm;
+	delete [] name;
 }
 
 ClassList::ClassList(Class * c, ClassList * n) {
@@ -254,7 +257,7 @@ ClassList::~ClassList() {
 	delete next;
 }
 
-Method::Method(char * n, bool sttc, int nArgs, unsigned int * bc_ep, StatmList * b) {
+Method::Method(const char * n, bool sttc, int nArgs, unsigned int * bc_ep, StatmList * b) {
 	name = new char[strlen(n) + 1];
 	isStatic = sttc;
 	numArgs = nArgs;
@@ -1300,7 +1303,7 @@ void Prog::Print(int ident) {
 }
 
 void Class::Print(int ident) {
-	printfi(ident, "Class\n");
+	printfi(ident, "Class [name=%s]\n", name);
 
 	printfi(ident, "stm:\n");
 	if (this->stm) {
@@ -1322,7 +1325,7 @@ void ClassList::Print(int ident) {
 }
 
 void Method::Print(int ident) {
-	printfi(ident, "Method\n");
+	printfi(ident, "Method [name=%s, %c]\n", name, isStatic ? 'S' : 'I');
 
 	printfi(ident, "body:\n");
 	if (this->body) {

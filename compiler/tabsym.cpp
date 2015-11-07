@@ -213,11 +213,18 @@ ClassEnv * deklClass(char * cls, char * par) {
 
 MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * cls){
 	if (constructor) {
-		if (cls->constructor) {
-			Chyba(mth, "trida muze mit pouze jeden konstruktor");
+		if (!isStatic) {
+			if (cls->constructor) {
+				Chyba(mth, "trida muze mit pouze jeden konstruktor");
+			}
+			cls->constructor = new MethodEnv(mth, isStatic, NULL);
+			return cls->constructor;
 		}
-		cls->constructor = new MethodEnv(mth, isStatic, NULL);
-		return cls->constructor;
+
+		if (cls->static_init) {
+			Chyba(mth, "trida muze mit pouze jeden staticky inicializator");
+		}
+		cls->static_init = new MethodEnv(mth, isStatic, NULL);
 	}
 
 	MethodEnv * me = hledejMethod(mth, cls, false);

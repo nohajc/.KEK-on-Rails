@@ -80,6 +80,7 @@ struct ClassEnv {
 	PrvekTab * syms; // class consts and vars
 	MethodEnv * methods;
 	MethodEnv * constructor;
+	MethodEnv * static_init;
 	ClassEnv * next;
 	ClassEnv * parent;
 	int class_addr_next; // Static members address counter

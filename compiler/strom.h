@@ -277,9 +277,10 @@ class Empty: public Statm {
 };
 
 class Class: public Statm {
+	char * name;
 	StatmList *stm;
 public:
-	Class(StatmList*);
+	Class(const char *, StatmList*);
 	virtual ~Class();
 	virtual Node *Optimize();
 	virtual uint32_t Translate();
@@ -307,7 +308,7 @@ class Method: public Statm {
 	StatmList * body;
 	unsigned int * bc_entrypoint; // Points to symbol table MethodEnv object
 public:
-	Method(char *, bool, int, unsigned int *, StatmList *);
+	Method(const char *, bool, int, unsigned int *, StatmList *);
 	virtual ~Method();
 	virtual uint32_t Translate();
 	virtual void Print(int);
