@@ -11,6 +11,29 @@
 #include "vm.h"
 #include "loader.h"
 
+/******************************************************************************/
+/* global variables */
+
+class_t *classes_g;
+
+/******************************************************************************/
+
+int kexe_load_classes(FILE *f) {
+	size_t fread_result;
+	uint32_t classes_cnt;
+
+	fread_result = fread(&classes_cnt, sizeof(uint32_t), 1, f);
+	if (fread_result != sizeof(uint32_t)) {
+		vm_error("Reading of \"classes\" has failed. fread_result=%zu\n",
+				fread_result);
+		return (FALSE);
+	}
+
+	vm_debug("classes_cnt=%d\n", classes_cnt);
+
+	return (TRUE);
+}
+
 kexe_t *kexe_load(const char *filename) {
 	kexe_t *kexe;
 	FILE *f;
@@ -27,15 +50,23 @@ kexe_t *kexe_load(const char *filename) {
 	fread_result = fread(&kek_magic, 1, sizeof(uint32_t), f);
 	if (fread_result != sizeof(uint32_t)) {
 		vm_error("Reading of the first four bytes has failed.\n");
-		return (NULL);
+		goto error;
 	}
 
 	if (kek_magic != KEK_MAGIC) {
 		vm_error("Loaded magic number is not 0x%08x.\n", KEK_MAGIC);
-		return (NULL);
+		goto error;
+	}
+
+	if (!kexe_load_classes(f)) {
+		vm_error("kexe_load_classes has failed.\n");
+		goto error;
 	}
 
 	fclose(f);
-
 	return (kexe);
+
+	error: /* cleanup */
+	fclose(f);
+	return (NULL);
 }

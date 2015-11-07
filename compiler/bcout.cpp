@@ -482,8 +482,8 @@ void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
 	sym_cnt = 0;
 	sym_cnt_ptr = classout_w32(cow, sym_cnt);
 	if (me->syms != NULL) {
-		sym = me->args;
-		while (arg->dalsi != NULL) {
+		sym = me->syms;
+		while (sym->dalsi != NULL) {
 			classout_symbol(cow, sym);
 			sym = sym->dalsi;
 		}
@@ -499,9 +499,24 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	MethodEnv *method;
 	uint32_t method_cnt;
 	uint8_t method_cnt_ptr;
+	PrvekTab *sym;
+	uint32_t sym_cnt;
+	uint8_t sym_cnt_ptr;
 
 	classout_wstr(cow, ce->className);
 	classout_wstr(cow, ce->parent->className);
+
+	/* TODO: DRY */
+	sym_cnt = 0;
+	sym_cnt_ptr = classout_w32(cow, sym_cnt);
+	if (ce->syms != NULL) {
+		sym = ce->syms;
+		while (sym->dalsi != NULL) {
+			classout_symbol(cow, sym);
+			sym = sym->dalsi;
+		}
+		cow->classout[sym_cnt_ptr] = sym_cnt;
+	}
 
 	method_cnt = 1;
 	method_cnt_ptr = classout_w32(cow, method_cnt);
@@ -554,7 +569,7 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 
 	/* classes */
 	cow = classout_wrapp_init(top_class);
-	fwrite(cow, sizeof(uint32_t), 1, f);
+	fwrite(&cow->classout_cnt, sizeof(uint32_t), 1, f);
 	fwrite(cow->classout, sizeof(uint32_t), cow->classout_cnt, f);
 	free(cow->classout); /* TODO: make normal _free */
 	free(cow);
