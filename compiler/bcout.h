@@ -8,12 +8,11 @@
 #ifndef COMPILER_BCOUT_H_
 #define COMPILER_BCOUT_H_
 
-
 #define DEBUG 1
 
 #include <stdint.h>
 #include <stdio.h>
-
+#include "tabsym.h"
 
 enum Operator {
 	Plus,
@@ -158,13 +157,16 @@ typedef struct _class {
 	// class_method_t[methods]
 } class_t;
 
+/*
 typedef struct _classout {
 	uint32_t classes;
 	// class_item_t[classes]
 } classout_t;
+*/
 
 typedef struct _classout_wrapp {
-	classout_t *classout; /* in real: an array of uint8_t */
+	uint32_t classes;
+	uint8_t *classout; /* in real: an array of uint8_t */
 	size_t classout_size;
 	size_t classout_cnt;
 } classout_wrapp_t;
@@ -262,5 +264,7 @@ void bco_print_const(bcout_t *bco, uint8_t idx);
 /******************************************************************************/
 
 extern bcout_t *bcout_g;
+
+void bcout_to_file(bcout_t *bcout, classout_wrapp_t *cow, const char *filename);
 
 #endif /* COMPILER_BCOUT_H_ */

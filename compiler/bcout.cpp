@@ -300,6 +300,7 @@ uint32_t bco_str(bcout_t *bco, const char *str) {
 	}
 
 	len = strlen(str);
+	len = (len + 3) & ~3;
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
 	cs->type = KEK_STR;
@@ -395,22 +396,31 @@ uint32_t bco_find_sym(bcout_t *bco, const char *str) {
 void classout_realloc(classout_wrapp_t *cow, size_t size) {
 	if (cow->classout_size < cow->classout_cnt + size) {
 		cow->classout_size *= 2;
-		cow->classout = realloc(cow->classout,
+		cow->classout = (uint8_t *) realloc(cow->classout,
 				cow->classout_size * sizeof(uint8_t));
 		assert(cow->classout);
 	}
 }
 
-uint8_t *classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
+uint8_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
+	classout_realloc(cow, sizeof(uint8_t));
+	cow->classout[cow->classout_cnt] = uint8;
+	cow->classout_cnt += 1;
+
+	return (cow->classout_cnt - 1);
+}
+
+uint8_t classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
 	classout_realloc(cow, sizeof(uint32_t));
 	cow->classout[cow->classout_cnt] = uint32;
 	cow->classout_cnt += 4;
 
-	return (cow->classout[cow->classout_cnt] - 4);
+	return (cow->classout_cnt - 4);
 }
 
 /* this write lenght+string */
-uint8_t *classout_wstr(classout_wrapp_t *cow, const char *str) {
+/* TODO: these functions could return a pointer */
+uint8_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 	size_t len;
 
 	len = strlen(str) + 1;
@@ -421,22 +431,35 @@ uint8_t *classout_wstr(classout_wrapp_t *cow, const char *str) {
 	(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
 	cow->classout_cnt += len;
 
-	return (cow->classout[cow->classout_cnt] - len);
+	return (cow->classout_cnt - len);
 }
 
+/* write symbol_t */
+#if 0
+symbol_t s; /* eclipse will show me how it looks like */
+#endif
 void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
+	classout_wstr(cow, pt->ident);
+	classout_w8(cow, pt->druh);
+	classout_w8(cow, pt->sc);
+	classout_w32(cow, pt->const_ptr);
 }
 
+/* write method_t */
+#if 0
+method_t m; /* eclipse will show me how it looks like */
+#endif
 void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
-	method_t how_it_will_look_like;
 	PrvekTab *arg;
 	uint32_t arg_cnt;
-	uint8_t *arg_cnt_ptr;
+	uint8_t arg_cnt_ptr; /* FIXME: not ptr, but offset */
 	PrvekTab *sym;
 	uint32_t sym_cnt;
-	uint8_t *sym_cnt_ptr;
+	uint8_t sym_cnt_ptr;
 
 	classout_wstr(cow, me->methodName);
+
+	/* FIXME: two or more, use a for... */
 
 	arg_cnt = 0;
 	arg_cnt_ptr = classout_w32(cow, arg_cnt);
@@ -446,16 +469,29 @@ void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
 			classout_symbol(cow, arg);
 			arg = arg->dalsi;
 		}
-		*arg_cnt_ptr = arg_cnt;
+		cow->classout[arg_cnt_ptr] = arg_cnt;
 	}
 
+	sym_cnt = 0;
+	sym_cnt_ptr = classout_w32(cow, sym_cnt);
+	if (me->syms != NULL) {
+		sym = me->args;
+		while (arg->dalsi != NULL) {
+			classout_symbol(cow, sym);
+			sym = sym->dalsi;
+		}
+		cow->classout[sym_cnt_ptr] = sym_cnt;
+	}
 }
 
+/* write class_t */
+#if 0
+class_t m; /* eclipse will show me how it looks like */
+#endif
 void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
-	class_t how_it_will_look_like;
 	MethodEnv *method;
 	uint32_t method_cnt;
-	uint8_t *method_cnt_ptr;
+	uint8_t method_cnt_ptr;
 
 	classout_wstr(cow, ce->className);
 	classout_wstr(cow, ce->parent->className);
@@ -470,7 +506,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 			method_cnt++;
 			ce = ce->next;
 		}
-		*method_cnt_ptr = method_cnt;
+		cow->classout[method_cnt_ptr] = method_cnt;
 	}
 }
 
@@ -482,15 +518,29 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	assert(cow);
 	cow->classout_cnt = 0;
 	cow->classout_size = 4096;
-	cow->classout = (classout_t *) malloc(cow->classout_size * sizeof(uint8_t));
+	cow->classes = 0;
+	cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
 	assert(cow->classout);
 
 	ceptr = ce;
 	while (ceptr->next != NULL) {
 		classout_class(cow, ceptr);
+		cow->classes++;
 		ce = ce->next;
 	}
 
 	return (cow);
 }
 
+/******************************************************************************/
+void bcout_to_file(bcout_t *bcout, classout_wrapp_t *cow,
+		const char *filename) {
+	FILE *f;
+
+	f = fopen(filename, "w");
+
+	/* write how many classes will be there and the data */
+	/* TODO */
+
+	fclose(f);
+}
