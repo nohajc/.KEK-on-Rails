@@ -22,7 +22,7 @@ class Test: Object {
 	static var sv
 	var im
 
-	static Test() {
+	static Test() { // Static class initializer
 		sv = 0xCAFEB1BE
 	}
 
