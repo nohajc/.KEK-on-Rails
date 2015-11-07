@@ -63,7 +63,7 @@ bcout_t *bcout_init() {
 	assert(bco);
 
 	/* alocate array for bytecode */
-	bco->bc_arr_size = 4096;
+	bco->bc_arr_size = DEFAULT_BUFFER_SIZE;
 	bco->bc_arr_cnt = 0;
 	bco->bc_arr = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
 	assert(bco->bc_arr);
@@ -72,10 +72,10 @@ bcout_t *bcout_init() {
 	assert(bco->bc_lab);
 
 	/* alocate array for bytecode */
-	bco->const_table_size = 4096;
+	bco->const_table_size = DEFAULT_BUFFER_SIZE;
 	bco->const_table_cnt = 0;
-	bco->const_table = (uint8_t *) malloc(
-			bco->const_table_size * sizeof(uint8_t *));
+	bco->const_table = (uint8_t *) calloc(bco->const_table_size,
+			sizeof(uint8_t *));
 	assert(bco->const_table);
 
 	/* array of pointers to const_table */
@@ -227,14 +227,18 @@ void bcout_items_add(bcout_t *bco, constant_item_t *i) {
 
 void *ct_malloc(bcout_t *bco, size_t obj_size) {
 	void *ptr; /* pointer to the beginning of the allocated data */
+	size_t oldsize;
 
 	ptr = bco->const_table + bco->const_table_cnt;
 
 	if (bco->const_table_size <= bco->const_table_cnt + obj_size) {
+		bco_debug("ct_malloc: reallocing\n");
+		oldsize = bco->const_table_size;
 		bco->const_table_size *= 2;
 		bco->const_table = (uint8_t*) realloc(bco->const_table,
 				bco->const_table_size);
 		assert(bco->const_table);
+		memset(bco->const_table + oldsize, 0, bco->const_table_size - oldsize);
 	}
 
 	bco->const_table_cnt += obj_size;
@@ -520,7 +524,7 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	cow = (classout_wrapp_t *) malloc(sizeof(classout_wrapp_t));
 	assert(cow);
 	cow->classout_cnt = 0;
-	cow->classout_size = 4096;
+	cow->classout_size = DEFAULT_BUFFER_SIZE;
 	cow->classes = 0;
 	cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
 	assert(cow->classout);
@@ -538,7 +542,7 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 }
 
 /******************************************************************************/
-void bcout_to_file(bcout_t *bcout, ClassEnv *TabClass, const char *filename) {
+void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 	FILE *f;
 	classout_wrapp_t *cow;
 	uint32_t kek_magic = 0x42666CEC;
@@ -549,7 +553,7 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *TabClass, const char *filename) {
 	fwrite(&kek_magic, sizeof(uint32_t), 1, f);
 
 	/* classes */
-	cow = classout_wrapp_init(TabClass);
+	cow = classout_wrapp_init(top_class);
 	fwrite(cow, sizeof(uint32_t), 1, f);
 	fwrite(cow->classout, sizeof(uint32_t), cow->classout_cnt, f);
 	free(cow->classout); /* TODO: make normal _free */
@@ -557,8 +561,11 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *TabClass, const char *filename) {
 
 	/* constant table */
 	fwrite(&bcout->const_table_cnt, sizeof(size_t), 1, f);
+
+	bco_debug("bcout->const_table_cnt=%d\n", bcout->const_table_cnt);
+
 	/* FIXME: this line makes mess in valgrind */
-	//fwrite(bcout->const_table, sizeof(uint8_t), bcout->const_table_cnt, f);
+	fwrite(bcout->const_table, sizeof(uint8_t), bcout->const_table_cnt, f);
 
 	/* bytecode */
 	fwrite(&bcout->bc_arr_cnt, sizeof(size_t), 1, f);

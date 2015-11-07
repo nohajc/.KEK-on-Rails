@@ -9,6 +9,7 @@
 #define COMPILER_BCOUT_H_
 
 #define DEBUG 1
+#define DEFAULT_BUFFER_SIZE 8192
 
 #include <stdint.h>
 #include <stdio.h>
