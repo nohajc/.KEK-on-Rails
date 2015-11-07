@@ -50,43 +50,11 @@ void bco_print_const(bcout_t *bco, uint8_t idx) {
 #endif
 /******************************************************************************/
 
-const char *op_str[] = {
-	"UNDEF",
-	"BOP",
-	"UNM",
-	"LD",
-	"ST",
-	"IFNJ",
-	"JU",
-	"WRT",
-	"RD",
-	"DUP",
-	"SWAP",
-	"NOT",
-	"STOP",
-	"RET",
-	"CALL",
-	"CALLS",
-	"CALLE",
-	"PUSH_C",
-	"PUSH_ARG",
-	"PUSH_LOC",
-	"PUSH_IV",
-	"PUSH_CV",
-	"PUSH_IVE",
-	"PUSH_CVE",
-	"PUSH_SELF",
-	"CLASSREF",
-	"PUSHA_ARG",
-	"PUSHA_LOC",
-	"PUSHA_IV",
-	"PUSHA_CV",
-	"PUSHA_IVE",
-	"PUSHA_CVE",
-	"IDX",
-	"IDXA",
-	"NEW"
-};
+const char *op_str[] = { "UNDEF", "BOP", "UNM", "LD", "ST", "IFNJ", "JU", "WRT",
+		"RD", "DUP", "SWAP", "NOT", "STOP", "RET", "CALL", "CALLS", "CALLE",
+		"PUSH_C", "PUSH_ARG", "PUSH_LOC", "PUSH_IV", "PUSH_CV", "PUSH_IVE",
+		"PUSH_CVE", "PUSH_SELF", "CLASSREF", "PUSHA_ARG", "PUSHA_LOC",
+		"PUSHA_IV", "PUSHA_CV", "PUSHA_IVE", "PUSHA_CVE", "IDX", "IDXA", "NEW" };
 
 bcout_t *bcout_init() {
 	bcout_t *bco;
@@ -214,7 +182,7 @@ uint32_t bco_ww1(bcout_t *bco, bc_t bc, uint16_t arg) {
 	return (ip);
 }
 
-uint32_t bco_ww1_labeled(bcout_t *bco, bc_t bc, uint16_t arg, label_t lab){
+uint32_t bco_ww1_labeled(bcout_t *bco, bc_t bc, uint16_t arg, label_t lab) {
 	uint32_t ip;
 
 	ip = bco_w8_labeled(bco, bc, lab);
@@ -419,3 +387,110 @@ uint32_t bco_find_sym(bcout_t *bco, const char *str) {
 
 	return (-1);
 }
+
+/******************************************************************************/
+/* classes */
+
+/* check, if we can add 'size' to the classout. if not, realloc */
+void classout_realloc(classout_wrapp_t *cow, size_t size) {
+	if (cow->classout_size < cow->classout_cnt + size) {
+		cow->classout_size *= 2;
+		cow->classout = realloc(cow->classout,
+				cow->classout_size * sizeof(uint8_t));
+		assert(cow->classout);
+	}
+}
+
+uint8_t *classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
+	classout_realloc(cow, sizeof(uint32_t));
+	cow->classout[cow->classout_cnt] = uint32;
+	cow->classout_cnt += 4;
+
+	return (cow->classout[cow->classout_cnt] - 4);
+}
+
+/* this write lenght+string */
+uint8_t *classout_wstr(classout_wrapp_t *cow, const char *str) {
+	size_t len;
+
+	len = strlen(str) + 1;
+
+	classout_w32(cow, len); /* FIXME? */
+
+	classout_realloc(cow, len * sizeof(char));
+	(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
+	cow->classout_cnt += len;
+
+	return (cow->classout[cow->classout_cnt] - len);
+}
+
+void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
+}
+
+void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
+	method_t how_it_will_look_like;
+	PrvekTab *arg;
+	uint32_t arg_cnt;
+	uint8_t *arg_cnt_ptr;
+	PrvekTab *sym;
+	uint32_t sym_cnt;
+	uint8_t *sym_cnt_ptr;
+
+	classout_wstr(cow, me->methodName);
+
+	arg_cnt = 0;
+	arg_cnt_ptr = classout_w32(cow, arg_cnt);
+	if (me->args != NULL) {
+		arg = me->args;
+		while (arg->dalsi != NULL) {
+			classout_symbol(cow, arg);
+			arg = arg->dalsi;
+		}
+		*arg_cnt_ptr = arg_cnt;
+	}
+
+}
+
+void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
+	class_t how_it_will_look_like;
+	MethodEnv *method;
+	uint32_t method_cnt;
+	uint8_t *method_cnt_ptr;
+
+	classout_wstr(cow, ce->className);
+	classout_wstr(cow, ce->parent->className);
+
+	method_cnt = 1;
+	method_cnt_ptr = classout_w32(cow, method_cnt);
+	classout_method(cow, ce->constructor);
+	if (ce->methods != NULL) { /* TODO: this could be refactored? */
+		method = ce->methods;
+		while (method->next != NULL) {
+			classout_method(cow, method);
+			method_cnt++;
+			ce = ce->next;
+		}
+		*method_cnt_ptr = method_cnt;
+	}
+}
+
+classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
+	classout_wrapp_t *cow;
+	ClassEnv *ceptr;
+
+	cow = (classout_wrapp_t *) malloc(sizeof(classout_wrapp_t));
+	assert(cow);
+	cow->classout_cnt = 0;
+	cow->classout_size = 4096;
+	cow->classout = (classout_t *) malloc(cow->classout_size * sizeof(uint8_t));
+	assert(cow->classout);
+
+	ceptr = ce;
+	while (ceptr->next != NULL) {
+		classout_class(cow, ceptr);
+		ce = ce->next;
+	}
+
+	return (cow);
+}
+

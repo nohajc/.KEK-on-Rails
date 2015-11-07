@@ -122,6 +122,78 @@ typedef union _constant_item {
 	constant_string_t cs;
 } constant_item_t;
 
+/******************************************************************************/
+/* classes */
+
+typedef struct _symbol {
+	uint32_t name;
+	// char[name]
+
+	DruhId type;
+	Scope scope;
+	uint32_t const_ptr;
+} symbol_t;
+
+typedef struct _method {
+	uint32_t name;
+	// char[name]
+
+	uint32_t args;
+	// symbol_t[args]
+
+	uint32_t syms;
+	// symbol_t[syms]
+	uint32_t bc_entrypoint;
+	uint8_t is_static;
+} method_t;
+
+typedef struct _class {
+	uint32_t name;
+	// char[name]
+
+	uint32_t parent;
+	// char[parent]
+
+	uint32_t methods;
+	// class_method_t[methods]
+} class_t;
+
+typedef struct _classout {
+	uint32_t classes;
+	// class_item_t[classes]
+} classout_t;
+
+typedef struct _classout_wrapp {
+	classout_t *classout; /* in real: an array of uint8_t */
+	size_t classout_size;
+	size_t classout_cnt;
+} classout_wrapp_t;
+
+/* to serialize class hierarchy, call this function with the top class */
+
+#define SIZE_PLACEHOLDER 666
+classout_wrapp_t *classout_wrapp_init(ClassEnv *);
+
+
+/* helper functions */
+void classout_class(classout_wrapp_t *, ClassEnv *);
+void classout_method(classout_wrapp_t *, ClassEnv *);
+void classout_symbol(classout_wrapp_t *, ClassEnv *);
+//classout_t *classout_init(ClassEnv *);
+//class_t *class_init(ClassEnv *);
+//class_t *method_init(MethodEnv *);
+//symbol_t *symbol_init(PrvekTab *);
+
+/*
+ just use free(.). structs are flat
+void classout_free(classout_t *);
+void class_free(class_t *);
+void method_free(method_t *);
+void symbol_free(symbol_t *);
+*/
+
+/******************************************************************************/
+
 typedef struct _bcout {
 
 	size_t bc_arr_cnt;
