@@ -260,7 +260,7 @@ void bco_resolve_break(bcout_t *bco, size_t a1, size_t a2);
 uint32_t bco_find_int(bcout_t *bco, int i);
 uint32_t bco_find_str(bcout_t *bco, const char *str);
 uint32_t bco_find_sym(bcout_t *bco, const char *str);
-void bco_debug(const char *format, va_list ap);
+void bco_debug(const char *format, ...);
 void bco_print_const(bcout_t *bco, uint8_t idx);
 /******************************************************************************/
 

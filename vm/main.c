@@ -8,24 +8,23 @@
 #include <stdlib.h>
 #include <getopt.h>
 
+#include "loader.h"
 #include "vm.h"
 
 void usage(const char *progname) {
+	printf("Usage:\n");
 	printf("%s -f [filename]\n", progname);
+	exit(1);
 }
 
 int main(int argc, char *argv[]) {
 	int c;
-	FILE *f;
-	char *file_name = NULL;
-
-	class_t *cl;
-	method_t *me;
+	char *filename = NULL;
 
 	while ((c = getopt(argc, argv, "f:")) != -1) {
 		switch (c) {
 		case 'f':
-			file_name = optarg;
+			filename = optarg;
 			break;
 		case '?':
 			fprintf(stderr, "unknown opt: \"%c\"\n", c);
@@ -37,13 +36,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (!file_name) {
+	if (filename == NULL) {
 		usage(argv[0]);
 	}
 
-	cl = class_find("Main");
-	me = method_find(cl, "main");
-	method_eval(me);
+	kexe_load(filename);
 
 	return (EXIT_SUCCESS);
 }

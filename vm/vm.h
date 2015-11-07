@@ -9,6 +9,12 @@
 
 #include "stack.h"
 
+#define DEBUG 1
+#define KEK_MAGIC 0x42666CEC
+
+void vm_debug(const char *format, ...);
+void vm_error(const char *format, ...);
+
 typedef enum _arg_type {
 	ARG_INTEGER, /* */
 	ARG_STRING, /* */

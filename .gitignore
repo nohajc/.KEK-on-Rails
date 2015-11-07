@@ -1,5 +1,9 @@
-# main
+# executables
 main
+kek
+
+# classfiles
+*.kexe
 
 # Eclipse files
 .cproject

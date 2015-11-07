@@ -1,9 +1,10 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -pedantic -Wno-write-strings -Wno-unused-variable -Og -ggdb3 
+CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3
 OBJS=\
-	stack.o \
+	loader.o \
 	vm.o \
-    main.o
+	stack.o \
+	main.o
 
 kek: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS)
