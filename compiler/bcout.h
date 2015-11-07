@@ -265,6 +265,6 @@ void bco_print_const(bcout_t *bco, uint8_t idx);
 
 extern bcout_t *bcout_g;
 
-void bcout_to_file(bcout_t *bcout, classout_wrapp_t *cow, const char *filename);
+void bcout_to_file(bcout_t *bcout, ClassEnv *ce, const char *filename);
 
 #endif /* COMPILER_BCOUT_H_ */

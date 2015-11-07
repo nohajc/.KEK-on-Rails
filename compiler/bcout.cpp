@@ -67,6 +67,7 @@ bcout_t *bcout_init() {
 	bco->bc_arr_cnt = 0;
 	bco->bc_arr = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
 	assert(bco->bc_arr);
+
 	bco->bc_lab = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
 	assert(bco->bc_lab);
 
@@ -75,7 +76,7 @@ bcout_t *bcout_init() {
 	bco->const_table_cnt = 0;
 	bco->const_table = (uint8_t *) malloc(
 			bco->const_table_size * sizeof(uint8_t *));
-	assert(bco->bc_arr);
+	assert(bco->const_table);
 
 	/* array of pointers to const_table */
 	bco->items_size = 4096;
@@ -300,6 +301,8 @@ uint32_t bco_str(bcout_t *bco, const char *str) {
 	}
 
 	len = strlen(str);
+
+	/* round up to the multiple of 4 */
 	len = (len + 3) & ~3;
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
@@ -523,24 +526,43 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	assert(cow->classout);
 
 	ceptr = ce;
-	while (ceptr->next != NULL) {
-		classout_class(cow, ceptr);
-		cow->classes++;
-		ce = ce->next;
+	if (ceptr != NULL) {
+		while (ceptr->next != NULL) {
+			classout_class(cow, ceptr);
+			cow->classes++;
+			ce = ce->next;
+		}
 	}
 
 	return (cow);
 }
 
 /******************************************************************************/
-void bcout_to_file(bcout_t *bcout, classout_wrapp_t *cow,
-		const char *filename) {
+void bcout_to_file(bcout_t *bcout, ClassEnv *TabClass, const char *filename) {
 	FILE *f;
+	classout_wrapp_t *cow;
+	uint32_t kek_magic = 0x42666CEC;
 
 	f = fopen(filename, "w");
 
-	/* write how many classes will be there and the data */
-	/* TODO */
+	/* write magic */
+	fwrite(&kek_magic, sizeof(uint32_t), 1, f);
+
+	/* classes */
+	cow = classout_wrapp_init(TabClass);
+	fwrite(cow, sizeof(uint32_t), 1, f);
+	fwrite(cow->classout, sizeof(uint32_t), cow->classout_cnt, f);
+	free(cow->classout); /* TODO: make normal _free */
+	free(cow);
+
+	/* constant table */
+	fwrite(&bcout->const_table_cnt, sizeof(size_t), 1, f);
+	/* FIXME: this line makes mess in valgrind */
+	//fwrite(bcout->const_table, sizeof(uint8_t), bcout->const_table_cnt, f);
+
+	/* bytecode */
+	fwrite(&bcout->bc_arr_cnt, sizeof(size_t), 1, f);
+	fwrite(bcout->bc_arr, sizeof(uint8_t), bcout->bc_arr_cnt, f);
 
 	fclose(f);
 }

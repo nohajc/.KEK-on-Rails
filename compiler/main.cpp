@@ -9,7 +9,10 @@
 
 int main(int argc, char *argv[]) {
 	char *fileName;
-	int ast_print = 1;
+	int ast_print;
+	Prog *prog;
+
+	ast_print = 1;
 	printf("Syntakticky analyzator\n");
 	if (argc == 1) {
 		printf("Vstup z klavesnice, zadejte zdrojovy text\n");
@@ -25,7 +28,7 @@ int main(int argc, char *argv[]) {
 
 	bcout_g = bcout_init();
 
-	Prog *prog = Program();
+	prog = Program();
 	if(!prog){
 		printf("Vstupni soubor je prazdny.\n");
 		return 0;
@@ -43,5 +46,8 @@ int main(int argc, char *argv[]) {
 	//printf("Konec\n");
 	closeInput();
 	delete prog;
+
+	bcout_to_file(bcout_g, TabClass, "test.kexe");
+
 	return 0;
 }
