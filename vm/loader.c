@@ -22,7 +22,7 @@ int kexe_load_classes(FILE *f) {
 	size_t fread_result;
 	uint32_t classes_cnt;
 
-	fread_result = fread(&classes_cnt, sizeof(uint32_t), 1, f);
+	fread_result = fread(&classes_cnt, 1, sizeof(uint32_t), f);
 	if (fread_result != sizeof(uint32_t)) {
 		vm_error("Reading of \"classes\" has failed. fread_result=%zu\n",
 				fread_result);

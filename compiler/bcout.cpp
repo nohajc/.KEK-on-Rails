@@ -37,7 +37,8 @@ void bco_print_const(bcout_t *bco, uint8_t idx) {
 		bco_debug("%s", item->cs.string);
 		break;
 	case KEK_ARR:
-		bco_debug("array [length: %d, first elem: %u]", item->ca.length, item->ca.first_elem_idx);
+		bco_debug("array [length: %d, first elem: %u]", item->ca.length,
+				item->ca.first_elem_idx);
 		break;
 	}
 }
@@ -344,7 +345,7 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 	return ((uint8_t *) cs - bco->const_table);
 }
 
-uint32_t bco_arr(bcout_t *bco, size_t len, uint32_t first_elem_idx){
+uint32_t bco_arr(bcout_t *bco, size_t len, uint32_t first_elem_idx) {
 	constant_array_t *ca;
 
 	ca = (constant_array_t *) ct_malloc(bco, sizeof(constant_array_t));
@@ -579,24 +580,24 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 	f = fopen(filename, "w");
 
 	/* write magic */
+	bco_debug("fwrite: kek_magic=0x%08x\n", kek_magic);
 	fwrite(&kek_magic, sizeof(uint32_t), 1, f);
 
 	/* classes */
 	cow = classout_wrapp_init(top_class);
+	bco_debug("fwrite: cow->classout_cnt=%d\n", cow->classout_cnt);
 	fwrite(&cow->classout_cnt, sizeof(uint32_t), 1, f);
 	fwrite(cow->classout, sizeof(uint32_t), cow->classout_cnt, f);
 	free(cow->classout); /* TODO: make normal _free */
 	free(cow);
 
 	/* constant table */
+	bco_debug("fwrite: bcout->const_table_cnt=%d\n", bcout->const_table_cnt);
 	fwrite(&bcout->const_table_cnt, sizeof(size_t), 1, f);
-
-	bco_debug("bcout->const_table_cnt=%d\n", bcout->const_table_cnt);
-
-	/* FIXME: this line makes mess in valgrind */
 	fwrite(bcout->const_table, sizeof(uint8_t), bcout->const_table_cnt, f);
 
 	/* bytecode */
+	bco_debug("fwrite: bcout->bc_arr_cnt=%d\n", bcout->bc_arr_cnt);
 	fwrite(&bcout->bc_arr_cnt, sizeof(size_t), 1, f);
 	fwrite(bcout->bc_arr, sizeof(uint8_t), bcout->bc_arr_cnt, f);
 
