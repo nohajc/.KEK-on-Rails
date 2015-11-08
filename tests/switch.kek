@@ -1,18 +1,27 @@
-{
-	var a, b, c
+class C {
+	static const ZERO = 0
+	static const TEN = 10
+	static const TWENTYNINE = 29
+	static const NUMB = 324
+}
 
-	read a
+class Switch {
+	Switch() {
+		var a, b, c
 
-	switch (a) {
-	case 0..9, 99..127: {
-		b = 2
-		write 0
-	}
-	case 10..19, 324:
-		write 1
-	case 20..29:
-		write 2
-	default:
-		write 999
+		read a
+
+		switch (a) {
+		case C.ZERO..9, 99..127: {
+			b = 2
+			write 0
+		}
+		case C.TEN..19, C.NUMB:
+			write 1
+		case 20..C.TWENTYNINE:
+			write 2
+		default:
+			write 999
+		}
 	}
 }

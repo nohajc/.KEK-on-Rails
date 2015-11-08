@@ -80,8 +80,8 @@ void TypVar(char *);
 void TypRec();
 
 CaseBlock * ntCASE_BODY(Env env);
-CaseBlockScope * ntCASE_SCOPE();
-Numb * ntCASE_RANGE();
-CaseBlockScope * ntCASE_SCOPE_NEXT();
+CaseBlockScope * ntCASE_SCOPE(Env env);
+Numb * ntCASE_RANGE(Env env);
+CaseBlockScope * ntCASE_SCOPE_NEXT(Env env);
 
 #endif

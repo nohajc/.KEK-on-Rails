@@ -443,7 +443,8 @@ Expr *VarOrConst(char *id, Expr * offset, Env env)
 		Chyba("Nelze pristupovat k instancni promenne ze statickeho kontextu.");
 	}
 
-	if (!env.self) { // We can inline local constants only
+	// We cannot inline constants of unknown objects (unknown type at compile time)
+	if (!env.self && env.clsEnv == CLASS_ANY) {
 		return new Var(p, offset, true, true);
 	}
 
@@ -1101,7 +1102,7 @@ CaseBlock * ntCASE_BODY(Env env) {
 	switch (Symb.type) {
 	case kwCASE: {
 		Symb = readLexem();
-		CaseBlockScope *scope = ntCASE_SCOPE();
+		CaseBlockScope *scope = ntCASE_SCOPE(env);
 		Statm *statm = Prikaz(env);
 		if(Symb.type == SEMICOLON){
 			Srovnani(SEMICOLON);
@@ -1136,39 +1137,49 @@ CaseBlock * ntCASE_BODY(Env env) {
 	return NULL;
 }
 
-CaseBlockScope * ntCASE_SCOPE() {
-	int loeq_int;
-	Srovnani_NUMB(&loeq_int);
-	Numb *loeq = new Numb(loeq_int);
-	Numb *hi = ntCASE_RANGE();
+CaseBlockScope * ntCASE_SCOPE(Env env) {
+	//int loeq_int;
+	//Srovnani_NUMB(&loeq_int);
+	//Numb *loeq = new Numb(loeq_int);
+	Numb *loeq = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
+	if (!loeq) {
+		Chyba("Vyraz specifikujici case musi byt konstantni.");
+	}
+	Numb *hi = ntCASE_RANGE(env);
 
 	if (hi == NULL) { /* number */
-		return new CaseBlockScope(ntCASE_SCOPE_NEXT(), loeq);
+		return new CaseBlockScope(ntCASE_SCOPE_NEXT(env), loeq);
 	} else { /* range */
-		return new CaseBlockScope(ntCASE_SCOPE_NEXT(), loeq, hi);
+		return new CaseBlockScope(ntCASE_SCOPE_NEXT(env), loeq, hi);
 	}
 }
 
-Numb * ntCASE_RANGE() {
+Numb * ntCASE_RANGE(Env env) {
+	Numb * hi;
 	switch (Symb.type) {
 	case DOUBLE_DOT:
 		Srovnani(DOUBLE_DOT);
-		int hi;
-		Srovnani_NUMB(&hi);
-		return new Numb(hi);
+		//int hi;
+		//Srovnani_NUMB(&hi);
+		//return new Numb(hi);
+		hi = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
+		if (!hi) {
+			Chyba("Vyraz specifikujici case musi byt konstantni.");
+		}
+		return hi;
 	default:
 		return NULL;
 	}
 }
 
-CaseBlockScope * ntCASE_SCOPE_NEXT() {
+CaseBlockScope * ntCASE_SCOPE_NEXT(Env env) {
 	switch (Symb.type) {
 	case COLON:
 		Srovnani(COLON);
 		return NULL;
 	case COMMA:
 		Srovnani(COMMA);
-		return ntCASE_SCOPE();
+		return ntCASE_SCOPE(env);
 	default:
 		ChybaExpanze("ntCASE_SCOPE_NEXT", Symb.type);
 		break;

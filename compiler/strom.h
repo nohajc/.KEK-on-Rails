@@ -357,7 +357,8 @@ public:
 	CaseBlockScope(CaseBlockScope *);
 	CaseBlockScope(CaseBlockScope *, Numb *);
 	CaseBlockScope(CaseBlockScope *, Numb *, Numb *);
-	~CaseBlockScope();
+	virtual ~CaseBlockScope();
+	virtual void Print(int);
 };
 
 class CaseBlock: public Statm {
@@ -367,7 +368,7 @@ public:
 	CaseBlock *next;
 	CaseBlock();
 	CaseBlock(Statm *, CaseBlock *, CaseBlockScope *);
-	~CaseBlock();
+	virtual ~CaseBlock();
 	virtual uint32_t Translate();
 	virtual void Print(int);
 };

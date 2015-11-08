@@ -301,7 +301,16 @@ Node *Var::Optimize() {
 }
 
 Node * ClassRef::Optimize() {
+	Const * cnst_target;
 	target = (Expr*)(target->Optimize());
+	cnst_target = dynamic_cast<Const*>(target);
+
+	if (cnst_target) {
+		target = NULL;
+		delete this;
+		return cnst_target;
+	}
+
 	return this;
 }
 
@@ -1392,8 +1401,34 @@ void Return::Print(int ident) {
 	}
 }
 
+void CaseBlockScope::Print(int ident) {
+	switch (type) {
+	case 1:
+		printfi(ident, "eq:\n");
+		this->eq->Print(ident + 1);
+		break;
+	case 2:
+		printfi(ident, "lo:\n");
+		this->lo->Print(ident + 1);
+		printfi(ident, "hi:\n");
+		this->hi->Print(ident + 1);
+		break;
+	default:;
+	}
+
+	printfi(ident, "next:\n");
+	if (this->next) {
+		this->next->Print(ident + 1);
+	}
+}
+
 void CaseBlock::Print(int ident) {
 	printfi(ident, "CaseBlock\n");
+
+	printfi(ident, "scope:\n");
+	if (this->scope) {
+		this->scope->Print(ident + 1);
+	}
 
 	printfi(ident, "statm:\n");
 	if (this->statmList) {
