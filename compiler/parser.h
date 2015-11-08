@@ -54,8 +54,9 @@ Expr * ConstructorCall(Env env);
 Expr * Pole(Env);
 ArgList * Elems(Env env);
 ArgList * ZbElems(Env env);
+ArgList * ArrayOffset(Env env);
 
-Expr *VarOrConst(char*, Expr * offset, Env env);
+Expr *VarOrConst(char*, ArgList * offset, Env env);
 ClassList * SeznamTrid();
 ClassList * ZbTrid();
 Class * Trida();

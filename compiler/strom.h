@@ -27,24 +27,6 @@ class Const: public Expr {
 class Statm: public Expr {
 };
 
-class Var: public Expr {
-protected:
-	char * name;
-	int addr;
-	Expr * offset;
-	bool rvalue;
-	Scope sc;
-	bool external;
-public:
-	Var(const PrvekTab *, Expr *, bool rv, bool e);
-	Var(char * n, bool rv);
-	Var(char * n, Expr * o, bool rv, bool e);
-	virtual ~Var();
-	virtual uint32_t Translate();
-	virtual Node *Optimize();
-	virtual void Print(int);
-};
-
 class ArgList: public Expr {
 public:
 	Expr * arg;
@@ -52,8 +34,27 @@ public:
 	ArgList(Expr *, ArgList *);
 	virtual ~ArgList();
 	virtual uint32_t Translate();
+	virtual Node *Optimize();
 	virtual void Print(int);
 	int Count();
+};
+
+class Var: public Expr {
+protected:
+	char * name;
+	int addr;
+	ArgList * offset;
+	bool rvalue;
+	Scope sc;
+	bool external;
+public:
+	Var(const PrvekTab * sym, ArgList * o, bool rv, bool e);
+	Var(char * n, bool rv);
+	Var(char * n, ArgList * o, bool rv, bool e);
+	virtual ~Var();
+	virtual uint32_t Translate();
+	virtual Node *Optimize();
+	virtual void Print(int);
 };
 
 class Call: public Statm {
@@ -80,7 +81,7 @@ public:
 class ObjRef: public Var { // Var which is also an object
 	Expr * target; // Member of the referenced object
 public:
-	ObjRef(const PrvekTab *, Expr *, bool, bool, Expr *);
+	ObjRef(const PrvekTab *, ArgList *, bool, bool, Expr *);
 	virtual ~ObjRef();
 	virtual uint32_t Translate();
 	virtual Node *Optimize();

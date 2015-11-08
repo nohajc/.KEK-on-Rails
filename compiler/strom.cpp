@@ -10,7 +10,7 @@
 
 // konstruktory a destruktory
 
-Var::Var(const PrvekTab * sym, Expr * o, bool rv, bool e) {
+Var::Var(const PrvekTab * sym, ArgList * o, bool rv, bool e) {
 	addr = sym->addr;
 	offset = o;
 	rvalue = rv;
@@ -29,7 +29,7 @@ Var::Var(char * n, bool rv) {
 	addr = -1;
 }
 
-Var::Var(char * n, Expr * o, bool rv, bool e) {
+Var::Var(char * n, ArgList * o, bool rv, bool e) {
 	name = new char[strlen(n) + 1];
 	strcpy(name, n);
 	rvalue = rv;
@@ -82,7 +82,7 @@ ClassRef::~ClassRef() {
 	delete target;
 }
 
-ObjRef::ObjRef(const PrvekTab * sym, Expr * o, bool rv, bool e, Expr * t) : Var(sym, o, rv, e) {
+ObjRef::ObjRef(const PrvekTab * sym, ArgList * o, bool rv, bool e, Expr * t) : Var(sym, o, rv, e) {
 	target = t;
 }
 
@@ -304,9 +304,17 @@ Return::~Return() {
 
 // definice metody Optimize
 
+Node *ArgList::Optimize() {
+	arg->Optimize();
+	if (next) {
+		next->Optimize();
+	}
+	return this;
+}
+
 Node *Var::Optimize() {
 	if(offset){
-		offset = (Expr*)(offset->Optimize());
+		offset = (ArgList*)(offset->Optimize());
 	}
 	return this;
 }
@@ -556,10 +564,23 @@ uint32_t Var::Translate() {
 		break;
 	}
 
-	if(offset){
-		offset->Translate();
+	if (offset) {
+		ArgList * o = offset;
+		while (o->next) {
+			o->arg->Translate();
+			bco_w0(bcout_g, IDX);
+			o = o->next;
+		}
+
+		o->arg->Translate();
 		bco_w0(bcout_g, (rvalue ? IDX : IDXA));
 	}
+
+
+	/*if(offset){
+		offset->Translate();
+		bco_w0(bcout_g, (rvalue ? IDX : IDXA));
+	}*/
 
 	return 0;
 }

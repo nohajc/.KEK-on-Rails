@@ -17,6 +17,19 @@ class Operators {
 		// For accessing static members we need their declaration in the source code.
 		// This is because of bytecode optimization - we look up the members by address, not by name.
 		write Array.sVar
+
+		var i, j, str = "something"
+		for(i = 0; i < str.len(); i++){
+			write str[i]
+		}
+
+		a1[0] = ["ab", "cd"]
+		a1[1] = ["ef", "gh"]
+		write a1[0].len()
+		a1[0][0] = a1[1][1]
+		a1[0][1] = a1[1][0]
+
+		write a2[0][1][2][3][4]["hash"][str]
 	}
 
 	static main() {

@@ -470,19 +470,19 @@ void ZbFor(Env env, char id[MAX_IDENT_LEN], Expr * offset, Expr ** cond, Statm *
 	*body = Prikaz(env, C_CYCLE);
 }
 
-Expr * ArrayOffset(Env env, char * id) {
+ArgList * ArrayOffset(Env env) {
 	if (Symb.type == LBRAC) {
 		Symb = readLexem();
 		Expr * e = Vyraz(env);
 
 		Srovnani(RBRAC);
-		return e;
+		return new ArgList(e, ArrayOffset(env));
 	}
 
 	return NULL;
 }
 
-Expr *VarOrConst(char *id, Expr * offset, Env env)
+Expr *VarOrConst(char *id, ArgList * offset, Env env)
 {
 	int v;
 	PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
@@ -556,7 +556,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	}
 
 	Srovnani_IDENT(id);
-	Expr * offset = ArrayOffset(env, id);
+	ArgList * offset = ArrayOffset(env);
 
 	switch (Symb.type) {
 	case DOT: // ref
