@@ -35,8 +35,11 @@ void bco_print_const(bcout_t *bco, uint8_t idx) {
 		bco_debug("%s", item->cs.string);
 		break;
 	case KEK_ARR:
-		bco_debug("array [length: %d, first elem: %u]", item->ca.length,
-				item->ca.first_elem_idx);
+		bco_debug("array [length: %d, elems: %d", item->ca.length, item->ca.elems[0]);
+		for (int i = 1; i < item->ca.length; ++i) {
+			bco_debug(", %d", item->ca.elems[i]);
+		}
+		bco_debug("]");
 		break;
 	}
 }
@@ -343,15 +346,20 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 	return ((uint8_t *) cs - bco->const_table);
 }
 
-uint32_t bco_arr(bcout_t *bco, size_t len, uint32_t first_elem_idx) {
+uint32_t bco_arr(bcout_t *bco, size_t len) {
 	constant_array_t *ca;
 
-	ca = (constant_array_t *) ct_malloc(bco, sizeof(constant_array_t));
+	 // Size of the allocated memory is already a multiple of four in this case.
+	ca = (constant_array_t *) ct_malloc(bco, sizeof(constant_array_t) + (len - 1) * sizeof(uint32_t));
 	ca->type = KEK_ARR;
 	ca->length = len;
-	ca->first_elem_idx = first_elem_idx;
 
 	return ((uint8_t *) ca - bco->const_table);
+}
+
+void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem){
+	constant_array_t *ca = (constant_array_t *)(bco->const_table + arr);
+	ca->elems[idx] = elem;
 }
 
 size_t bco_get_ip(bcout_t *bco) {

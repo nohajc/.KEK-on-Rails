@@ -127,11 +127,11 @@ typedef struct _constant_array {
 	// The elements won't be inlined because the type is mutable but we need to keep pointer to the array object constant
 	// when reallocating the array contents somewhere else (when we grow the array for example).
 	uint32_t padding;
-	// This member contains offset of the first array element.
-	// Compiler makes sure they are stored consecutively in the constant table.
-	uint32_t first_elem_idx;
+	// This member contains offsets to the array elements (as stored in the constant table).
+	// The array of offsets is inlined.
+	uint32_t elems[1];
 	// When we load the array object, we allocate array of pointers and then store the actual element pointers in it.
-	// The pointers will be determined by reading the constant table from first_elem_idx and parsing the elements encountered.
+	// The pointers will be computed from offsets and constant table location in memory (after it's loaded).
 } constant_array_t;
 
 typedef union _constant_item {
@@ -266,7 +266,8 @@ uint32_t bco_nil(bcout_t *bco);
 uint32_t bco_int(bcout_t *bco, int v);
 uint32_t bco_str(bcout_t *bco, const char *str);
 uint32_t bco_sym(bcout_t *bco, const char *str);
-uint32_t bco_arr(bcout_t *bco, size_t len, uint32_t first_elem_idx);
+uint32_t bco_arr(bcout_t *bco, size_t len);
+void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem);
 
 /* helper functions */
 size_t bco_get_ip(bcout_t *bco);
