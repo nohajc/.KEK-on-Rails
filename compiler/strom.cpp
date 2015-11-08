@@ -511,6 +511,11 @@ Node *ClassList::Optimize() {
 	return this;
 }
 
+Node *Method::Optimize() {
+	body->Optimize();
+	return this;
+}
+
 // definice metody Translate
 
 uint32_t Var::Translate() {
@@ -868,6 +873,17 @@ CaseBlock::~CaseBlock() {
 	delete this->statmList;
 	delete this->next;
 	delete this->scope;
+}
+
+Node* CaseBlock::Optimize() {
+	if (statmList) {
+		statmList->Optimize();
+	}
+	if (next) {
+		next->Optimize();
+	}
+
+	return this;
 }
 
 uint32_t CaseBlock::Translate() {

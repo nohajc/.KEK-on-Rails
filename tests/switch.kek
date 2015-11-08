@@ -1,8 +1,14 @@
-class C {
-	static const ZERO = 0
-	static const TEN = 10
-	static const TWENTYNINE = 29
-	static const NUMB = 324
+enum C {
+	ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN,
+	TWENTYNINE = 29, NUMB = 324
+}
+
+class V {
+	static var cve
+
+	static V() {
+		cve = "over 9000"
+	}
 }
 
 class Switch {
@@ -23,5 +29,22 @@ class Switch {
 		default:
 			write 999
 		}
+	}
+
+	debugPrint() {
+		write C.ZERO
+		write C.ONE
+		write C.TWO
+		write C.THREE
+		write C.FOUR
+		write C.FIVE
+		write C.SIX
+		write C.SEVEN
+		write C.EIGHT
+		write C.NINE
+		write C.TEN
+		write C.TWENTYNINE
+		write C.NUMB
+		write V.cve
 	}
 }

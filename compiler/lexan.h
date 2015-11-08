@@ -72,6 +72,7 @@ typedef enum {
 	LSHIFT,
 	RSHIFT,
 	kwCLASS,
+	kwENUM,
 	kwSTATIC,
 	kwRETURN,
 	kwTHIS,

@@ -73,31 +73,51 @@ Prog *Program() {
 StatmList * Dekl(Env env, bool isStatic) {
 	switch (Symb.type) {
 	case kwVAR:
+		Symb = readLexem();
 		return DeklProm(env, isStatic);
 	case kwCONST:
-		return DeklKonst(env, isStatic);;
+		Symb = readLexem();
+		return DeklKonst(env, isStatic);
 	default:
 		return new StatmList(new Empty, NULL);
 	}
 }
 
-StatmList * DeklKonst(Env env, bool isStatic) {
+StatmList * DeklKonst(Env env, bool isStatic, bool isEnum) {
 	char id[MAX_IDENT_LEN];
 	char str[MAX_IDENT_LEN];
 	int hod;
+	int nextVal = 0;
 
-	Symb = readLexem();
+	//Symb = readLexem();
 	Srovnani_IDENT(id);
-	Srovnani(ASSIGN);
-	if(Symb.type == NUMB){
-		Srovnani_NUMB(&hod);
-		deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+
+	if(Symb.type != ASSIGN){
+		if(isEnum){
+			deklKonst(id, nextVal, isStatic, env.clsEnv, env.mthEnv);
+			nextVal++;
+		}
+		else{
+			Chyba("Konstanta musi mit hodnotu, ocekava se prirazeni.");
+		}
 	}
 	else{
-		Srovnani_STR(str);
-		deklKonst(id, str, isStatic, env.clsEnv, env.mthEnv);
+		Srovnani(ASSIGN);
+		if(Symb.type == NUMB){
+			Srovnani_NUMB(&hod);
+			deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+			nextVal = hod + 1;
+		}
+		else if(!isEnum){
+			Srovnani_STR(str);
+			deklKonst(id, str, isStatic, env.clsEnv, env.mthEnv);
+		}
+		else{
+			Chyba("Enum muze obsahovat pouze ciselne konstanty.");
+		}
 	}
-	ZbDeklKonst(env, isStatic);
+
+	ZbDeklKonst(env, isStatic, isEnum, nextVal);
 	if(Symb.type == SEMICOLON){
 		Srovnani(SEMICOLON);
 	}
@@ -107,24 +127,41 @@ StatmList * DeklKonst(Env env, bool isStatic) {
 	return new StatmList(new Empty, NULL);
 }
 
-void ZbDeklKonst(Env env, bool isStatic) {
+void ZbDeklKonst(Env env, bool isStatic, bool isEnum, int nextVal) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		char str[MAX_IDENT_LEN];
 		int hod;
 
 		Symb = readLexem();
+		skipNewlines();
 		Srovnani_IDENT(id);
-		Srovnani(ASSIGN);
-		if(Symb.type == NUMB){
-			Srovnani_NUMB(&hod);
-			deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+
+		if(Symb.type != ASSIGN){
+			if(isEnum){
+				deklKonst(id, nextVal, isStatic, env.clsEnv, env.mthEnv);
+				nextVal++;
+			}
+			else{
+				Chyba("Konstanta musi mit hodnotu, ocekava se prirazeni.");
+			}
 		}
 		else{
-			Srovnani_STR(str);
-			deklKonst(id, str, isStatic, env.clsEnv, env.mthEnv);
+			Srovnani(ASSIGN);
+			if(Symb.type == NUMB){
+				Srovnani_NUMB(&hod);
+				deklKonst(id, hod, isStatic, env.clsEnv, env.mthEnv);
+				nextVal = hod + 1;
+			}
+			else if(!isEnum){
+				Srovnani_STR(str);
+				deklKonst(id, str, isStatic, env.clsEnv, env.mthEnv);
+			}
+			else{
+				Chyba("Enum muze obsahovat pouze ciselne konstanty.");
+			}
 		}
-		ZbDeklKonst(env, isStatic);
+		ZbDeklKonst(env, isStatic, isEnum, nextVal);
 	}
 }
 
@@ -160,7 +197,7 @@ CRecord * Record() {
 
 StatmList * DeklProm(Env env, bool isStatic) {
 	char id[MAX_IDENT_LEN];
-	Symb = readLexem();
+	//Symb = readLexem();
 	Srovnani_IDENT(id);
 	Statm * st;
 	StatmList * ret;
@@ -198,6 +235,7 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 	if (Symb.type == COMMA) {
 		char id[MAX_IDENT_LEN];
 		Symb = readLexem();
+		skipNewlines();
 		Srovnani_IDENT(id);
 		Statm * st;
 		Var * var;
@@ -256,24 +294,40 @@ Class * Trida() {
 	Class * ret;
 
 	skipNewlines();
-	if(Symb.type == EOI){
+	if (Symb.type == EOI) {
 		return NULL;
 	}
 
-	Srovnani(kwCLASS);
-	Srovnani_IDENT(id);
-	if(Symb.type == COLON){ // Class has parent
-		Symb = readLexem();
-		Srovnani_IDENT(parId);
-		clsEnv = deklClass(id, parId);
-	}
-	else{ // Class does not have a parent
-		clsEnv = deklClass(id);
+	if (Symb.type == kwCLASS) {
+		Srovnani(kwCLASS);
+		Srovnani_IDENT(id);
+		if(Symb.type == COLON){ // Class has parent
+			Symb = readLexem();
+			Srovnani_IDENT(parId);
+			clsEnv = deklClass(id, parId);
+		}
+		else{ // Class does not have a parent
+			clsEnv = deklClass(id);
+		}
+
+		env.clsEnv = clsEnv;
+		env.mthEnv = NULL;
+		return new Class(id, SeznamMetod(env));
 	}
 
-	env.clsEnv = clsEnv;
-	env.mthEnv = NULL;
-	return new Class(id, SeznamMetod(env));
+	if(Symb.type == kwENUM) {
+		Srovnani(kwENUM);
+		Srovnani_IDENT(id);
+		clsEnv = deklClass(id);
+		env.clsEnv = clsEnv;
+		env.mthEnv = NULL;
+		Srovnani(LCURLY);
+		skipNewlines();
+		ret = new Class(id, DeklKonst(env, true, true));
+		Srovnani(RCURLY);
+		return ret;
+	}
+	return NULL;
 }
 
 StatmList * SeznamMetod(Env env) {
@@ -450,7 +504,7 @@ Expr *VarOrConst(char *id, Expr * offset, Env env)
 
 	switch (druh) {
 	case IdProm:
-		return new Var(p, offset, true, false);
+		return new Var(p, offset, true, !env.self);
 	case IdConstNum:
 		return new Numb(p->val.num);
 	case IdConstStr:

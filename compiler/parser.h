@@ -14,8 +14,8 @@ enum Context {
 
 Prog *Program();
 StatmList * Dekl(Env, bool);
-StatmList * DeklKonst(Env, bool);
-void ZbDeklKonst(Env, bool);
+StatmList * DeklKonst(Env, bool, bool = false);
+void ZbDeklKonst(Env, bool, bool, int);
 StatmList * DeklProm(Env, bool);
 StatmList * ZbDeklProm(Env, bool);
 StatmList *SlozPrikaz(Env env, Context ctxt = C_NIL);

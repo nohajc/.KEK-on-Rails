@@ -37,11 +37,11 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	prog = (Prog*) (prog->Optimize());
+
 	if (ast_print) {
 		prog->Print(0);
 	}
-
-	prog = (Prog*) (prog->Optimize());
 
 	prog->Translate();
 

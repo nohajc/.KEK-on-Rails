@@ -320,6 +320,7 @@ class Method: public Statm {
 public:
 	Method(const char *, bool, int, unsigned int *, StatmList *);
 	virtual ~Method();
+	virtual Node *Optimize();
 	virtual uint32_t Translate();
 	virtual void Print(int);
 };
@@ -369,6 +370,7 @@ public:
 	CaseBlock();
 	CaseBlock(Statm *, CaseBlock *, CaseBlockScope *);
 	virtual ~CaseBlock();
+	virtual Node *Optimize();
 	virtual uint32_t Translate();
 	virtual void Print(int);
 };

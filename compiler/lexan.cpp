@@ -10,7 +10,7 @@ typedef enum {
 	LETTER, NUMBER, WHITE_SPACE, NEW_LINE, END, NO_TYPE
 } InputCharType;
 
-const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
+const char *symbTable[] = { "IDENT", "NUMB", "STR", "PLUS", "MINUS", "TIMES",
 		"DIVIDE", "MODULO", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
 		"ASSIGN", "COMMA", "SEMICOLON", "NEWLINE", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
 		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
@@ -18,7 +18,7 @@ const char *symbTable[] = { "IDENT", "NUMB", "PLUS", "MINUS", "TIMES",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO", "kwBREAK",
 		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN", "INCREMENT", "DECREMENT",
 		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT",
-		"kwCLASS", "kwSTATIC", "kwRETURN", "kwTHIS", "kwSUPER", "kwNEW", "kwNIL" }; //symbol names in the same order as in LexSymbolType
+		"kwCLASS", "kwENUM", "kwSTATIC", "kwRETURN", "kwTHIS", "kwSUPER", "kwNEW", "kwNIL" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -66,6 +66,7 @@ const struct {
 		{ "downto", kwDOWNTO },
 		{ "break", kwBREAK },
 		{ "class", kwCLASS },
+		{ "enum", kwENUM },
 		{ "static", kwSTATIC },
 		{ "return", kwRETURN },
 		{ "this", kwTHIS },
