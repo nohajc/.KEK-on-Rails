@@ -29,6 +29,8 @@ PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, PrvekTab *n) {
 	strcpy(ident, i);
 	druh = d; addr = a; dalsi = n;
 	sc = s;
+	const_ptr = 0;
+	val.str = NULL;
 }
 
 PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, int v, PrvekTab *n) {
