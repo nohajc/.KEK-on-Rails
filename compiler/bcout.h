@@ -97,8 +97,11 @@ typedef enum _bc {
 
 extern const char *op_str[];
 
+// We assume that struct alignment is the same on 32-bit and 64-bit systems
+// This is dangerous. We should use appropriate __attribute__ to ensure compatibility
+
 typedef enum _constant_type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR
 } constant_type_t;
 
 typedef struct _constant_nil {
@@ -116,10 +119,26 @@ typedef struct _constant_string {
 	char string[1];
 } constant_string_t;
 
+typedef struct _constant_array {
+	constant_type_t type;
+	int length;
+	// This is a little hack: at runtime, the last two members will be replaced by pointer to memory allocated elsewhere.
+	// Padding is here in case of 64-bit pointers and an array with one element.
+	// The elements won't be inlined because the type is mutable but we need to keep pointer to the array object constant
+	// when reallocating the array contents somewhere else (when we grow the array for example).
+	uint32_t padding;
+	// This member contains offset of the first array element.
+	// Compiler makes sure they are stored consecutively in the constant table.
+	uint32_t first_elem_idx;
+	// When we load the array object, we allocate array of pointers and then store the actual element pointers in it.
+	// The pointers will be determined by reading the constant table from first_elem_idx and parsing the elements encountered.
+} constant_array_t;
+
 typedef union _constant_item {
 	constant_type_t type;
 	constant_int_t ci;
 	constant_string_t cs;
+	constant_array_t ca;
 } constant_item_t;
 
 /******************************************************************************/
@@ -248,7 +267,7 @@ uint32_t bco_nil(bcout_t *bco);
 uint32_t bco_int(bcout_t *bco, int v);
 uint32_t bco_str(bcout_t *bco, const char *str);
 uint32_t bco_sym(bcout_t *bco, const char *str);
-uint32_t bco_arr(bcout_t *bco, constant_item_t *arr);
+uint32_t bco_arr(bcout_t *bco, size_t len, uint32_t first_elem_idx);
 
 /* helper functions */
 size_t bco_get_ip(bcout_t *bco);

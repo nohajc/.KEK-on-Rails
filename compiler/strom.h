@@ -45,9 +45,9 @@ public:
 };
 
 class ArgList: public Expr {
+public:
 	Expr * arg;
 	ArgList * next;
-public:
 	ArgList(Expr *, ArgList *);
 	virtual ~ArgList();
 	virtual uint32_t Translate();
@@ -134,6 +134,16 @@ class String: public Const {
 public:
 	String(const char *);
 	virtual ~String();
+	virtual uint32_t Translate();
+	char * Value();
+	virtual void Print(int);
+};
+
+class Array: public Const {
+	ArgList * elems;
+public:
+	Array(ArgList *);
+	virtual ~Array();
 	virtual uint32_t Translate();
 	virtual void Print(int);
 };

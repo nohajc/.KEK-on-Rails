@@ -1,7 +1,12 @@
 class Object {
 	static const a = 5
+	var v, b
 
 	method1() {
+		b = 101
+		//v = [1, 2, 3, "ahoj", "b", "c", a, b] // does not compile
+		v = [1, 2, 3, "ahoj", "b", "c", a]
+		v[7] = b
 		return new Object()
 	}
 
@@ -13,6 +18,11 @@ class Object {
 		//this.a = 42 // does not compile
 		return
 	}
+
+	/*static foo() {
+		return v
+		return this
+	}*/
 };
 
 class Test: Object {
@@ -59,4 +69,4 @@ class Loader {
 	Loader() {
 		Test.main()
 	}
-}
+};

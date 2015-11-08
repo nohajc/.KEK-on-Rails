@@ -114,7 +114,19 @@ String::~String() {
 	delete [] value;
 }
 
+Array::Array(ArgList * e) {
+	elems = e;
+}
+
+Array::~Array() {
+	delete elems;
+}
+
 int Numb::Value() {
+	return value;
+}
+
+char * String::Value() {
 	return value;
 }
 
@@ -600,6 +612,43 @@ uint32_t Numb::Translate() {
 uint32_t String::Translate() {
 	uint32_t str_idx = bco_str(bcout_g, value);
 	bco_ww1(bcout_g, PUSH_C, str_idx);
+
+	return 0;
+}
+
+uint32_t Array::Translate() {
+	ArgList * e = elems;
+	Numb * n;
+	String * s;
+	int elem_count = elems->Count();
+	uint32_t arr_idx;
+	int i = 0;
+	uint32_t first_elem_idx = 0;
+	bool first_elem_inserted = false;
+
+	while (e) {
+		if ((n = dynamic_cast<Numb*>(e->arg))) {
+			uint32_t int_idx = bco_int(bcout_g, n->Value());
+			//printf("DEBUG int_idx = %u\n", int_idx);
+			if (!first_elem_inserted) {
+				first_elem_idx = int_idx;
+				first_elem_inserted = true;
+			}
+		}
+		else if((s = dynamic_cast<String*>(e->arg))) {
+			uint32_t str_idx = bco_str(bcout_g, s->Value());
+			//printf("DEBUG str_idx = %u\n", str_idx);
+			if (!first_elem_inserted) {
+				first_elem_idx = str_idx;
+				first_elem_inserted = true;
+			}
+		}
+
+		e = e->next;
+	}
+
+	arr_idx = bco_arr(bcout_g, elem_count, first_elem_idx);
+	bco_ww1(bcout_g, PUSH_C, arr_idx);
 
 	return 0;
 }
@@ -1131,6 +1180,15 @@ void Numb::Print(int ident) {
 
 void String::Print(int ident) {
 	printfi(ident, "String [value=\"%s\"]\n", this->value);
+}
+
+void Array::Print(int ident) {
+	printfi(ident, "Array\n");
+
+	printfi(ident, "elems:\n");
+	if (this->elems) {
+		this->elems->Print(ident + 1);
+	}
 }
 
 void Nil::Print(int ident) {

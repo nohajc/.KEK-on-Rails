@@ -469,6 +469,10 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	if (env.mthEnv && Symb.type == kwTHIS) { // self ref
 		Symb = readLexem();
 
+		if (env.mthEnv->isStatic) {
+			Chyba("Neplatna reference na instanci ve statickem kontextu.");
+		}
+
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.mthEnv = NULL;
@@ -974,7 +978,7 @@ Expr * ZbTermu(Env env, Expr * du) {
 }
 
 Expr * Faktor(Env env) {
-	Expr * offset;
+	Expr * offset, * e;
 	char id[MAX_IDENT_LEN];
 
 	if (Symb.type == MINUS) {
@@ -1016,12 +1020,79 @@ Expr * Faktor(Env env) {
 	}
 	case LBRAC:
 		Symb = readLexem(); // TODO: array initializer
+		e = Pole(env);
 		Srovnani(RBRAC);
-		return new New(new MethodRef("Array"), NULL);
+		return e;
 	default:
 		ChybaExpanze("Faktor", Symb.type);
 		return 0;
 	}
+}
+
+ArgList * ZbElems(Env env) {
+	Const * e = NULL;
+	PrvekTab * p;
+	int hodn;
+	char id[MAX_IDENT_LEN];
+
+	if(Symb.type == RBRAC) {
+		return NULL;
+	}
+
+	Srovnani(COMMA);
+
+	if (Symb.type == NUMB) {
+		Srovnani_NUMB(&hodn);
+		e = new Numb(hodn);
+	}
+	else if (Symb.type == STR) {
+		Srovnani_STR(id);
+		e = new String(id);
+	}
+	else if (Symb.type == IDENT) {
+		Srovnani_IDENT(id);
+		p = adrSym(id, env.clsEnv, env.mthEnv);
+		if (p->druh == IdConstNum) {
+			e = new Numb(p->val.num);
+		}
+		else if (p->druh == IdConstStr) {
+			e = new String(p->val.str);
+		}
+	}
+
+	if(!e) {
+		Chyba("Inicializator pole muze obsahovat pouze konstantni vyrazy.");
+	}
+
+	return new ArgList(e, ZbElems(env));
+}
+
+ArgList * Elems(Env env) {
+	Const * e;
+	int hodn;
+	char id[MAX_IDENT_LEN];
+
+	if (Symb.type == NUMB) {
+		Srovnani_NUMB(&hodn);
+		e = new Numb(hodn);
+	}
+	else if (Symb.type == STR) {
+		Srovnani_STR(id);
+		e = new String(id);
+	}
+	else {
+		Chyba("Inicializator pole muze obsahovat pouze konstantni vyrazy.");
+	}
+
+	return new ArgList(e, ZbElems(env));
+}
+
+Expr * Pole(Env env) {
+	if (Symb.type == RBRAC) {
+		return new New(new MethodRef("Array"), NULL);
+	}
+
+	return new Array(Elems(env));
 }
 
 CaseBlock * ntCASE_BODY(Env env) {

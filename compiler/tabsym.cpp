@@ -73,6 +73,7 @@ ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 	syms = NULL;
 	methods = NULL;
 	constructor = NULL;
+	static_init = NULL;
 }
 
 ClassEnv::~ClassEnv() {

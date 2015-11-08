@@ -36,6 +36,9 @@ void bco_print_const(bcout_t *bco, uint8_t idx) {
 	case KEK_SYM:
 		bco_debug("%s", item->cs.string);
 		break;
+	case KEK_ARR:
+		bco_debug("array [length: %d, first elem: %u]", item->ca.length, item->ca.first_elem_idx);
+		break;
 	}
 }
 
@@ -339,6 +342,17 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 	bcout_items_add(bco, (constant_item_t *) cs);
 
 	return ((uint8_t *) cs - bco->const_table);
+}
+
+uint32_t bco_arr(bcout_t *bco, size_t len, uint32_t first_elem_idx){
+	constant_array_t *ca;
+
+	ca = (constant_array_t *) ct_malloc(bco, sizeof(constant_array_t));
+	ca->type = KEK_ARR;
+	ca->length = len;
+	ca->first_elem_idx = first_elem_idx;
+
+	return ((uint8_t *) ca - bco->const_table);
 }
 
 size_t bco_get_ip(bcout_t *bco) {
