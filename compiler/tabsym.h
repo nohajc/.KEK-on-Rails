@@ -3,9 +3,8 @@
 #ifndef TABSYM_H
 #define TABSYM_H
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 enum DruhId {
 	Nedef, IdProm, IdConstNum, IdConstStr
@@ -37,7 +36,7 @@ struct PrvekTab {
 	char *ident;
 	DruhId druh;
 	Scope sc;
-	int addr; // address within method/class (even for consts)
+	uint32_t addr; // address within method/class (even for consts)
 	//int prvni, posledni;
 	uint32_t const_ptr; // index to constant pool (in case of ConstNum, ConstStr) - replaced by pointer at runtime
 
@@ -78,6 +77,8 @@ struct MethodEnv {
 struct ClassEnv {
 	char * className;
 	PrvekTab * syms; // class consts and vars
+	PrvekTab * syms_static; // this is filled before bcout
+	PrvekTab * syms_instance; // this is filled before bcout
 	MethodEnv * methods;
 	MethodEnv * constructor;
 	MethodEnv * static_init;

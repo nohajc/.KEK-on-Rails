@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3
+CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3 -std=c99
 OBJS=\
 	loader.o \
 	vm.o \

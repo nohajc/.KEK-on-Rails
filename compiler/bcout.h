@@ -38,16 +38,17 @@ enum Operator {
 };
 
 /*
-Extra instruction info:
-	NIL - no special meaning
-	BRK - break
-*/
+ Extra instruction info:
+ NIL - no special meaning
+ BRK - break
+ */
 typedef enum _label {
-	NIL, BRK
+	NIL, /**/
+	BRK
 } label_t;
 
 typedef enum _bc {
-	UNDEF,
+	UNDEF, /**/
 	BOP, /**/
 	UNM, /**/
 	LD, /* load */
@@ -66,7 +67,7 @@ typedef enum _bc {
 	CALL, /* arg: index to const table */
 	CALLS, /* arg: index to const table, calls method of the superclass */
 	CALLE, /* call external. arg: index to const table,
-	          start search at the given pointer */
+	 start search at the given pointer */
 
 	PUSH_C, /* arg: index to const table (f.ex. string) */
 	PUSH_ARG, /* arg: index */
@@ -87,12 +88,12 @@ typedef enum _bc {
 	PUSHA_CVE, /* cv external. push class variable, arg: index */
 
 	IDX, /* return an item at the index. args: none. takes obj pointer
-	and the index from the stack */
+	 and the index from the stack */
 
 	IDXA, /* return address of an item at index */
 
 	NEW /* arg: index to constant table.
-	        creates a new object and returns its address */
+	 creates a new object and returns its address */
 } bc_t;
 
 extern const char *op_str[];
@@ -122,16 +123,29 @@ typedef struct _constant_string {
 typedef struct _constant_array {
 	constant_type_t type;
 	int length;
-	// This is a little hack: at runtime, the last two members will be replaced by pointer to memory allocated elsewhere.
+	// This is a little hack: at runtime, the last two members will be replaced
+	//     by pointer to memory allocated elsewhere.
 	// Padding is here in case of 64-bit pointers and an array with one element.
-	// The elements won't be inlined because the type is mutable but we need to keep pointer to the array object constant
-	// when reallocating the array contents somewhere else (when we grow the array for example).
+	// The elements won't be inlined because the type is mutable but we need to
+	//     keep pointer to the array object constant
+	// when reallocating the array contents somewhere else (when we grow the
+	//     array for example).
 	uint32_t padding;
+<<<<<<< HEAD
 	// This member contains offsets to the array elements (as stored in the constant table).
 	// The array of offsets is inlined.
 	uint32_t elems[1];
 	// When we load the array object, we allocate array of pointers and then store the actual element pointers in it.
 	// The pointers will be computed from offsets and constant table location in memory (after it's loaded).
+=======
+	// This member contains offset of the first array element.
+	// Compiler makes sure they are stored consecutively in the constant table.
+	uint32_t first_elem_idx;
+	// When we load the array object, we allocate array of pointers and then
+	//     store the actual element pointers in it.
+	// The pointers will be determined by reading the constant table from
+	//     first_elem_idx and parsing the elements encountered.
+>>>>>>> divided syms in ClassEnv (needs testing), loader.c wip
 } constant_array_t;
 
 typedef union _constant_item {
@@ -162,6 +176,7 @@ typedef struct _method {
 
 	uint32_t syms;
 	// symbol_t[syms]
+
 	uint32_t bc_entrypoint;
 	uint8_t is_static;
 } method_t;
@@ -173,16 +188,15 @@ typedef struct _class {
 	uint32_t parent;
 	// char[parent]
 
+	uint32_t syms_static;
+	// symbol_t[syms]
+
+	uint32_t syms_method;
+	// symbol_t[syms]
+
 	uint32_t methods;
 	// class_method_t[methods]
 } class_t;
-
-/*
-typedef struct _classout {
-	uint32_t classes;
-	// class_item_t[classes]
-} classout_t;
-*/
 
 typedef struct _classout_wrapp {
 	uint8_t *classout; /* in real: an array of uint8_t */
@@ -195,7 +209,6 @@ typedef struct _classout_wrapp {
 #define SIZE_PLACEHOLDER 666
 classout_wrapp_t *classout_wrapp_init(ClassEnv *);
 
-
 /* helper functions */
 void classout_class(classout_wrapp_t *, ClassEnv *);
 void classout_method(classout_wrapp_t *, ClassEnv *);
@@ -207,11 +220,11 @@ void classout_symbol(classout_wrapp_t *, ClassEnv *);
 
 /*
  just use free(.). structs are flat
-void classout_free(classout_t *);
-void class_free(class_t *);
-void method_free(method_t *);
-void symbol_free(symbol_t *);
-*/
+ void classout_free(classout_t *);
+ void class_free(class_t *);
+ void method_free(method_t *);
+ void symbol_free(symbol_t *);
+ */
 
 /******************************************************************************/
 
@@ -220,7 +233,8 @@ typedef struct _bcout {
 	size_t bc_arr_cnt;
 	size_t bc_arr_size;
 	uint8_t *bc_arr; /* bytecode array */
-	uint8_t *bc_lab; /* bytecode labels - for internal use only, won't be saved in the binary */
+	uint8_t *bc_lab; /* bytecode labels - for internal use only, won't be saved
+	 in the binary */
 
 	size_t const_table_cnt;
 	size_t const_table_size;
@@ -241,11 +255,11 @@ void bcout_free(bcout_t *bco);
 /******************************************************************************/
 
 /*
-00 - byte
-01 - word
-10 - double word
-11 - int
-*/
+ 00 - byte
+ 01 - word
+ 10 - double word
+ 11 - int
+ */
 
 /* bco write (args: byte) */
 uint32_t bco_w0(bcout_t *bco, bc_t bc);

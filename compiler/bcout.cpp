@@ -1,10 +1,10 @@
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-
 #include "bcout.h"
+
+#include <assert.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 bcout_t *bcout_g;
 
@@ -471,7 +471,29 @@ void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
 	classout_wstr(cow, pt->ident);
 	classout_w8(cow, pt->druh);
 	classout_w8(cow, pt->sc);
+	classout_w32(cow, pt->addr);
 	classout_w32(cow, pt->const_ptr);
+}
+
+/* uint32_t cnt;
+ * PrvekTab[cnt]
+ */
+void classout_prvektab_ll(classout_wrapp_t *cow, PrvekTab *ptarg) {
+	PrvekTab *pt;
+	uint32_t pt_cnt;
+	uint8_t pt_cnt_offset;
+
+	pt = ptarg;
+
+	pt_cnt = 0;
+	pt_cnt_offset = classout_w32(cow, pt_cnt);
+	if (pt != NULL) {
+		while (pt->dalsi != NULL) {
+			classout_symbol(cow, pt);
+			pt = pt->dalsi;
+		}
+		cow->classout[pt_cnt_offset] = pt_cnt;
+	}
 }
 
 /* write method_t */
@@ -479,38 +501,11 @@ void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
 method_t m; /* eclipse will show me how it looks like */
 #endif
 void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
-	PrvekTab *arg;
-	uint32_t arg_cnt;
-	uint8_t arg_cnt_offset;
-	PrvekTab *sym;
-	uint32_t sym_cnt;
-	uint8_t sym_cnt_offset;
-
 	classout_wstr(cow, me->methodName);
-
-	/* FIXME: two or more, use a for... */
-
-	arg_cnt = 0;
-	arg_cnt_offset = classout_w32(cow, arg_cnt);
-	if (me->args != NULL) {
-		arg = me->args;
-		while (arg->dalsi != NULL) {
-			classout_symbol(cow, arg);
-			arg = arg->dalsi;
-		}
-		cow->classout[arg_cnt_offset] = arg_cnt;
-	}
-
-	sym_cnt = 0;
-	sym_cnt_offset = classout_w32(cow, sym_cnt);
-	if (me->syms != NULL) {
-		sym = me->syms;
-		while (sym->dalsi != NULL) {
-			classout_symbol(cow, sym);
-			sym = sym->dalsi;
-		}
-		cow->classout[sym_cnt_offset] = sym_cnt;
-	}
+	classout_prvektab_ll(cow, me->args);
+	classout_prvektab_ll(cow, me->syms);
+	classout_w32(cow, me->bc_entrypoint);
+	classout_w8(cow, me->isStatic);
 }
 
 /* write class_t */
@@ -521,9 +516,15 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	MethodEnv *method;
 	uint32_t method_cnt;
 	uint8_t method_cnt_ptr;
+
 	PrvekTab *sym;
 	uint32_t sym_cnt;
 	uint8_t sym_cnt_ptr;
+
+	PrvekTab *sym_instance;
+	PrvekTab *sym_static;
+
+	/**************************************************************************/
 
 	classout_wstr(cow, ce->className);
 
@@ -533,17 +534,46 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 		classout_wstr(cow, "NOPARENT");
 	}
 
-	/* TODO: DRY */
-	sym_cnt = 0;
-	sym_cnt_ptr = classout_w32(cow, sym_cnt);
+	/* now we need to divide syms */
+	ce->syms_instance = NULL;
+	sym_instance = ce->syms_instance; /* FIXME assign pointer? */
+	ce->syms_static = NULL;
+	sym_static = ce->syms_static;
 	if (ce->syms != NULL) {
 		sym = ce->syms;
 		while (sym->dalsi != NULL) {
-			classout_symbol(cow, sym);
+			switch (sym->sc) {
+			case SC_INSTANCE: // instance variable
+				if (sym_instance == NULL) {
+					sym_instance = sym;
+				} else {
+					sym_instance->dalsi = sym;
+					sym_instance = sym;
+				}
+				break;
+			case SC_CLASS: // class static variable
+				if (sym_static == NULL) {
+					sym_static = sym;
+				} else {
+					sym_static->dalsi = sym;
+					sym_static = sym;
+				}
+				break;
+			default:
+				assert(0);
+				break;
+			}
+
 			sym = sym->dalsi;
 		}
-		cow->classout[sym_cnt_ptr] = sym_cnt;
 	}
+
+	/* print syms_{static,instance} *******************************************/
+
+	classout_prvektab_ll(cow, ce->syms_static);
+	classout_prvektab_ll(cow, ce->syms_instance);
+
+	/**************************************************************************/
 
 	method_cnt = 0;
 	method_cnt_ptr = classout_w32(cow, method_cnt);
