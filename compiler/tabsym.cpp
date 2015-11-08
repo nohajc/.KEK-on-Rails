@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* global variable */
+ClassEnv *TabClass;
+
 /*CRecord::CRecord(char *ident) {
 	this->m_Ident = strdup(ident);
 	this->m_Val = volna_adr++;

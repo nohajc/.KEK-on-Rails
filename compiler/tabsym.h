@@ -103,7 +103,7 @@ struct Env {
 	bool self;
 };
 
-static ClassEnv * TabClass = NULL;
+extern ClassEnv *TabClass;
 
 
 ClassEnv * deklClass(char *, char * = NULL);

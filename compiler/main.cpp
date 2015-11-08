@@ -1,11 +1,14 @@
 /* main.c */
 /* syntakticky analyzator */
 
+#include <stdio.h>
+#include <assert.h>
+
 #include "lexan.h"
 #include "parser.h"
 #include "strom.h"
 #include "bcout.h"
-#include <stdio.h>
+
 
 int main(int argc, char *argv[]) {
 	char *fileName;
@@ -41,13 +44,12 @@ int main(int argc, char *argv[]) {
 	prog = (Prog*) (prog->Optimize());
 
 	prog->Translate();
-	//Print();
-	//Run();
-	//printf("Konec\n");
+
+	assert(TabClass != NULL);
+	bcout_to_file(bcout_g, TabClass, "test.kexe");
+
 	closeInput();
 	delete prog;
-
-	bcout_to_file(bcout_g, TabClass, "test.kexe");
 
 	return 0;
 }

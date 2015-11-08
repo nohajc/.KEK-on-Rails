@@ -13,11 +13,9 @@ bcout_t *bcout_g;
 
 void bco_debug(const char *format, ...) {
 	va_list args;
-	//fprintf(stderr, "bco: ");
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
-	//fprintf(stderr, "\n");
 	fflush(stderr);
 }
 
@@ -417,6 +415,7 @@ uint32_t bco_find_sym(bcout_t *bco, const char *str) {
 /* check, if we can add 'size' to the classout. if not, realloc */
 void classout_realloc(classout_wrapp_t *cow, size_t size) {
 	if (cow->classout_size < cow->classout_cnt + size) {
+		bco_debug("classout_realloc\n");
 		cow->classout_size *= 2;
 		cow->classout = (uint8_t *) realloc(cow->classout,
 				cow->classout_size * sizeof(uint8_t));
@@ -474,35 +473,35 @@ method_t m; /* eclipse will show me how it looks like */
 void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
 	PrvekTab *arg;
 	uint32_t arg_cnt;
-	uint8_t arg_cnt_ptr; /* FIXME: not ptr, but offset */
+	uint8_t arg_cnt_offset;
 	PrvekTab *sym;
 	uint32_t sym_cnt;
-	uint8_t sym_cnt_ptr;
+	uint8_t sym_cnt_offset;
 
 	classout_wstr(cow, me->methodName);
 
 	/* FIXME: two or more, use a for... */
 
 	arg_cnt = 0;
-	arg_cnt_ptr = classout_w32(cow, arg_cnt);
+	arg_cnt_offset = classout_w32(cow, arg_cnt);
 	if (me->args != NULL) {
 		arg = me->args;
 		while (arg->dalsi != NULL) {
 			classout_symbol(cow, arg);
 			arg = arg->dalsi;
 		}
-		cow->classout[arg_cnt_ptr] = arg_cnt;
+		cow->classout[arg_cnt_offset] = arg_cnt;
 	}
 
 	sym_cnt = 0;
-	sym_cnt_ptr = classout_w32(cow, sym_cnt);
+	sym_cnt_offset = classout_w32(cow, sym_cnt);
 	if (me->syms != NULL) {
 		sym = me->syms;
 		while (sym->dalsi != NULL) {
 			classout_symbol(cow, sym);
 			sym = sym->dalsi;
 		}
-		cow->classout[sym_cnt_ptr] = sym_cnt;
+		cow->classout[sym_cnt_offset] = sym_cnt;
 	}
 }
 
@@ -519,7 +518,12 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	uint8_t sym_cnt_ptr;
 
 	classout_wstr(cow, ce->className);
-	classout_wstr(cow, ce->parent->className);
+
+	if (ce->parent != NULL) {
+		classout_wstr(cow, ce->parent->className);
+	} else {
+		classout_wstr(cow, "NOPARENT");
+	}
 
 	/* TODO: DRY */
 	sym_cnt = 0;
@@ -533,17 +537,26 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 		cow->classout[sym_cnt_ptr] = sym_cnt;
 	}
 
-	method_cnt = 1;
+	method_cnt = 0;
 	method_cnt_ptr = classout_w32(cow, method_cnt);
-	classout_method(cow, ce->constructor);
+
+	if (ce->constructor != NULL) {
+		classout_method(cow, ce->constructor);
+		method_cnt++;
+	} else {
+		bco_debug("class \"%s\" has no constructor\n", ce->className);
+	}
+
 	if (ce->methods != NULL) { /* TODO: this could be refactored? */
 		method = ce->methods;
 		while (method->next != NULL) {
 			classout_method(cow, method);
 			method_cnt++;
-			ce = ce->next;
+			method = method->next;
 		}
 		cow->classout[method_cnt_ptr] = method_cnt;
+	} else {
+		bco_debug("class \"%s\" has no methods\n", ce->className);
 	}
 }
 
@@ -555,7 +568,9 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	assert(cow);
 	cow->classout_cnt = 0;
 	cow->classout_size = DEFAULT_BUFFER_SIZE;
-	cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
+	/* FIXME: how it's possible that we have "holes" in classout? */
+	//cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
+	cow->classout = (uint8_t *) calloc(cow->classout_size, sizeof(uint8_t));
 	assert(cow->classout);
 
 	ceptr = ce;
@@ -563,7 +578,7 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 		while (ceptr->next != NULL) {
 			classout_class(cow, ceptr);
 			cow->classout_cnt++;
-			ce = ce->next;
+			ceptr = ceptr->next;
 		}
 	} else {
 		bco_debug("top_class is NULL\n");
@@ -588,7 +603,7 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 	cow = classout_wrapp_init(top_class);
 	bco_debug("fwrite: cow->classout_cnt=%d\n", cow->classout_cnt);
 	fwrite(&cow->classout_cnt, sizeof(uint32_t), 1, f);
-	fwrite(cow->classout, sizeof(uint32_t), cow->classout_cnt, f);
+	fwrite(cow->classout, sizeof(uint8_t), cow->classout_cnt, f);
 	free(cow->classout); /* TODO: make normal _free */
 	free(cow);
 
