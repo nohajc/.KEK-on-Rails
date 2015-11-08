@@ -555,7 +555,6 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	assert(cow);
 	cow->classout_cnt = 0;
 	cow->classout_size = DEFAULT_BUFFER_SIZE;
-	cow->classes = 0;
 	cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
 	assert(cow->classout);
 
@@ -563,9 +562,11 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	if (ceptr != NULL) {
 		while (ceptr->next != NULL) {
 			classout_class(cow, ceptr);
-			cow->classes++;
+			cow->classout_cnt++;
 			ce = ce->next;
 		}
+	} else {
+		bco_debug("top_class is NULL\n");
 	}
 
 	return (cow);
