@@ -131,21 +131,13 @@ typedef struct _constant_array {
 	// when reallocating the array contents somewhere else (when we grow the
 	//     array for example).
 	uint32_t padding;
-<<<<<<< HEAD
-	// This member contains offsets to the array elements (as stored in the constant table).
-	// The array of offsets is inlined.
+	// This member contains offsets to the array elements (as stored in the
+	//     constant table). The array of offsets is inlined.
 	uint32_t elems[1];
-	// When we load the array object, we allocate array of pointers and then store the actual element pointers in it.
-	// The pointers will be computed from offsets and constant table location in memory (after it's loaded).
-=======
-	// This member contains offset of the first array element.
-	// Compiler makes sure they are stored consecutively in the constant table.
-	uint32_t first_elem_idx;
 	// When we load the array object, we allocate array of pointers and then
 	//     store the actual element pointers in it.
-	// The pointers will be determined by reading the constant table from
-	//     first_elem_idx and parsing the elements encountered.
->>>>>>> divided syms in ClassEnv (needs testing), loader.c wip
+	// The pointers will be computed from offsets and constant table location 
+	//     in memory (after it's loaded).
 } constant_array_t;
 
 typedef union _constant_item {
