@@ -38,6 +38,7 @@ protected:
 public:
 	Var(const PrvekTab *, Expr *, bool rv, bool e);
 	Var(char * n, bool rv);
+	Var(char * n, Expr * o, bool rv, bool e);
 	virtual ~Var();
 	virtual uint32_t Translate();
 	virtual Node *Optimize();

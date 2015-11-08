@@ -600,6 +600,12 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;
 	case LPAR: // call
+		if (env.clsEnv == CLASS_ANY) {
+			// For unknown object, we can also call an unknown method.
+			// Its existence will be checked at runtime
+			external = !env.self;
+			return new MethodRef(id);
+		}
 		m = hledejMethod(id, env.clsEnv);
 		if (m) {
 			if (!env.self && env.clsEnv != CLASS_ANY && !m->isStatic) {
@@ -616,7 +622,13 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	default: // var/const
 		external = !env.self;
 		if (rvalue) {
+			if (env.clsEnv == CLASS_ANY) {
+				return new Var(id, offset, true, external);
+			}
 			return VarOrConst(id, offset, env);
+		}
+		if (env.clsEnv == CLASS_ANY) {
+			return new Var(id, offset, false, external);
 		}
 
 		p = adrProm(id, env.clsEnv, env.mthEnv);

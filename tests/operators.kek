@@ -1,40 +1,56 @@
-{
-	var a = 4
-	var b = 5
-	var c = 10
-	var d, i
-	read d
+class Array {
+	static var sVar
+}
 
-	// 0 + -4 = -4
-	write !c + -a
+class Operators {
+	static var a1, a2, a3
 
-	//if (a == (d & 4) && b == 5 || c != 1) {
-	//if (a == (d & 4) && (b == 5 || c != 1)) {
-	if (a == (d ^ 4) && (b == 5 || c != 1)) {
-		write d
-	}
-	else {
-		write c
-	}
-
-	/*read a
-	write a << 1
-	write a << 2
-	write a << 3
-	write a << 4
-
-	read b
-	write b >> 1
-	write b >> 2
-	write b >> 3
-	write b >> 4*/
-
-	write 3 * 2 + 10 << 2
-	write 3 * 2 + (10 << 2)
-
-	for(i = 14; i >= 0; i--){
-		write i
+	static Operators() {
+		a1 = []
+		a2 = new Array()
+		a3 = [1, 2]
+		// We can perform operations on incomplete types (useful for natives implemented in the VM).
+		// The method's existence will be checked at runtime.
+		a3.append([3, 4])
+		// We can access instance variable whose existence will also be checked at runtime.
+		write a3.length
+		// For accessing static members we need their declaration in the source code.
+		// This is because of bytecode optimization - we look up the members by address, not by name.
+		write Array.sVar
 	}
 
-	for(i = 14 downto 0) write i
+	static main() {
+		var a = 4
+		var b = 5
+		var c = 10
+		var d, i
+		read d
+
+		// 0 + -4 = -4
+		write !c + -a
+
+		//if (a == (d & 4) && b == 5 || c != 1) {
+		//if (a == (d & 4) && (b == 5 || c != 1)) {
+		if (a == (d ^ 4) && (b == 5 || c != 1)) {
+			write d
+		}
+		else {
+			write c
+		}
+
+		/*read a
+		write a << 1
+		write a << 2
+		write a << 3
+		write a << 4
+
+		read b
+		write b >> 1
+		write b >> 2
+		write b >> 3
+		write b >> 4*/
+
+		write 3 * 2 + 10 << 2
+		write 3 * 2 + (10 << 2)
+	}
 }

@@ -26,6 +26,17 @@ Var::Var(char * n, bool rv) {
 	rvalue = rv;
 	offset = NULL;
 	external = false;
+	addr = -1;
+}
+
+Var::Var(char * n, Expr * o, bool rv, bool e) {
+	name = new char[strlen(n) + 1];
+	strcpy(name, n);
+	rvalue = rv;
+	offset = o;
+	external = e;
+	addr = -1;
+	sc = SC_INSTANCE;
 }
 
 Var::~Var() {
