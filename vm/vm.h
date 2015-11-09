@@ -54,6 +54,9 @@ typedef struct _symbol {
 
 typedef struct _method {
 	const char *name;
+	uint32_t bc_entrypoint;
+	uint32_t args_cnt;
+	uint8_t is_static;
 } method_t;
 
 typedef struct _class {
@@ -76,6 +79,7 @@ typedef struct _class {
 /******************************************************************************/
 /* global variables */
 
+extern uint32_t classes_cnt_g;
 extern class_t *classes_g;
 
 /******************************************************************************/

@@ -472,8 +472,8 @@ symbol_t s; /* eclipse will show me how it looks like */
 #endif
 void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
 	classout_wstr(cow, pt->ident);
-	classout_w8(cow, pt->druh);
-	classout_w8(cow, pt->sc);
+	//classout_w8(cow, pt->druh);
+	//classout_w8(cow, pt->sc);
 	classout_w32(cow, pt->addr);
 	classout_w32(cow, pt->const_ptr);
 }

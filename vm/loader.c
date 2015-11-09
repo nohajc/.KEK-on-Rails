@@ -15,6 +15,7 @@
 /******************************************************************************/
 /* global variables */
 
+uint32_t classes_cnt_g = 0;
 class_t *classes_g = NULL;
 
 /******************************************************************************/
@@ -71,17 +72,26 @@ char *kexe_load_string(FILE *f) {
 
 int kexe_load_sym(FILE *f, symbol_t *sym) {
 	/* size_t fread_result; */
-	sym->name =  kexe_load_string(f);
+	sym->name = kexe_load_string(f);
+	if (sym->name == NULL) {
+		vm_error("sym->name failed\n");
+		return (FALSE);
+	}
 
-	/*sym->const_flag
-	kexe_load_uint32
-	DruhId type;
-	Scope scope;
-	uint32_t const_ptr;
+	sym->addr = kexe_load_uint32(f);
+	if (sym->addr == UINT32_MAX) {
+		vm_error("sym->addr failed\n");
+		return (FALSE);
+	}
 
-		classout_w8(cow, pt->druh);
-		classout_w8(cow, pt->sc);
-		classout_w32(cow, pt->const_ptr); */
+	sym->const_ptr = kexe_load_uint32(f);
+	if (sym->addr == UINT32_MAX) {
+		vm_error("sym->const_ptr failed\n");
+		return (FALSE);
+	}
+
+	sym->const_flag = 0; /* FIXME TODO */
+
 	return (TRUE);
 }
 
@@ -89,20 +99,65 @@ int kexe_load_sym(FILE *f, symbol_t *sym) {
  * sym_cnt is a pointer to classes_g->syms_*_cnt
  */
 int kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t *sym_array) {
-	size_t fread_result;
 	uint32_t i;
 
-	/* TODO: load both syms_{static,instance} */
-
-	fread_result = fread(sym_cnt, 1, sizeof(uint32_t), f);
-	if (fread_result != sizeof(uint32_t)) {
-		vm_error("Reading of \"cym_cnt\" has failed. fread_result=%zu\n",
-				fread_result);
+	*sym_cnt = kexe_load_uint32(f);
+	if (*sym_cnt == UINT32_MAX) {
+		vm_error("Reading of sym_cnt has failed.\n");
 		return (FALSE);
 	}
 
+	sym_array = malloc(*sym_cnt * sizeof(symbol_t));
+	assert(sym_array);
+
+	/* FIXME: this is in another function. refactor the rest of the loading? */
 	for (i = 0; i < *sym_cnt; i++) {
 		if (!kexe_load_sym(f, &sym_array[i])) {
+			vm_error("loading sym_array[%d] failed\n", i);
+			return (FALSE);
+		}
+	}
+
+	return (TRUE);
+}
+
+int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
+	uint32_t i;
+
+	*methods_cnt = kexe_load_uint32(f);
+	if (*methods_cnt == UINT32_MAX) {
+		vm_error("Reading of methods_cnt has failed.\n");
+		return (FALSE);
+	}
+
+	methods = malloc(*methods_cnt * sizeof(method_t));
+	assert(methods);
+
+	for (i = 0; i < *methods_cnt; i++) {
+		methods[i].name = kexe_load_string(f);
+		if (methods[i].name == NULL) {
+			vm_error("loading methods[%d].name failed\n", i);
+			return (FALSE);
+		}
+
+		methods[i].bc_entrypoint = kexe_load_uint32(f);
+		if (methods[i].bc_entrypoint == UINT32_MAX) {
+			vm_error("Reading of methods[%d].bc_entrypoint has failed.\n", i);
+			return (FALSE);
+		}
+
+		/* TODO: load 2x syms here */
+
+		/* FIXME THIS IS NOT PRINTED TO THE CLASSFILE YET */
+		methods[i].args_cnt = kexe_load_uint32(f);
+		if (methods[i].args_cnt == UINT32_MAX) {
+			vm_error("Reading of methods[%d].args_cnt has failed.\n", i);
+			return (FALSE);
+		}
+
+		methods[i].is_static = kexe_load_uint8(f);
+		if (methods[i].args_cnt == UINT32_MAX) {
+			vm_error("Reading of methods[%d].is_static has failed.\n", i);
 			return (FALSE);
 		}
 	}
@@ -111,28 +166,48 @@ int kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t *sym_array) {
 }
 
 int kexe_load_classes(FILE *f) {
-	size_t fread_result;
-	uint32_t classes_cnt;
 	uint32_t i;
 
-	fread_result = fread(&classes_cnt, 1, sizeof(uint32_t), f);
-	if (fread_result != sizeof(uint32_t)) {
-		vm_error("Reading of \"classes\" has failed. fread_result=%zu\n",
-				fread_result);
+	classes_cnt_g = kexe_load_uint32(f);
+	if (classes_cnt_g == UINT32_MAX) {
+		vm_error("Reading of \"classes\" has failed.\n");
 		return (FALSE);
 	}
 
-	vm_debug("classes_cnt=%d\n", classes_cnt);
-	classes_g = malloc(classes_cnt * sizeof(class_t));
+	vm_debug("classes_cnt=%d\n", classes_cnt_g);
+	classes_g = malloc(classes_cnt_g * sizeof(class_t));
 	assert(classes_g);
 
-	for (i = 0; i < classes_cnt; i++) {
+	for (i = 0; i < classes_cnt_g; i++) {
 		classes_g[i].name = kexe_load_string(f);
+		if (classes_g[i].name == NULL) {
+			vm_error("loading classes_g[%d].name failed\n", i);
+			return (FALSE);
+		}
+
 		classes_g[i].parent_name = kexe_load_string(f);
-		kexe_load_syms(f, &classes_g[i].syms_static_cnt,
-				classes_g[i].syms_static);
-		kexe_load_syms(f, &classes_g[i].syms_instance_cnt,
-				classes_g[i].syms_instance);
+		if (classes_g[i].parent_name == NULL) {
+			vm_error("loading classes_g[%d].parent_name failed\n", i);
+			return (FALSE);
+		}
+
+		if (!kexe_load_syms(f, &classes_g[i].syms_static_cnt,
+				classes_g[i].syms_static)) {
+			vm_error("loading classes_g[%d].syms_static{,_cnt} failed\n", i);
+			return (FALSE);
+		}
+
+		if (!kexe_load_syms(f, &classes_g[i].syms_instance_cnt,
+				classes_g[i].syms_instance)) {
+			vm_error("loading classes_g[%d].syms_instance{,_cnt} failed\n", i);
+			return (FALSE);
+		}
+
+		if (!kexe_load_methods(f, &classes_g[i].methods_cnt,
+				classes_g[i].methods)) {
+			vm_error("loading classes_g[%d].methods{,_cnt} failed\n", i);
+			return (FALSE);
+		}
 	}
 
 	return (TRUE);
@@ -141,7 +216,6 @@ int kexe_load_classes(FILE *f) {
 int kexe_load(const char *filename) {
 	FILE *f;
 	uint32_t kek_magic;
-	size_t fread_result;
 
 	f = fopen(filename, "r");
 	if (f == NULL) {
@@ -150,9 +224,10 @@ int kexe_load(const char *filename) {
 	}
 
 	/* try to read magic number */
-	fread_result = fread(&kek_magic, 1, sizeof(uint32_t), f);
-	if (fread_result != sizeof(uint32_t)) {
-		vm_error("Reading of the first four bytes has failed.\n");
+	kek_magic = kexe_load_uint32(f);
+	if (kek_magic != UINT32_MAX) {
+		vm_error(
+				"Reading of the first four bytes (magic number) has failed.\n");
 		goto error;
 	}
 
@@ -170,6 +245,7 @@ int kexe_load(const char *filename) {
 	return (TRUE);
 
 	error: /* cleanup */
+	/* TODO: cleanup */
 	fclose(f);
 	return (FALSE);
 }
