@@ -19,7 +19,7 @@ void bco_debug(const char *format, ...) {
 	fflush(stderr);
 }
 
-void bco_print_const(bcout_t *bco, uint8_t idx) {
+void bco_print_const(bcout_t *bco, uint32_t idx) {
 	constant_item_t* item = (constant_item_t*) (bco->const_table + idx);
 	switch (item->type) {
 	case KEK_NIL:
@@ -49,7 +49,7 @@ void bco_print_const(bcout_t *bco, uint8_t idx) {
 void bco_debug(const char *format, ...) {
 }
 
-void bco_print_const(bcout_t *bco, uint8_t idx) {
+void bco_print_const(bcout_t *bco, uint32_t idx) {
 }
 
 #endif
@@ -335,6 +335,9 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 	}
 
 	len = strlen(str);
+
+	/* round up to the multiple of 4 */
+	len = (len + 3) & ~3;
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
 	cs->type = KEK_SYM;
