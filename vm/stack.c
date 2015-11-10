@@ -14,7 +14,7 @@ void stack_init(void) {
 	sp_g = 0;
 	fp_g = 0;
 
-	stack_g = malloc(stack_size_g * sizeof(obj_t));
+	stack_g = malloc(stack_size_g * sizeof(kek_obj_t));
 	assert(stack_g);
 }
 
@@ -22,18 +22,18 @@ void stack_destroy(void) {
 	free(stack_g);
 }
 
-void stack_push(obj_t *obj) {
+void stack_push(kek_obj_t *obj) {
 	if (sp_g == stack_size_g) {
 		stack_size_g *= 2;
-		stack_g = realloc(stack_g, stack_size_g * sizeof(obj_t));
+		stack_g = realloc(stack_g, stack_size_g * sizeof(kek_obj_t));
 		assert(stack_g != NULL);
 	}
 	stack_g[sp_g++] = obj;
 }
 
-obj_t* stack_pop() {
+kek_obj_t* stack_pop() {
 	return (stack_g[--sp_g]);
 }
-obj_t* stack_top() {
+kek_obj_t* stack_top() {
 	return (stack_g[sp_g - 1]);
 }
