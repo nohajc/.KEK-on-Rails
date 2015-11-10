@@ -74,6 +74,9 @@ typedef struct _method {
 	const char *name;
 	uint32_t bc_entrypoint;
 	uint32_t args_cnt;
+	/* We need this number to properly set SP
+	   after call, thus reserving space for locals. */
+	uint32_t locals_cnt;
 	uint8_t is_static;
 } method_t;
 
