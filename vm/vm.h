@@ -119,4 +119,8 @@ extern class_t *classes_g;
 
 /******************************************************************************/
 
+#define P32 "%u" /* printf uint32_t */
+#define P16 "%u" /* printf uint32_t */
+#define P8 "%u" /* printf uint32_t */
+
 #endif /* VM_H_ */

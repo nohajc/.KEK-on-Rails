@@ -13,12 +13,13 @@
 #include "loader.h"
 
 /******************************************************************************/
-/* global variables */
+/* global variables. (their extern is in vm.h) */
 
 uint32_t classes_cnt_g = 0;
 class_t *classes_g = NULL;
 
 /******************************************************************************/
+/* loading of primitives */
 
 uint8_t kexe_load_uint8(FILE *f) {
 	size_t fread_result;
@@ -29,6 +30,20 @@ uint8_t kexe_load_uint8(FILE *f) {
 		vm_error("Reading of \"uint8_t\" has failed. fread_result=%zu\n",
 				fread_result);
 		return (UINT8_MAX);
+	}
+
+	return (ret);
+}
+
+uint16_t kexe_load_uint16(FILE *f) {
+	size_t fread_result;
+	uint32_t ret;
+
+	fread_result = fread(&ret, 1, sizeof(uint16_t), f);
+	if (fread_result != sizeof(uint16_t)) {
+		vm_error("Reading of \"uint16_t\" has failed. fread_result=%zu\n",
+				fread_result);
+		return (UINT16_MAX);
 	}
 
 	return (ret);
@@ -55,14 +70,25 @@ char *kexe_load_string(FILE *f) {
 
 	len = kexe_load_uint32(f);
 	if (len == UINT32_MAX) {
+		vm_error("Failed to read the \"len\" of the string.\n");
 		return (NULL);
+	} else {
+		vm_debug("Length of the string is " P32 "\n", len);
 	}
 
-	fread_result = fread(string, len, sizeof(char), f);
+	string = malloc(len * sizeof(char));
+	assert(string);
+
+	/* FIXME: why this works? */
+	fread_result = fread(string, sizeof(char), len, f);
+	string[len - 1] = '\0';
 	if (fread_result != (len * sizeof(char))) {
-		vm_error("Reading of \"string\" of len=%d has failed."
-				"fread_result=%zu\n", len, fread_result);
+		vm_error("Reading of a \"string\" of len=%d has failed, "
+				"fread_result=%u, should read=%u\n", len, fread_result,
+				(len * sizeof(char)));
 		return (FALSE);
+	} else {
+		vm_debug("String \"%s\" has been loaded.\n", string);
 	}
 
 	return (string);
@@ -76,18 +102,25 @@ int kexe_load_sym(FILE *f, symbol_t *sym) {
 	if (sym->name == NULL) {
 		vm_error("sym->name failed\n");
 		return (FALSE);
+	} else {
+		vm_debug("loaded symbol = %s", sym->name);
 	}
 
 	sym->addr = kexe_load_uint32(f);
 	if (sym->addr == UINT32_MAX) {
 		vm_error("sym->addr failed\n");
 		return (FALSE);
+	} else {
+		vm_debug("addr of symbol \"%s\" is " P32 "\n", sym->name, sym->addr);
 	}
 
 	sym->const_ptr = kexe_load_uint32(f);
 	if (sym->addr == UINT32_MAX) {
 		vm_error("sym->const_ptr failed\n");
 		return (FALSE);
+	} else {
+		vm_debug("const ptr of symbol \"%s\" is " P32 "\n", sym->name,
+				sym->const_ptr);
 	}
 
 	sym->const_flag = 0; /* FIXME TODO */
@@ -105,6 +138,8 @@ int kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t *sym_array) {
 	if (*sym_cnt == UINT32_MAX) {
 		vm_error("Reading of sym_cnt has failed.\n");
 		return (FALSE);
+	} else {
+		vm_debug("*sym_cnt = " P32 "\n", *sym_cnt);
 	}
 
 	sym_array = malloc(*sym_cnt * sizeof(symbol_t));
@@ -138,27 +173,43 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 		if (methods[i].name == NULL) {
 			vm_error("loading methods[%d].name failed\n", i);
 			return (FALSE);
+		} else {
+			vm_debug("methods[i].name = %s", i, methods[i].name);
 		}
 
-		methods[i].entry.bc_addr = kexe_load_uint32(f);
-		if (methods[i].entry.bc_addr == UINT32_MAX) {
-			vm_error("Reading of methods[%d].bc_entrypoint has failed.\n", i);
-			return (FALSE);
-		}
-
-		/* TODO: load 2x syms here */
-
-		/* FIXME THIS IS NOT PRINTED TO THE CLASSFILE YET */
 		methods[i].args_cnt = kexe_load_uint32(f);
 		if (methods[i].args_cnt == UINT32_MAX) {
 			vm_error("Reading of methods[%d].args_cnt has failed.\n", i);
 			return (FALSE);
+		} else {
+			vm_debug("methods[i].args_cnt = " P32 "\n", i, methods[i].args_cnt);
+		}
+
+		methods[i].locals_cnt = kexe_load_uint32(f);
+		if (methods[i].locals_cnt == UINT32_MAX) {
+			vm_error("Reading of methods[%d].locals_cnt has failed.\n", i);
+			return (FALSE);
+		} else {
+			vm_debug("methods[i].locals_cnt = " P32 "\n", i,
+					methods[i].locals_cnt);
+		}
+
+		methods[i].entry.bc_addr = kexe_load_uint32(f);
+		if (methods[i].entry.bc_addr == UINT32_MAX) {
+			vm_error("Reading of methods[%d].entry.bc_addr has failed.\n", i);
+			return (FALSE);
+		} else {
+			vm_debug("methods[i].entry.bc_addr = " P32 "\n", i,
+					methods[i].entry.bc_addr);
 		}
 
 		methods[i].is_static = kexe_load_uint8(f);
-		if (methods[i].args_cnt == UINT32_MAX) {
+		if (methods[i].is_static == UINT8_MAX) {
 			vm_error("Reading of methods[%d].is_static has failed.\n", i);
 			return (FALSE);
+		} else {
+			vm_debug("methods[i].is_static = " P8 "\n", i,
+					methods[i].is_static);
 		}
 	}
 
@@ -172,23 +223,31 @@ int kexe_load_classes(FILE *f) {
 	if (classes_cnt_g == UINT32_MAX) {
 		vm_error("Reading of \"classes\" has failed.\n");
 		return (FALSE);
+	} else {
+		vm_debug("classes_cnt_g = " P32 "\n", classes_cnt_g);
 	}
 
-	vm_debug("classes_cnt=%d\n", classes_cnt_g);
 	classes_g = malloc(classes_cnt_g * sizeof(class_t));
 	assert(classes_g);
 
 	for (i = 0; i < classes_cnt_g; i++) {
+		vm_debug("kexe_load_classes i=%u\n", i);
+
 		classes_g[i].name = kexe_load_string(f);
 		if (classes_g[i].name == NULL) {
 			vm_error("loading classes_g[%d].name failed\n", i);
 			return (FALSE);
+		} else {
+			vm_debug("classes_g[%d].name = \"%s\"\n", i, classes_g[i].name);
 		}
 
 		classes_g[i].parent_name = kexe_load_string(f);
 		if (classes_g[i].parent_name == NULL) {
 			vm_error("loading classes_g[%d].parent_name failed\n", i);
 			return (FALSE);
+		} else {
+			vm_debug("classes_g[%d].parent_name = %s\n", i,
+					classes_g[i].parent_name);
 		}
 
 		if (!kexe_load_syms(f, &classes_g[i].syms_static_cnt,
@@ -219,15 +278,13 @@ int kexe_load(const char *filename) {
 
 	f = fopen(filename, "r");
 	if (f == NULL) {
-		vm_error("Filename \"%s\" does not exists.\n");
+		vm_error("Filename \"%s\" does not exists.\n", filename);
 		return (FALSE);
 	}
 
-	/* try to read magic number */
 	kek_magic = kexe_load_uint32(f);
-	if (kek_magic != UINT32_MAX) {
-		vm_error(
-				"Reading of the first four bytes (magic number) has failed.\n");
+	if (kek_magic == UINT32_MAX) {
+		vm_error("Failed to load first 32 bits for magic number.\n");
 		goto error;
 	}
 

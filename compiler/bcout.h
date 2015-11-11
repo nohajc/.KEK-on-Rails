@@ -199,6 +199,8 @@ typedef struct _classout_wrapp {
 	uint8_t *classout; /* in real: an array of uint8_t */
 	size_t classout_size;
 	uint32_t classout_cnt;
+
+	uint32_t classes;
 } classout_wrapp_t;
 
 /* to serialize class hierarchy, call this function with the top class */

@@ -35,7 +35,8 @@ void bco_print_const(bcout_t *bco, uint32_t idx) {
 		bco_debug("%s", item->cs.string);
 		break;
 	case KEK_ARR:
-		bco_debug("array [length: %d, elems: %d", item->ca.length, item->ca.elems[0]);
+		bco_debug("array [length: %d, elems: %d", item->ca.length,
+				item->ca.elems[0]);
 		for (int i = 1; i < item->ca.length; ++i) {
 			bco_debug(", %d", item->ca.elems[i]);
 		}
@@ -353,16 +354,17 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 uint32_t bco_arr(bcout_t *bco, size_t len) {
 	constant_array_t *ca;
 
-	 // Size of the allocated memory is already a multiple of four in this case.
-	ca = (constant_array_t *) ct_malloc(bco, sizeof(constant_array_t) + (len - 1) * sizeof(uint32_t));
+	// Size of the allocated memory is already a multiple of four in this case.
+	ca = (constant_array_t *) ct_malloc(bco,
+			sizeof(constant_array_t) + (len - 1) * sizeof(uint32_t));
 	ca->type = KEK_ARR;
 	ca->length = len;
 
 	return ((uint8_t *) ca - bco->const_table);
 }
 
-void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem){
-	constant_array_t *ca = (constant_array_t *)(bco->const_table + arr);
+void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem) {
+	constant_array_t *ca = (constant_array_t *) (bco->const_table + arr);
 	ca->elems[idx] = elem;
 }
 
@@ -500,14 +502,39 @@ void classout_prvektab_ll(classout_wrapp_t *cow, PrvekTab *ptarg) {
 	}
 }
 
+uint32_t PrvekTab_ll_cnt(PrvekTab *pt) {
+	uint32_t cnt;
+	PrvekTab *pt_ptr;
+
+	cnt = 0;
+	pt_ptr = pt;
+	while (pt_ptr != NULL) {
+		cnt++;
+		pt_ptr = pt_ptr->dalsi;
+	}
+
+	return (cnt);
+}
+
 /* write method_t */
 #if 0
 method_t m; /* eclipse will show me how it looks like */
 #endif
 void classout_method(classout_wrapp_t *cow, MethodEnv *me) {
+	uint32_t args_cnt;
+	PrvekTab *arg;
+
 	classout_wstr(cow, me->methodName);
-	classout_prvektab_ll(cow, me->args);
-	classout_prvektab_ll(cow, me->syms);
+
+	//we need only {args,syms}_cnt
+	//classout_prvektab_ll(cow, me->args);
+	//classout_prvektab_ll(cow, me->syms);
+
+	classout_w32(cow, PrvekTab_ll_cnt(me->args));
+
+	/* this is read as: locals_cnt */
+	classout_w32(cow, PrvekTab_ll_cnt(me->syms));
+
 	classout_w32(cow, me->bc_entrypoint);
 	classout_w8(cow, me->isStatic);
 }
@@ -530,12 +557,14 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 
 	/**************************************************************************/
 
+	bco_debug("classout: %s\n", ce->className);
+
 	classout_wstr(cow, ce->className);
 
 	if (ce->parent != NULL) {
 		classout_wstr(cow, ce->parent->className);
 	} else {
-		classout_wstr(cow, "NOPARENT");
+		classout_wstr(cow, "NO_PARENT");
 	}
 
 	/* now we need to divide syms */
@@ -608,8 +637,10 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 
 	cow = (classout_wrapp_t *) malloc(sizeof(classout_wrapp_t));
 	assert(cow);
+	cow->classes = 0;
 	cow->classout_cnt = 0;
 	cow->classout_size = DEFAULT_BUFFER_SIZE;
+
 	/* FIXME: how it's possible that we have "holes" in classout? */
 	//cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
 	cow->classout = (uint8_t *) calloc(cow->classout_size, sizeof(uint8_t));
@@ -619,7 +650,7 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	if (ceptr != NULL) {
 		while (ceptr->next != NULL) {
 			classout_class(cow, ceptr);
-			cow->classout_cnt++;
+			cow->classes++;
 			ceptr = ceptr->next;
 		}
 	} else {
@@ -643,8 +674,8 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 
 	/* classes */
 	cow = classout_wrapp_init(top_class);
-	bco_debug("fwrite: cow->classout_cnt=%d\n", cow->classout_cnt);
-	fwrite(&cow->classout_cnt, sizeof(uint32_t), 1, f);
+	bco_debug("fwrite: cow->classes=%u\n", cow->classes);
+	fwrite(&cow->classes, sizeof(uint32_t), 1, f);
 	fwrite(cow->classout, sizeof(uint8_t), cow->classout_cnt, f);
 	free(cow->classout); /* TODO: make normal _free */
 	free(cow);
