@@ -8,9 +8,6 @@
 #define VM_H_
 
 #include <stdint.h>
-
-#include "stack.h"
-#include "types.h"
 #include "bc.h"
 
 /* stolen from "../compiler/tabsym.h" */
@@ -52,6 +49,11 @@ void vm_error(const char *format, ...);
 github.com/nohajc/.KEK-on-Rails/wiki/Class-hierarchy-representation-in-the-VM
 */
 
+/* Native methods also work with our stack
+ * so no arguments are passed via the system stack.
+ */
+typedef void (*method_ptr)(void);
+
 typedef enum _const_flag {
 	VAR = 0,
 	CONST = 1
@@ -60,10 +62,15 @@ typedef enum _const_flag {
 typedef struct _symbol {
 	const char *name;
 	/* There is an index to const table in the class file. At runtime though,
-	 * there should be an kek_obj_t pointer for every var/const instead.
+	 * there should be a kek_obj_t pointer for every static var/const instead.
 	 * So, there should be two versions of this structure (and possibly others)
 	 * one in loader.h reflecting the format of stored binary data
 	 * and one here with the runtime format.
+	 *
+	 * The pointer is used for static symbols only. Pointers to instance vars
+	 * are stored in each object's kek_udo_t structure. symbol_t is used here
+	 * only for name-based dynamic lookup. You then use addr index to access
+	 * the right element in kek_udo_t.
 	 */
 	uint32_t const_ptr;
 	uint32_t addr;
@@ -72,12 +79,16 @@ typedef struct _symbol {
 
 typedef struct _method {
 	const char *name;
-	uint32_t bc_entrypoint;
+	union _entry {
+		uint32_t bc_addr;
+		method_ptr func;
+	} entry;
 	uint32_t args_cnt;
 	/* We need this number to properly set SP
 	   after call, thus reserving space for locals. */
 	uint32_t locals_cnt;
 	uint8_t is_static;
+	uint8_t is_native;
 } method_t;
 
 typedef struct _class {

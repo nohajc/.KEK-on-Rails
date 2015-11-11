@@ -140,8 +140,8 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 			return (FALSE);
 		}
 
-		methods[i].bc_entrypoint = kexe_load_uint32(f);
-		if (methods[i].bc_entrypoint == UINT32_MAX) {
+		methods[i].entry.bc_addr = kexe_load_uint32(f);
+		if (methods[i].entry.bc_addr == UINT32_MAX) {
 			vm_error("Reading of methods[%d].bc_entrypoint has failed.\n", i);
 			return (FALSE);
 		}
