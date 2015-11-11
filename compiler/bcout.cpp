@@ -485,21 +485,21 @@ void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
  * PrvekTab[cnt]
  */
 void classout_prvektab_ll(classout_wrapp_t *cow, PrvekTab *ptarg) {
-	PrvekTab *pt;
+	PrvekTab *pt_ptr;
 	uint32_t pt_cnt;
 	uint8_t pt_cnt_offset;
 
-	pt = ptarg;
+	pt_ptr = ptarg;
 
 	pt_cnt = 0;
 	pt_cnt_offset = classout_w32(cow, pt_cnt);
-	if (pt != NULL) {
-		while (pt->dalsi != NULL) {
-			classout_symbol(cow, pt);
-			pt = pt->dalsi;
-		}
-		cow->classout[pt_cnt_offset] = pt_cnt;
+	while (pt_ptr != NULL) {
+		classout_symbol(cow, pt_ptr);
+		pt_ptr = pt_ptr->dalsi;
+		pt_cnt++;
 	}
+	cow->classout[pt_cnt_offset] = pt_cnt;
+	bco_debug("pt_cnt = %u\n", pt_cnt);
 }
 
 uint32_t PrvekTab_ll_cnt(PrvekTab *pt) {
@@ -569,18 +569,18 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 
 	/* now we need to divide syms */
 	ce->syms_instance = NULL;
-	sym_instance = ce->syms_instance; /* FIXME assign pointer? */
+	sym_instance = ce->syms_instance;
 	ce->syms_static = NULL;
 	sym_static = ce->syms_static;
 	if (ce->syms != NULL) {
 		sym = ce->syms;
-		while (sym->dalsi != NULL) {
+		while (sym != NULL) {
 			switch (sym->sc) {
 			case SC_INSTANCE: // instance variable
 				if (sym_instance == NULL) {
 					sym_instance = sym;
 				} else {
-					sym_instance->dalsi = sym;
+					sym_instance->dalsi = sym_instance;
 					sym_instance = sym;
 				}
 				break;
@@ -588,7 +588,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 				if (sym_static == NULL) {
 					sym_static = sym;
 				} else {
-					sym_static->dalsi = sym;
+					sym_static->dalsi = sym_static;
 					sym_static = sym;
 				}
 				break;
@@ -596,10 +596,17 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 				assert(0);
 				break;
 			}
-
 			sym = sym->dalsi;
 		}
 	}
+	if (sym_instance != NULL) {
+		sym_instance->dalsi = NULL;
+	}
+	if (sym_static != NULL) {
+		sym_static->dalsi = NULL;
+	}
+	ce->syms_instance = sym_instance;
+	ce->syms_static = sym_static;
 
 	/* print syms_{static,instance} *******************************************/
 

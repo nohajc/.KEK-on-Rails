@@ -76,6 +76,14 @@ char *kexe_load_string(FILE *f) {
 		vm_debug("Length of the string is " P32 "\n", len);
 	}
 
+	if (len == 0) {
+		string = malloc(1 * sizeof(char));
+		assert(string);
+		string[0] = '\0';
+		vm_debug("Because of the zero length, return empty string.\n");
+		return (string);
+	}
+
 	string = malloc(len * sizeof(char));
 	assert(string);
 
@@ -103,7 +111,7 @@ int kexe_load_sym(FILE *f, symbol_t *sym) {
 		vm_error("sym->name failed\n");
 		return (FALSE);
 	} else {
-		vm_debug("loaded symbol = %s", sym->name);
+		vm_debug("loaded symbol = \"%s\"\n", sym->name);
 	}
 
 	sym->addr = kexe_load_uint32(f);
@@ -250,12 +258,14 @@ int kexe_load_classes(FILE *f) {
 					classes_g[i].parent_name);
 		}
 
+		vm_debug("going to load static syms\n");
 		if (!kexe_load_syms(f, &classes_g[i].syms_static_cnt,
 				classes_g[i].syms_static)) {
 			vm_error("loading classes_g[%d].syms_static{,_cnt} failed\n", i);
 			return (FALSE);
 		}
 
+		vm_debug("going to load instance syms\n");
 		if (!kexe_load_syms(f, &classes_g[i].syms_instance_cnt,
 				classes_g[i].syms_instance)) {
 			vm_error("loading classes_g[%d].syms_instance{,_cnt} failed\n", i);
