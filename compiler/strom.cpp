@@ -540,26 +540,26 @@ Node *Method::Optimize() {
 uint32_t Var::Translate() {
 	switch (sc) {
 	case SC_LOCAL:
-		bco_ww1(bcout_g, (rvalue || offset ? PUSH_LOC : PUSHA_LOC), addr);
+		bco_ww1(bcout_g, (rvalue || offset ? LVBI_LOC : LABI_LOC), addr);
 		break;
 	case SC_ARG:
-		bco_ww1(bcout_g, (rvalue || offset ? PUSH_ARG : PUSHA_ARG), addr);
+		bco_ww1(bcout_g, (rvalue || offset ? LVBI_ARG : LABI_ARG), addr);
 		break;
 	case SC_INSTANCE:
 		if (external) {
 			uint32_t iv_name_idx = bco_sym(bcout_g, name);
-			bco_ww1(bcout_g, (rvalue || offset ? PUSH_IVE : PUSHA_IVE), iv_name_idx);
+			bco_ww1(bcout_g, (rvalue || offset ? LVBS_IVE : LABS_IVE), iv_name_idx);
 		}
 		else {
-			bco_ww1(bcout_g, (rvalue || offset ? PUSH_IV : PUSHA_IV), addr);
+			bco_ww1(bcout_g, (rvalue || offset ? LVBI_IV : LABI_IV), addr);
 		}
 		break;
 	case SC_CLASS:
 		if (external) {
-			bco_ww1(bcout_g, (rvalue || offset ? PUSH_CVE : PUSHA_CVE), addr);
+			bco_ww1(bcout_g, (rvalue || offset ? LVBI_CVE : LABI_CVE), addr);
 		}
 		else {
-			bco_ww1(bcout_g, (rvalue || offset ? PUSH_CV : PUSHA_CV), addr);
+			bco_ww1(bcout_g, (rvalue || offset ? LVBI_CV : LABI_CV), addr);
 		}
 		break;
 	}
@@ -619,7 +619,7 @@ uint32_t Call::Translate() {
 
 uint32_t ClassRef::Translate() {
 	uint32_t sym_idx = bco_sym(bcout_g, name);
-	bco_ww1(bcout_g, CLASSREF, (uint16_t)sym_idx);
+	bco_ww1(bcout_g, LD_CLASS, (uint16_t)sym_idx);
 
 	return target->Translate();
 }
@@ -630,7 +630,7 @@ uint32_t ObjRef::Translate() {
 }
 
 uint32_t SelfRef::Translate() {
-	bco_w0(bcout_g, PUSH_SELF);
+	bco_w0(bcout_g, LD_SELF);
 	return 0;
 }
 
@@ -650,14 +650,14 @@ uint32_t New::Translate() {
 
 uint32_t Numb::Translate() {
 	uint32_t num_idx = bco_int(bcout_g, value);
-	bco_ww1(bcout_g, PUSH_C, num_idx); // TODO: optimize?
+	bco_ww1(bcout_g, LVBI_C, num_idx); // TODO: optimize?
 
 	return 0;
 }
 
 uint32_t String::Translate() {
 	uint32_t str_idx = bco_str(bcout_g, value);
-	bco_ww1(bcout_g, PUSH_C, str_idx);
+	bco_ww1(bcout_g, LVBI_C, str_idx);
 
 	return 0;
 }
@@ -686,14 +686,14 @@ uint32_t Array::Translate() {
 		e = e->next;
 	}
 
-	bco_ww1(bcout_g, PUSH_C, arr_idx);
+	bco_ww1(bcout_g, LVBI_C, arr_idx);
 
 	return 0;
 }
 
 uint32_t Nil::Translate() {
 	uint32_t nil_idx = bco_nil(bcout_g);
-	bco_ww1(bcout_g, PUSH_C, nil_idx);
+	bco_ww1(bcout_g, LVBI_C, nil_idx);
 
 	return 0;
 }
@@ -727,7 +727,7 @@ uint32_t Assign::Translate() {
 uint32_t AssignWithBop::Translate() {
 	var->Translate();
 	bco_w0(bcout_g, DUP);
-	bco_w0(bcout_g, LD);
+	bco_w0(bcout_g, DR);
 	expr->Translate();
 	bco_wb1(bcout_g, BOP, op);
 	bco_w0(bcout_g, ST);

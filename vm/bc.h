@@ -37,7 +37,7 @@ typedef enum _bc {
 	UNDEF, /**/
 	BOP, /**/
 	UNM, /**/
-	LD, /* load */
+	DR, /* dereference */
 	ST, /* store */
 	IFNJ, /* if zero, jump */
 	JU, /* jump */
@@ -55,23 +55,28 @@ typedef enum _bc {
 	CALLE, /* call external. arg: index to const table,
 	 start search at the given pointer */
 
-	PUSH_C, /* arg: index to const table (f.ex. string) */
-	PUSH_ARG, /* arg: index */
-	PUSH_LOC, /* arg: index to local variable table */
-	PUSH_IV, /* push instance variable, arg: index */
-	PUSH_CV, /* push class variable, arg: index */
-	PUSH_IVE, /* iv external. push instance variable, arg: index */
-	PUSH_CVE, /* cv external. push class variable, arg: index */
-	PUSH_SELF, /* push self class reference */
-	CLASSREF,
+	LVBI_C, /* arg: index to const table (f.ex. string) */
+	LVBI_ARG, /* arg: index */
+	LVBI_LOC, /* arg: index to local variable table */
+	LVBI_IV, /* push instance variable, arg: index */
+	LVBI_CV, /* push class variable, arg: index */
+	LVBI_CVE, /* cv external. push class variable, arg: index */
+
+	LVBS_IVE, /* iv external. push instance variable, arg: index */
+	LVBS_CVE,
+
+	LD_SELF, /* push self class reference */
+	LD_CLASS,
 
 	// When storing new obj ref into a variable, we need its address on stack
-	PUSHA_ARG, /* arg: index */
-	PUSHA_LOC, /* arg: index to local variable table */
-	PUSHA_IV, /* push instance variable, arg: index */
-	PUSHA_CV, /* push class variable, arg: index */
-	PUSHA_IVE, /* iv external. push instance variable, arg: index */
-	PUSHA_CVE, /* cv external. push class variable, arg: index */
+	LABI_ARG, /* arg: index */
+	LABI_LOC, /* arg: index to local variable table */
+	LABI_IV, /* push instance variable, arg: index */
+	LABI_CV, /* push class variable, arg: index */
+	LABI_CVE, /* cv external. push class variable, arg: index */
+
+	LABS_IVE, /* iv external. push instance variable, arg: index */
+	LABS_CVE,
 
 	IDX, /* return an item at the index. args: none. takes obj pointer
 	 and the index from the stack */
