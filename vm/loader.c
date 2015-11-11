@@ -93,7 +93,7 @@ unsigned char *kexe_load_string(FILE *f) {
 	/* FIXME: why this works? */
 	fread_result = fread(string, sizeof(unsigned char), len, f);
 	string[len - 1] = '\0';
-	if (fread_result != (len * sizeof(unsigned char))) {
+	if (fread_result != len) {
 		vm_error("Reading of a \"string\" of len=%d has failed, "
 				"fread_result=%u, should read=%u\n", len, fread_result,
 				(len * sizeof(unsigned char)));

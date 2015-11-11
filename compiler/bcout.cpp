@@ -458,16 +458,15 @@ uint8_t classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
 	return (cow->classout_cnt - 4);
 }
 
-int round_up(int numToRound, int multiple)
-{
-    if (multiple == 0)
-        return numToRound;
+int round_up(int numToRound, int multiple) {
+	if (multiple == 0)
+		return numToRound;
 
-    int remainder = numToRound % multiple;
-    if (remainder == 0)
-        return numToRound;
+	int remainder = numToRound % multiple;
+	if (remainder == 0)
+		return numToRound;
 
-    return numToRound + multiple - remainder;
+	return numToRound + multiple - remainder;
 }
 
 /* this write lenght+string */
@@ -476,7 +475,7 @@ uint8_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 	size_t len;
 
 	len = strlen(str) + 1;
-	len = round_up(len, 32);
+	//len = round_up(len, 32);
 	classout_w32(cow, len); /* FIXME? */
 
 	classout_realloc(cow, len * sizeof(char));
@@ -605,7 +604,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 				if (sym_static == NULL) {
 					sym_static = sym;
 				} else {
-					sym_static->dalsi = sym_static;
+					sym_static->dalsi = sym;
 					sym_static = sym;
 				}
 				break;
@@ -668,15 +667,15 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	cow->classout = (uint8_t *) calloc(cow->classout_size, sizeof(uint8_t));
 	assert(cow->classout);
 
-	ceptr = ce;
-	if (ceptr != NULL) {
-		while (ceptr->next != NULL) {
-			classout_class(cow, ceptr);
-			cow->classes++;
-			ceptr = ceptr->next;
-		}
-	} else {
+	if (ce != NULL) {
 		bco_debug("top_class is NULL\n");
+	}
+
+	ceptr = ce;
+	while (ceptr != NULL) {
+		classout_class(cow, ceptr);
+		cow->classes++;
+		ceptr = ceptr->next;
 	}
 
 	return (cow);
