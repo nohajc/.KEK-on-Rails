@@ -25,8 +25,8 @@ uint8_t kexe_load_uint8(FILE *f) {
 	size_t fread_result;
 	uint32_t ret;
 
-	fread_result = fread(&ret, 1, sizeof(uint8_t), f);
-	if (fread_result != sizeof(uint8_t)) {
+	fread_result = fread(&ret, sizeof(uint8_t), 1, f);
+	if (fread_result != 1) {
 		vm_error("Reading of \"uint8_t\" has failed. fread_result=%zu\n",
 				fread_result);
 		return (UINT8_MAX);
@@ -39,8 +39,8 @@ uint16_t kexe_load_uint16(FILE *f) {
 	size_t fread_result;
 	uint32_t ret;
 
-	fread_result = fread(&ret, 1, sizeof(uint16_t), f);
-	if (fread_result != sizeof(uint16_t)) {
+	fread_result = fread(&ret, sizeof(uint16_t), 1, f);
+	if (fread_result != 1) {
 		vm_error("Reading of \"uint16_t\" has failed. fread_result=%zu\n",
 				fread_result);
 		return (UINT16_MAX);
@@ -53,20 +53,23 @@ uint32_t kexe_load_uint32(FILE *f) {
 	size_t fread_result;
 	uint32_t ret;
 
-	fread_result = fread(&ret, 1, sizeof(uint32_t), f);
-	if (fread_result != sizeof(uint32_t)) {
+	/*fread_result = fread(&ret, 1, sizeof(uint32_t), f);*/
+	fread_result = fread(&ret, sizeof(uint32_t), 1, f);
+	if (fread_result != 1) {
 		vm_error("Reading of \"uint32_t\" has failed. fread_result=%zu\n",
 				fread_result);
 		return (UINT32_MAX);
+	} else {
+		vm_debug("load uint32 " P32 "\n", ret);
 	}
 
 	return (ret);
 }
 
-char *kexe_load_string(FILE *f) {
+unsigned char *kexe_load_string(FILE *f) {
 	uint32_t len;
 	size_t fread_result;
-	char *string;
+	unsigned char *string;
 
 	len = kexe_load_uint32(f);
 	if (len == UINT32_MAX) {
@@ -77,23 +80,23 @@ char *kexe_load_string(FILE *f) {
 	}
 
 	if (len == 0) {
-		string = malloc(1 * sizeof(char));
+		string = malloc(1 * sizeof(unsigned char));
 		assert(string);
 		string[0] = '\0';
 		vm_debug("Because of the zero length, return empty string.\n");
 		return (string);
 	}
 
-	string = malloc(len * sizeof(char));
+	string = malloc(len * sizeof(unsigned char));
 	assert(string);
 
 	/* FIXME: why this works? */
-	fread_result = fread(string, sizeof(char), len, f);
+	fread_result = fread(string, sizeof(unsigned char), len, f);
 	string[len - 1] = '\0';
-	if (fread_result != (len * sizeof(char))) {
+	if (fread_result != (len * sizeof(unsigned char))) {
 		vm_error("Reading of a \"string\" of len=%d has failed, "
 				"fread_result=%u, should read=%u\n", len, fread_result,
-				(len * sizeof(char)));
+				(len * sizeof(unsigned char)));
 		return (FALSE);
 	} else {
 		vm_debug("String \"%s\" has been loaded.\n", string);

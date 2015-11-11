@@ -60,7 +60,7 @@ typedef enum _const_flag {
 } const_flag_t;
 
 typedef struct _symbol {
-	const char *name;
+	const unsigned char *name;
 	/* There is an index to const table in the class file. At runtime though,
 	 * there should be a kek_obj_t pointer for every static var/const instead.
 	 * So, there should be two versions of this structure (and possibly others)
@@ -78,7 +78,7 @@ typedef struct _symbol {
 } symbol_t;
 
 typedef struct _method {
-	const char *name;
+	const unsigned  char *name;
 	union _entry {
 		uint32_t bc_addr;
 		method_ptr func;
@@ -92,7 +92,7 @@ typedef struct _method {
 } method_t;
 
 typedef struct _class {
-	const char *name;
+	const unsigned char *name;
 	struct _class *parent;
 
 	uint32_t methods_cnt;
@@ -108,7 +108,7 @@ typedef struct _class {
 	symbol_t *syms_instance;
 
 	/* helpers */
-	const char *parent_name;
+	const unsigned char *parent_name;
 } class_t;
 
 /******************************************************************************/

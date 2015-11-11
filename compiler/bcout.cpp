@@ -434,6 +434,7 @@ void classout_realloc(classout_wrapp_t *cow, size_t size) {
 		cow->classout = (uint8_t *) realloc(cow->classout,
 				cow->classout_size * sizeof(uint8_t));
 		assert(cow->classout);
+		/* TODO FIXME zero the memory! */
 	}
 }
 
@@ -441,6 +442,8 @@ uint8_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
 	classout_realloc(cow, sizeof(uint8_t));
 	cow->classout[cow->classout_cnt] = uint8;
 	cow->classout_cnt += 1;
+
+	bco_debug("> w8 %u\n", uint8);
 
 	return (cow->classout_cnt - 1);
 }
@@ -450,7 +453,21 @@ uint8_t classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
 	cow->classout[cow->classout_cnt] = uint32;
 	cow->classout_cnt += 4;
 
+	bco_debug("> w32 %u\n", uint32);
+
 	return (cow->classout_cnt - 4);
+}
+
+int round_up(int numToRound, int multiple)
+{
+    if (multiple == 0)
+        return numToRound;
+
+    int remainder = numToRound % multiple;
+    if (remainder == 0)
+        return numToRound;
+
+    return numToRound + multiple - remainder;
 }
 
 /* this write lenght+string */
@@ -459,12 +476,14 @@ uint8_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 	size_t len;
 
 	len = strlen(str) + 1;
-
+	len = round_up(len, 32);
 	classout_w32(cow, len); /* FIXME? */
 
 	classout_realloc(cow, len * sizeof(char));
-	(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
+	//(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
+	(void) memcpy(&cow->classout[cow->classout_cnt], str, len);
 	cow->classout_cnt += len;
+	bco_debug("> wstr %s\n", str);
 
 	return (cow->classout_cnt - len);
 }
@@ -475,8 +494,6 @@ symbol_t s; /* eclipse will show me how it looks like */
 #endif
 void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
 	classout_wstr(cow, pt->ident);
-	//classout_w8(cow, pt->druh);
-	//classout_w8(cow, pt->sc);
 	classout_w32(cow, pt->addr);
 	classout_w32(cow, pt->const_ptr);
 }
@@ -580,7 +597,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 				if (sym_instance == NULL) {
 					sym_instance = sym;
 				} else {
-					sym_instance->dalsi = sym_instance;
+					sym_instance->dalsi = sym;
 					sym_instance = sym;
 				}
 				break;
@@ -648,8 +665,6 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	cow->classout_cnt = 0;
 	cow->classout_size = DEFAULT_BUFFER_SIZE;
 
-	/* FIXME: how it's possible that we have "holes" in classout? */
-	//cow->classout = (uint8_t *) malloc(cow->classout_size * sizeof(uint8_t));
 	cow->classout = (uint8_t *) calloc(cow->classout_size, sizeof(uint8_t));
 	assert(cow->classout);
 
