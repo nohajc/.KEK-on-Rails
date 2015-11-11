@@ -1,4 +1,4 @@
-class Array {
+class Arr {
 	static var sVar
 }
 
@@ -14,9 +14,8 @@ class Operators {
 		a3.append([3, 4])
 		// We can access instance variable whose existence will also be checked at runtime.
 		write a3.length
-		// For accessing static members we need their declaration in the source code.
-		// This is because of bytecode optimization - we look up the members by address, not by name.
-		write Array.sVar
+		write Arr.sVar // Known class variable reference
+		write Array.sVar // Unknown class variable reference
 
 		var i, j, str = "something"
 		for(i = 0; i < str.len(); i++){

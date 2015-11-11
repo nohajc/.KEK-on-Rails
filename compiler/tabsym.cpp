@@ -155,6 +155,9 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce, bool recursive) {
 		}
 		return NULL;
 	}
+	if (ce == CLASS_UNKNOWN) {
+		return NULL;
+	}
 
 	FIND_METHOD(ce->methods);
 
@@ -190,6 +193,9 @@ PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me, bool recursive
 			FIND_SYM(tc->syms);
 			tc = tc->next;
 		}
+		return NULL;
+	}
+	if (ce == CLASS_UNKNOWN) {
 		return NULL;
 	}
 

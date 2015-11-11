@@ -212,7 +212,7 @@ StatmList * DeklProm(Env env, bool isStatic) {
 		}
 
 		Symb = readLexem();
-		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false, false);
+		var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false, false, false);
 		e = Vyraz(env);
 		st = new Assign(var, e);
 	}
@@ -249,7 +249,7 @@ StatmList * ZbDeklProm(Env env, bool isStatic) {
 			}
 
 			Symb = readLexem();
-			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false, false);
+			var = new Var(adrProm(id, env.clsEnv, env.mthEnv), NULL, false, false, false);
 			e = Vyraz(env);
 			st = new Assign(var, e);
 		}
@@ -498,13 +498,13 @@ Expr *VarOrConst(char *id, ArgList * offset, Env env)
 	}
 
 	// We cannot inline constants of unknown objects (unknown type at compile time)
-	if (!env.self && env.clsEnv == CLASS_ANY) {
-		return new Var(p, offset, true, true);
+	if (!env.self && (env.clsEnv == CLASS_ANY || env.clsEnv == CLASS_UNKNOWN)) {
+		return new Var(p, offset, true, true, true);
 	}
 
 	switch (druh) {
 	case IdProm:
-		return new Var(p, offset, true, !env.self);
+		return new Var(p, offset, true, !env.self, false);
 	case IdConstNum:
 		return new Numb(p->val.num);
 	case IdConstStr:
@@ -520,6 +520,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	ClassEnv * c;
 	MethodEnv * m;
 	bool curr_self;
+	ClassEnv * curr_cls;
 
 	if (env.mthEnv && Symb.type == kwTHIS) { // self ref
 		Symb = readLexem();
@@ -577,30 +578,38 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 			}
 
 			curr_self = env.self;
+			curr_cls = env.clsEnv;
 			env.self = false;
 			env.clsEnv = CLASS_ANY;
 			env.mthEnv = NULL;
-			return new ObjRef(p, offset, true, !curr_self, ZbIdent(env, rvalue, external));
+			return new ObjRef(p, offset, true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rvalue, external));
 		}
 
 		if (!env.mthEnv) {
-			Chyba("Ocekava se deklarovany objekt.");
+			//Chyba("Ocekava se deklarovany objekt.");
+			if (env.clsEnv == CLASS_ANY || env.clsEnv == CLASS_UNKNOWN) {
+				curr_self = env.self;
+				curr_cls = env.clsEnv;
+				env.self = false;
+				env.clsEnv = CLASS_ANY;
+				return new ObjRef(id, (env.clsEnv == CLASS_ANY ? SC_INSTANCE : SC_CLASS), offset,
+					true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rvalue, external));
+			}
 		}
 
 		c = hledejClass(id);
-		if (c) { // class ref
-			if (offset) {
-				Chyba("Ke tride nelze pristupovat jako k poli");
-			}
-			env.self = false;
-			env.clsEnv = c;
-			env.mthEnv = NULL;
-			return new ClassRef(id, true, ZbIdent(env, rvalue, external));
+		// class ref
+		if (offset) {
+			Chyba("Ke tride nelze pristupovat jako k poli");
 		}
-		Chyba("Ocekava se deklarovany objekt nebo trida.");
+		env.self = false;
+		env.clsEnv = c ? c : CLASS_UNKNOWN;
+		env.mthEnv = NULL;
+		return new ClassRef(id, true, ZbIdent(env, rvalue, external));
+		//Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;
 	case LPAR: // call
-		if (env.clsEnv == CLASS_ANY) {
+		if (env.clsEnv == CLASS_ANY || env.clsEnv == CLASS_UNKNOWN) {
 			// For unknown object, we can also call an unknown method.
 			// Its existence will be checked at runtime
 			external = !env.self;
@@ -622,13 +631,13 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	default: // var/const
 		external = !env.self;
 		if (rvalue) {
-			if (env.clsEnv == CLASS_ANY) {
-				return new Var(id, offset, true, external);
+			if (env.clsEnv == CLASS_ANY || env.clsEnv == CLASS_UNKNOWN) {
+				return new Var(id, (env.clsEnv == CLASS_ANY ? SC_INSTANCE : SC_CLASS), offset, true, external, env.clsEnv == CLASS_UNKNOWN);
 			}
 			return VarOrConst(id, offset, env);
 		}
-		if (env.clsEnv == CLASS_ANY) {
-			return new Var(id, offset, false, external);
+		if (env.clsEnv == CLASS_ANY || env.clsEnv == CLASS_UNKNOWN) {
+			return new Var(id, (env.clsEnv == CLASS_ANY ? SC_INSTANCE : SC_CLASS), offset, false, external, env.clsEnv == CLASS_UNKNOWN);
 		}
 
 		p = adrProm(id, env.clsEnv, env.mthEnv);
@@ -644,7 +653,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		if (!env.self && env.clsEnv != CLASS_ANY && p->sc != SC_CLASS) {
 			Chyba("Prvek tridy musi byt staticky.");
 		}
-		return new Var(p, offset, false, external);
+		return new Var(p, offset, false, external, false);
 	}
 
 	return NULL;

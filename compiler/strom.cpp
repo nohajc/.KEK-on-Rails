@@ -10,7 +10,7 @@
 
 // konstruktory a destruktory
 
-Var::Var(const PrvekTab * sym, ArgList * o, bool rv, bool e) {
+Var::Var(const PrvekTab * sym, ArgList * o, bool rv, bool e, bool uc) {
 	addr = sym->addr;
 	offset = o;
 	rvalue = rv;
@@ -18,6 +18,7 @@ Var::Var(const PrvekTab * sym, ArgList * o, bool rv, bool e) {
 	external = e;
 	name = new char[strlen(sym->ident) + 1];
 	strcpy(name, sym->ident);
+	unknown_class = uc;
 }
 
 Var::Var(char * n, bool rv) {
@@ -29,14 +30,15 @@ Var::Var(char * n, bool rv) {
 	addr = -1;
 }
 
-Var::Var(char * n, ArgList * o, bool rv, bool e) {
+Var::Var(char * n, Scope s, ArgList * o, bool rv, bool e, bool uc) {
 	name = new char[strlen(n) + 1];
 	strcpy(name, n);
 	rvalue = rv;
 	offset = o;
 	external = e;
 	addr = -1;
-	sc = SC_INSTANCE;
+	sc = s;
+	unknown_class = uc;
 }
 
 Var::~Var() {
@@ -82,7 +84,11 @@ ClassRef::~ClassRef() {
 	delete target;
 }
 
-ObjRef::ObjRef(const PrvekTab * sym, ArgList * o, bool rv, bool e, Expr * t) : Var(sym, o, rv, e) {
+ObjRef::ObjRef(const PrvekTab * sym, ArgList * o, bool rv, bool e, bool uc, Expr * t) : Var(sym, o, rv, e, uc) {
+	target = t;
+}
+
+ObjRef::ObjRef(char *n, Scope s, ArgList * o, bool rv, bool e, bool uc, Expr * t) : Var(n, s, o, rv, e, uc) {
 	target = t;
 }
 
@@ -556,7 +562,13 @@ uint32_t Var::Translate() {
 		break;
 	case SC_CLASS:
 		if (external) {
-			bco_ww1(bcout_g, (rvalue || offset ? LVBI_CVE : LABI_CVE), addr);
+			if (unknown_class) {
+				uint32_t cve_name_idx = bco_sym(bcout_g, name);
+				bco_ww1(bcout_g, (rvalue || offset ? LVBS_CVE : LABS_CVE), cve_name_idx);
+			}
+			else {
+				bco_ww1(bcout_g, (rvalue || offset ? LVBI_CVE : LABI_CVE), addr);
+			}
 		}
 		else {
 			bco_ww1(bcout_g, (rvalue || offset ? LVBI_CV : LABI_CV), addr);

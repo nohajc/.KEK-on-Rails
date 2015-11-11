@@ -47,10 +47,11 @@ protected:
 	bool rvalue;
 	Scope sc;
 	bool external;
+	bool unknown_class;
 public:
-	Var(const PrvekTab * sym, ArgList * o, bool rv, bool e);
+	Var(const PrvekTab * sym, ArgList * o, bool rv, bool e, bool uc);
 	Var(char * n, bool rv);
-	Var(char * n, ArgList * o, bool rv, bool e);
+	Var(char * n, Scope s, ArgList * o, bool rv, bool e, bool uc);
 	virtual ~Var();
 	virtual uint32_t Translate();
 	virtual Node *Optimize();
@@ -81,7 +82,8 @@ public:
 class ObjRef: public Var { // Var which is also an object
 	Expr * target; // Member of the referenced object
 public:
-	ObjRef(const PrvekTab *, ArgList *, bool, bool, Expr *);
+	ObjRef(const PrvekTab *, ArgList *, bool, bool, bool, Expr *);
+	ObjRef(char *n, Scope s, ArgList *, bool, bool, bool, Expr *);
 	virtual ~ObjRef();
 	virtual uint32_t Translate();
 	virtual Node *Optimize();

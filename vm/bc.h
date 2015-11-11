@@ -34,7 +34,7 @@ enum Operator {
 	Error
 };
 typedef enum _bc {
-	UNDEF, /**/
+	NOP, /**/
 	BOP, /**/
 	UNM, /**/
 	DR, /* dereference */

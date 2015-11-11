@@ -94,8 +94,10 @@ struct ClassEnv {
 // Special class environment for searching through all classes
 #if defined(__LP64__)
 #define CLASS_ANY (ClassEnv*)0xFFFFFFFFFFFFFFFFULL
+#define CLASS_UNKNOWN (ClassEnv*)0xFFFFFFFFFFFFFFFDULL
 #else
 #define CLASS_ANY (ClassEnv*)0xFFFFFFFF
+#define CLASS_UNKNOWN (ClassEnv*)0xFFFFFFFD
 #endif
 
 struct Env {

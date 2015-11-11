@@ -55,11 +55,12 @@ void bco_print_const(bcout_t *bco, uint32_t idx) {
 #endif
 /******************************************************************************/
 
-const char *op_str[] = { "UNDEF", "BOP", "UNM", "LD", "ST", "IFNJ", "JU", "WRT",
+const char *op_str[] = { "NOP", "BOP", "UNM", "DR", "ST", "IFNJ", "JU", "WRT",
 		"RD", "DUP", "SWAP", "NOT", "STOP", "RET", "CALL", "CALLS", "CALLE",
-		"PUSH_C", "PUSH_ARG", "PUSH_LOC", "PUSH_IV", "PUSH_CV", "PUSH_IVE",
-		"PUSH_CVE", "PUSH_SELF", "CLASSREF", "PUSHA_ARG", "PUSHA_LOC",
-		"PUSHA_IV", "PUSHA_CV", "PUSHA_IVE", "PUSHA_CVE", "IDX", "IDXA", "NEW" };
+		"LVBI_C", "LVBI_ARG", "LVBI_LOC", "LVBI_IV", "LVBI_CV", "LVBI_CVE",
+		"LVBS_IVE", "LVBS_CVE", "LD_SELF", "LD_CLASS", "LABI_ARG", "LABI_LOC",
+		"LABI_IV", "LABI_CV", "LABI_CVE", "LABS_IVE", "LABS_IVE", "IDX", "IDXA",
+		"NEW" };
 
 bcout_t *bcout_init() {
 	bcout_t *bco;
