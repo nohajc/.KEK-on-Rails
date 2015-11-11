@@ -12,7 +12,8 @@
 char line[MAX_LINE_LENGTH];
 int lineNumber = 0;
 char *linePointer = line;
-FILE *inputFile;
+FILE *inputFileStack[1024];
+int inputFileNum;
 int extendedLine = 0;
 
 /**
@@ -21,10 +22,11 @@ int extendedLine = 0;
  */
 int initInput(char* fileName) {
 	if (!fileName) {
-		inputFile = stdin;
+		inputFileStack[0] = stdin;
 	} else {
-		inputFile = fopen(fileName, "rt");
-		if (!inputFile) {
+		inputFileNum = 0;
+		inputFileStack[0] = fopen(fileName, "r");
+		if (!inputFileStack[0]) {
 			printf("Vstupni soubor %s nenalezen.\n", fileName);
 			return 0;
 		}
@@ -33,7 +35,42 @@ int initInput(char* fileName) {
 }
 
 void closeInput() {
-	fclose(inputFile);
+	while (inputFileNum--) {
+		fclose(inputFileStack[inputFileNum]);
+	}
+}
+
+char * getLine(char * buf, int maxLen) {
+	FILE * f;
+	char * str = fgets(buf, MAX_LINE_LENGTH, inputFileStack[inputFileNum]);
+	while (!str) {
+		if (inputFileNum > 0) {
+			inputFileNum--;
+			str = fgets(buf, MAX_LINE_LENGTH, inputFileStack[inputFileNum]);
+		}
+		else {
+			return NULL;
+		}
+	}
+	if (!strncmp(str, "#include", 8)) {
+		char incl[16], expr[257], * fname;
+		sscanf(str, "%s %s", incl, expr);
+		if (expr[0] != '\"' || expr[strlen(expr) - 1] != '\"') {
+			printf("Chybna syntaxe ve vyrazu #include.\n");
+			exit(1);
+		}
+		expr[strlen(expr) - 1] = '\0';
+		fname = expr + 1;
+
+		f = fopen(fname, "r");
+		if (!f) {
+			printf("Soubor %s nenalezen.\n", fname);
+			exit(1);
+		}
+		inputFileStack[++inputFileNum] = f;
+		str = getLine(buf, maxLen);
+	}
+	return str;
 }
 
 /**
@@ -41,7 +78,7 @@ void closeInput() {
  */
 int getChar() {
 	if (!*linePointer) {
-		if (!fgets(line, MAX_LINE_LENGTH, inputFile))
+		if (!getLine(line, MAX_LINE_LENGTH))
 			return EOF;
 
 		linePointer = line;

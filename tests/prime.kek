@@ -1,3 +1,5 @@
+#include "class.kek"
+
 class Prime {
 	static const n = 100, sqrtn = 10
 	var i, j, isprime

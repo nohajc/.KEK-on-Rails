@@ -1,3 +1,6 @@
+#include "operators.kek"
+#include "switch.kek"
+
 class Object {
 	static const a = 5
 	var v, b
