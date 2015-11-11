@@ -45,6 +45,7 @@ char * getLine(char * buf, int maxLen) {
 	char * str = fgets(buf, MAX_LINE_LENGTH, inputFileStack[inputFileNum]);
 	while (!str) {
 		if (inputFileNum > 0) {
+			fclose(inputFileStack[inputFileNum]);
 			inputFileNum--;
 			str = fgets(buf, MAX_LINE_LENGTH, inputFileStack[inputFileNum]);
 		}
