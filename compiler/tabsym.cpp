@@ -253,10 +253,12 @@ void deklKonst(char *id, int val, bool isStatic, ClassEnv * cls, MethodEnv * mth
 
 	if (mth) {
 		int addr;
-		addr = mth->local_addr_next;
-		mth->local_addr_next++;
+		/*addr = mth->local_addr_next;
+		mth->local_addr_next++;*/
 
-		mth->syms = new PrvekTab(id, IdConstNum, SC_LOCAL, addr, val, mth->syms);
+		// Local constants are not on the stack. They're always in the
+		// constant table and therefore don't need an address.
+		mth->syms = new PrvekTab(id, IdConstNum, SC_LOCAL, 0, val, mth->syms);
 	}
 	else if (isStatic) {
 		int addr;
