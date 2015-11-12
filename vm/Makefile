@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3 -std=c99
 OBJS=\
+	array.o \
 	loader.o \
 	vm.o \
 	stack.o \

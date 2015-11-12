@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <stdarg.h>
 
@@ -42,3 +43,8 @@ void vm_debug(const char *format, ...) {
 }
 #endif
 /******************************************************************************/
+
+void vm_init_builtin_classes(void) {
+	init_kek_array_class();
+	// TODO: String, ...
+}

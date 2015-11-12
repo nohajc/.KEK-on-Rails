@@ -8,11 +8,13 @@
 #define TYPES_H_
 
 #include <stdlib.h>
-#include "vm.h"
+
+#include "array.h"
 
 /******************************************************************************/
 /* objects ********************************************************************/
 
+struct _class;
 union _kek_obj;
 
 typedef enum _type {
@@ -21,7 +23,7 @@ typedef enum _type {
 
 typedef struct _header {
 	type_t t;
-	class_t cls; /* Each object needs a pointer to its class. */
+	struct _class * cls; /* Each object needs a pointer to its class. */
 } header_t;
 
 /* nil - immutable, singleton */

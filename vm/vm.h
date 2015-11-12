@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 #include "bc.h"
+#include "types.h"
+#include "memory.h"
 
 /* stolen from "../compiler/tabsym.h" */
 /* We don't need DruhId and Scope in the final structures
@@ -40,6 +42,8 @@ enum Scope {
 
 void vm_debug(const char *format, ...);
 void vm_error(const char *format, ...);
+
+void vm_init_builtin_classes(void);
 
 /******************************************************************************/
 /*
@@ -106,6 +110,8 @@ typedef struct _class {
 	/* helpers */
 	char *parent_name;
 } class_t;
+
+#define BUILTIN_CLASSES_CNT 16 // Maybe less but we reserve it for the future
 
 /******************************************************************************/
 /* global variables */

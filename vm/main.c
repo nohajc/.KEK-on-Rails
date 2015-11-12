@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	kexe_load(filename);
+	vm_init_builtin_classes();
 
 	free_globals();
 

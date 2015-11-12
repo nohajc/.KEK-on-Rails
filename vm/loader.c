@@ -270,7 +270,7 @@ int kexe_load_classes(FILE *f) {
 		vm_debug("classes_cnt_g = " P32 "\n", classes_cnt_g);
 	}
 
-	classes_g = calloc(classes_cnt_g, sizeof(class_t));
+	classes_g = calloc(classes_cnt_g + BUILTIN_CLASSES_CNT, sizeof(class_t));
 	assert(classes_g);
 
 	for (i = 0; i < classes_cnt_g; i++) {
