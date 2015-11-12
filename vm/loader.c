@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 #include "vm.h"
 #include "loader.h"
@@ -66,10 +67,10 @@ uint32_t kexe_load_uint32(FILE *f) {
 	return (ret);
 }
 
-unsigned char *kexe_load_string(FILE *f) {
+char *kexe_load_string(FILE *f) {
 	uint32_t len;
 	size_t fread_result;
-	unsigned char *string;
+	char *string;
 
 	len = kexe_load_uint32(f);
 	if (len == UINT32_MAX) {
@@ -80,27 +81,30 @@ unsigned char *kexe_load_string(FILE *f) {
 	}
 
 	if (len == 0) {
-		string = malloc(1 * sizeof(unsigned char));
+		string = malloc(1 * sizeof(char));
 		assert(string);
 		string[0] = '\0';
 		vm_debug("Because of the zero length, return empty string.\n");
+		assert(0 && "this shouldn't happen I think");
 		return (string);
 	}
 
-	string = malloc(len * sizeof(unsigned char));
+	//string = malloc(len * sizeof(unsigned char));
+	string = calloc(len + 1, sizeof(char));
 	assert(string);
 
-	/* FIXME: why this works? */
-	fread_result = fread(string, sizeof(unsigned char), len, f);
-	string[len - 1] = '\0';
+	fread_result = fread(string, sizeof(char), len, f);
+	string[len] = '\0';
 	if (fread_result != len) {
 		vm_error("Reading of a \"string\" of len=%d has failed, "
 				"fread_result=%u, should read=%u\n", len, fread_result,
-				(len * sizeof(unsigned char)));
+				(len * sizeof(char)));
 		return (FALSE);
 	} else {
 		vm_debug("String \"%s\" has been loaded.\n", string);
 	}
+
+	assert(strlen(string) == (size_t) len); /* FIXME: is the cast ok? */
 
 	return (string);
 }
@@ -185,7 +189,7 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 			vm_error("loading methods[%d].name failed\n", i);
 			return (FALSE);
 		} else {
-			vm_debug("methods[i].name = %s", i, methods[i].name);
+			vm_debug("methods[i].name = %s\n", i, methods[i].name);
 		}
 
 		methods[i].args_cnt = kexe_load_uint32(f);
@@ -285,9 +289,24 @@ int kexe_load_classes(FILE *f) {
 	return (TRUE);
 }
 
+int kexe_load_magic(FILE *f) {
+	uint32_t kek_magic;
+	kek_magic = kexe_load_uint32(f);
+	if (kek_magic == UINT32_MAX) {
+		vm_error("Failed to load first 32 bits for magic number.\n");
+		return (FALSE);
+	}
+
+	if (kek_magic != KEK_MAGIC) {
+		vm_error("Loaded magic number is not 0x%08x.\n", KEK_MAGIC);
+		return FALSE;
+	}
+
+	return (TRUE);
+}
+
 int kexe_load(const char *filename) {
 	FILE *f;
-	uint32_t kek_magic;
 
 	f = fopen(filename, "r");
 	if (f == NULL) {
@@ -295,14 +314,8 @@ int kexe_load(const char *filename) {
 		return (FALSE);
 	}
 
-	kek_magic = kexe_load_uint32(f);
-	if (kek_magic == UINT32_MAX) {
-		vm_error("Failed to load first 32 bits for magic number.\n");
-		goto error;
-	}
-
-	if (kek_magic != KEK_MAGIC) {
-		vm_error("Loaded magic number is not 0x%08x.\n", KEK_MAGIC);
+	if (!kexe_load_magic(f)) {
+		vm_error("kexe_load_magic has failed.\n");
 		goto error;
 	}
 

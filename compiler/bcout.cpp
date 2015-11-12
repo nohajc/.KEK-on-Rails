@@ -473,16 +473,18 @@ int round_up(int numToRound, int multiple) {
 /* TODO: these functions could return a pointer */
 uint8_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 	size_t len;
+	len = strlen(str);
 
-	len = strlen(str) + 1;
-	//len = round_up(len, 32);
-	classout_w32(cow, len); /* FIXME? */
+	classout_w32(cow, len);
 
-	classout_realloc(cow, len * sizeof(char));
-	//(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
-	(void) memcpy(&cow->classout[cow->classout_cnt], str, len);
-	cow->classout_cnt += len;
-	bco_debug("> wstr %s\n", str);
+	if (len > 0) {
+		classout_realloc(cow, len * sizeof(char));
+		(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
+		cow->classout_cnt += len;
+		bco_debug("> wstr %s\n", str);
+	} else {
+		bco_debug("> wstr (string has not len > 0, no str\n");
+	}
 
 	return (cow->classout_cnt - len);
 }
@@ -510,6 +512,8 @@ void classout_prvektab_ll(classout_wrapp_t *cow, PrvekTab *ptarg) {
 	pt_cnt = 0;
 	pt_cnt_offset = classout_w32(cow, pt_cnt);
 	while (pt_ptr != NULL) {
+		bco_debug("classout_prvektab_ll: write symbol = \"%s\"\n",
+				pt_ptr->ident);
 		classout_symbol(cow, pt_ptr);
 		pt_ptr = pt_ptr->dalsi;
 		pt_cnt++;
@@ -624,11 +628,13 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 		sym_static->dalsi = NULL;
 	}
 	/*ce->syms_instance = sym_instance;
-	ce->syms_static = sym_static;*/
+	 ce->syms_static = sym_static;*/
 
 	/* print syms_{static,instance} *******************************************/
 
+	bco_debug("bcout: write syms_static\n");
 	classout_prvektab_ll(cow, ce->syms_static);
+	bco_debug("bcout: write syms_instance\n");
 	classout_prvektab_ll(cow, ce->syms_instance);
 
 	/**************************************************************************/
