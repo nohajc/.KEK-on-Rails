@@ -13,7 +13,8 @@
 
 #include "vm.h"
 #include "loader.h"
-
+#include "k_string.h"
+#include "k_array.h"
 
 /******************************************************************************/
 /* global variables */

@@ -4,6 +4,7 @@
  * https://github.com/nohajc/.KEK-on-Rails
  */
 
+#include <string.h>
 #include "k_string.h"
 
 void init_kek_string_class(void) {
@@ -33,9 +34,9 @@ void init_kek_string_class(void) {
 kek_obj_t * new_string_from_cstring(const char * cstr) {
 	size_t len = strlen(cstr);
 	class_t * str_class = vm_find_class("String");
-	kek_string_t * kstr = alloc_string(str_class, len);
+	kek_string_t * kstr = (kek_string_t *) alloc_string(str_class, len);
 	kstr->length = len;
 	strcpy(kstr->string, cstr);
 
-	return kstr;
+	return ((kek_obj_t *) kstr);
 }
