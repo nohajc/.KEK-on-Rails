@@ -113,10 +113,17 @@ typedef struct _class {
 extern uint32_t classes_cnt_g;
 extern class_t *classes_g;
 
+extern size_t const_table_cnt_g;
+extern uint8_t *const_table_g;
+
+extern size_t bc_arr_cnt_g;
+extern uint8_t *bc_arr_g;
+
 /******************************************************************************/
 
 #define P32 "%u" /* printf uint32_t */
 #define P16 "%u" /* printf uint32_t */
 #define P8 "%u" /* printf uint32_t */
+#define PSIZE "%zu" /* printf size_t */
 
 #endif /* VM_H_ */

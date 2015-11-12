@@ -20,13 +20,14 @@ void usage(const char *progname) {
 void free_globals() {
 	uint32_t i;
 
-	if (classes_g == NULL) {
-		return;
+	if (classes_g != NULL) {
+		for (i = 0; i < classes_cnt_g; i++) {
+			class_free(&classes_g[i]);
+		}
 	}
 
-	for (i = 0; i < classes_cnt_g; i++) {
-		class_free(&classes_g[i]);
-	}
+	free(bc_arr_g);
+	free(const_table_g);
 }
 
 int main(int argc, char *argv[]) {

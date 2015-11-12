@@ -19,6 +19,12 @@
 uint32_t classes_cnt_g = 0;
 class_t *classes_g = NULL;
 
+size_t const_table_cnt_g = 0;
+uint8_t *const_table_g = NULL;
+
+size_t bc_arr_cnt_g = 0;
+uint8_t *bc_arr_g = NULL;
+
 /******************************************************************************/
 /* loading of primitives */
 
@@ -66,6 +72,22 @@ uint32_t kexe_load_uint32(FILE *f) {
 		return (UINT32_MAX);
 	} else {
 		vm_debug("# load uint32 " P32 "\n", ret);
+	}
+
+	return (ret);
+}
+
+size_t kexe_load_size(FILE *f) {
+	size_t fread_result;
+	size_t ret;
+
+	fread_result = fread(&ret, sizeof(size_t), 1, f);
+	if (fread_result != 1) {
+		vm_error("Reading of \"size_t\" has failed. fread_result=%zu\n",
+				fread_result);
+		return (SIZE_MAX);
+	} else {
+		vm_debug("# load size " PSIZE "\n", ret);
 	}
 
 	return (ret);
@@ -318,6 +340,50 @@ int kexe_load_magic(FILE *f) {
 	return (TRUE);
 }
 
+int kexe_load_const_table(FILE *f) {
+	size_t fread_result;
+
+	const_table_cnt_g = kexe_load_size(f);
+	if (const_table_cnt_g == SIZE_MAX) {
+		vm_error("Failed to load first const table size.\n");
+		return (FALSE);
+	}
+
+	const_table_g = malloc(const_table_cnt_g * sizeof(uint8_t));
+	assert(const_table_g);
+
+	fread_result = fread(const_table_g, sizeof(uint8_t), const_table_cnt_g, f);
+	if (fread_result != const_table_cnt_g) {
+		vm_error("Failed to load const table. fread_result=" PSIZE
+		", const_table_g=" PSIZE "\n", fread_result, const_table_cnt_g);
+		return (FALSE);
+	}
+
+	return (TRUE);
+}
+
+int kexe_load_bc_arr(FILE *f) {
+	size_t fread_result;
+
+	bc_arr_cnt_g = kexe_load_size(f);
+	if (bc_arr_cnt_g == SIZE_MAX) {
+		vm_error("Failed to load first bc_arr size.\n");
+		return (FALSE);
+	}
+
+	bc_arr_g = malloc(bc_arr_cnt_g * sizeof(uint8_t));
+	assert(const_table_g);
+
+	fread_result = fread(bc_arr_g, sizeof(uint8_t), bc_arr_cnt_g, f);
+	if (fread_result != bc_arr_cnt_g) {
+		vm_error("Failed to load const table. fread_result=" PSIZE
+		", const_table_g=" PSIZE "\n", fread_result, bc_arr_cnt_g);
+		return (FALSE);
+	}
+
+	return (TRUE);
+}
+
 int kexe_load(const char *filename) {
 	FILE *f;
 
@@ -334,6 +400,16 @@ int kexe_load(const char *filename) {
 
 	if (!kexe_load_classes(f)) {
 		vm_error("kexe_load_classes has failed.\n");
+		goto error;
+	}
+
+	if (!kexe_load_const_table(f)) {
+		vm_error("kexe_load_const_table has failed.\n");
+		goto error;
+	}
+
+	if (!kexe_load_bc_arr(f)) {
+		vm_error("kexe_load_bc_arr has failed.\n");
 		goto error;
 	}
 
