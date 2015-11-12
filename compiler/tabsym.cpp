@@ -239,6 +239,7 @@ MethodEnv * deklMethod(char * mth, bool constructor, bool isStatic, ClassEnv * c
 			Chyba(mth, "trida muze mit pouze jeden staticky inicializator");
 		}
 		cls->static_init = new MethodEnv(mth, isStatic, NULL);
+		return cls->static_init;
 	}
 
 	MethodEnv * me = hledejMethod(mth, cls, false);

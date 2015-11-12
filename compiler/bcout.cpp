@@ -450,7 +450,7 @@ uint8_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
 
 uint8_t classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
 	classout_realloc(cow, sizeof(uint32_t));
-	cow->classout[cow->classout_cnt] = uint32;
+	*(uint32_t*) &cow->classout[cow->classout_cnt] = uint32;
 	cow->classout_cnt += 4;
 
 	bco_debug("> w32 %u\n", uint32);
@@ -514,7 +514,7 @@ void classout_prvektab_ll(classout_wrapp_t *cow, PrvekTab *ptarg) {
 		pt_ptr = pt_ptr->dalsi;
 		pt_cnt++;
 	}
-	cow->classout[pt_cnt_offset] = pt_cnt;
+	*(uint32_t*) &cow->classout[pt_cnt_offset] = pt_cnt;
 	bco_debug("pt_cnt = %u\n", pt_cnt);
 }
 
@@ -595,6 +595,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 			case SC_INSTANCE: // instance variable
 				if (sym_instance == NULL) {
 					sym_instance = sym;
+					ce->syms_instance = sym; // save pointer to the beginning
 				} else {
 					sym_instance->dalsi = sym;
 					sym_instance = sym;
@@ -603,6 +604,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 			case SC_CLASS: // class static variable
 				if (sym_static == NULL) {
 					sym_static = sym;
+					ce->syms_static = sym; // save pointer to the beginning
 				} else {
 					sym_static->dalsi = sym;
 					sym_static = sym;
@@ -621,8 +623,8 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	if (sym_static != NULL) {
 		sym_static->dalsi = NULL;
 	}
-	ce->syms_instance = sym_instance;
-	ce->syms_static = sym_static;
+	/*ce->syms_instance = sym_instance;
+	ce->syms_static = sym_static;*/
 
 	/* print syms_{static,instance} *******************************************/
 
@@ -641,17 +643,24 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 		bco_debug("class \"%s\" has no constructor\n", ce->className);
 	}
 
+	if (ce->static_init != NULL) {
+		classout_method(cow, ce->static_init);
+		method_cnt++;
+	} else {
+		bco_debug("class \"%s\" has no static initializer\n", ce->className);
+	}
+
 	if (ce->methods != NULL) { /* TODO: this could be refactored? */
 		method = ce->methods;
-		while (method->next != NULL) {
+		while (method != NULL) {
 			classout_method(cow, method);
 			method_cnt++;
 			method = method->next;
 		}
-		cow->classout[method_cnt_ptr] = method_cnt;
 	} else {
 		bco_debug("class \"%s\" has no methods\n", ce->className);
 	}
+	*(uint32_t*) &cow->classout[method_cnt_ptr] = method_cnt;
 }
 
 classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
@@ -667,7 +676,7 @@ classout_wrapp_t *classout_wrapp_init(ClassEnv *ce) {
 	cow->classout = (uint8_t *) calloc(cow->classout_size, sizeof(uint8_t));
 	assert(cow->classout);
 
-	if (ce != NULL) {
+	if (ce == NULL) {
 		bco_debug("top_class is NULL\n");
 	}
 
