@@ -9,7 +9,7 @@ OBJS=\
 kek: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
-$(OBJS): stack.h vm.h
+$(OBJS): stack.h vm.h types.h bc.h loader.h
 
 clean:
 	rm $(OBJS)

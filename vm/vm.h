@@ -121,6 +121,8 @@ extern uint8_t *bc_arr_g;
 
 /******************************************************************************/
 
+#define CONST(i) ((kek_obj_t*)&const_table_g[i])
+
 #define P32 "%u" /* printf uint32_t */
 #define P16 "%u" /* printf uint32_t */
 #define P8 "%u" /* printf uint32_t */

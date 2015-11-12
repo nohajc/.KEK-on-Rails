@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "vm.h"
+#include "types.h"
 #include "loader.h"
 
 /******************************************************************************/
@@ -413,6 +414,8 @@ int kexe_load(const char *filename) {
 		vm_error("kexe_load_bc_arr has failed.\n");
 		goto error;
 	}
+
+	assert(IS_NIL(CONST(0)));
 
 	fclose(f);
 	return (TRUE);

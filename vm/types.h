@@ -64,6 +64,7 @@ typedef struct _kek_udo {
 } kek_udo_t;
 
 typedef union _kek_obj {
+	header_t h;
 	kek_nil_t k_nil;
 	kek_int_t k_int;
 	kek_string_t k_str;
@@ -71,5 +72,11 @@ typedef union _kek_obj {
 	kek_array_t k_arr;
 	kek_udo_t k_udo;
 } kek_obj_t;
+
+#define IS_NIL(obj) ((obj)->h.t == KEK_NIL)
+#define IS_INT(obj) ((obj)->h.t == KEK_INT)
+#define IS_STR(obj) ((obj)->h.t == KEK_STR)
+#define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
+#define IS_ARR(obj) ((obj)->h.t == KEK_ARR)
 
 #endif /* TYPES_H_ */

@@ -10,12 +10,13 @@
 #include <stdarg.h>
 
 #include "vm.h"
+#include "loader.h"
 
 
 /******************************************************************************/
 /* global variables */
 
-class_t *classes_g;
+//class_t *classes_g;
 
 /******************************************************************************/
 /* debugging/printing code */

@@ -2,6 +2,7 @@
 /* syntakticky analyzator */
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #include "lexan.h"
@@ -12,6 +13,7 @@
 
 int main(int argc, char *argv[]) {
 	char *fileName;
+	char outName[256];
 	int ast_print;
 	Prog *prog;
 
@@ -46,7 +48,15 @@ int main(int argc, char *argv[]) {
 	prog->Translate();
 
 	assert(TabClass != NULL);
-	bcout_to_file(bcout_g, TabClass, "test.kexe");
+
+	if (fileName) {
+		char * name = strtok(fileName, ".");
+		sprintf(outName, "%s.kexe", name);
+		bcout_to_file(bcout_g, TabClass, outName);
+	}
+	else {
+		bcout_to_file(bcout_g, TabClass, "out.kexe");
+	}
 
 	closeInput();
 	delete prog;
