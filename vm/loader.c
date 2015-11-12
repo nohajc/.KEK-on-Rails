@@ -24,13 +24,15 @@ class_t *classes_g = NULL;
 
 uint8_t kexe_load_uint8(FILE *f) {
 	size_t fread_result;
-	uint32_t ret;
+	uint8_t ret;
 
 	fread_result = fread(&ret, sizeof(uint8_t), 1, f);
 	if (fread_result != 1) {
 		vm_error("Reading of \"uint8_t\" has failed. fread_result=%zu\n",
 				fread_result);
 		return (UINT8_MAX);
+	} else {
+		vm_debug("# load uint8 " P8 " (as char = \"%c\")\n", ret, ret);
 	}
 
 	return (ret);
@@ -38,13 +40,15 @@ uint8_t kexe_load_uint8(FILE *f) {
 
 uint16_t kexe_load_uint16(FILE *f) {
 	size_t fread_result;
-	uint32_t ret;
+	uint16_t ret;
 
 	fread_result = fread(&ret, sizeof(uint16_t), 1, f);
 	if (fread_result != 1) {
 		vm_error("Reading of \"uint16_t\" has failed. fread_result=%zu\n",
 				fread_result);
 		return (UINT16_MAX);
+	} else {
+		vm_debug("# load uint16 " P16 "\n", ret);
 	}
 
 	return (ret);
@@ -61,7 +65,7 @@ uint32_t kexe_load_uint32(FILE *f) {
 				fread_result);
 		return (UINT32_MAX);
 	} else {
-		vm_debug("load uint32 " P32 "\n", ret);
+		vm_debug("# load uint32 " P32 "\n", ret);
 	}
 
 	return (ret);
@@ -69,42 +73,37 @@ uint32_t kexe_load_uint32(FILE *f) {
 
 char *kexe_load_string(FILE *f) {
 	uint32_t len;
-	size_t fread_result;
+	uint32_t i;
 	char *string;
+
+	assert(sizeof(char) == sizeof(uint8_t));
 
 	len = kexe_load_uint32(f);
 	if (len == UINT32_MAX) {
 		vm_error("Failed to read the \"len\" of the string.\n");
 		return (NULL);
 	} else {
-		vm_debug("Length of the string is " P32 "\n", len);
+		vm_debug("# Length of the string is " P32 "\n", len);
 	}
 
 	if (len == 0) {
-		string = malloc(1 * sizeof(char));
-		assert(string);
-		string[0] = '\0';
-		vm_debug("Because of the zero length, return empty string.\n");
 		assert(0 && "this shouldn't happen I think");
-		return (string);
+		return NULL;
 	}
 
-	//string = malloc(len * sizeof(unsigned char));
-	string = calloc(len + 1, sizeof(char));
+	string = malloc((len + 1) * sizeof(char));
 	assert(string);
 
-	fread_result = fread(string, sizeof(char), len, f);
-	string[len] = '\0';
-	if (fread_result != len) {
-		vm_error("Reading of a \"string\" of len=%d has failed, "
-				"fread_result=%u, should read=%u\n", len, fread_result,
-				(len * sizeof(char)));
-		return (FALSE);
-	} else {
-		vm_debug("String \"%s\" has been loaded.\n", string);
+	//fread_result = fread(string, sizeof(char), len + 1, f);
+	for (i = 0; i <= len; i++) {
+		string[i] = (char) kexe_load_uint8(f);
+		vm_debug("# string[%u]=\"%c\"\n", i, string[i]);
 	}
 
-	assert(strlen(string) == (size_t) len); /* FIXME: is the cast ok? */
+	assert(string[len] == '\0');
+	assert(strlen(string) == (size_t ) len);
+
+	vm_debug("# str=\"%s\", len=%d\n", string, strlen(string));
 
 	return (string);
 }
@@ -178,18 +177,22 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 	if (*methods_cnt == UINT32_MAX) {
 		vm_error("Reading of methods_cnt has failed.\n");
 		return (FALSE);
+	} else {
+		vm_debug("*methods_cnt = \"%d\"\n", *methods_cnt);
 	}
 
 	methods = malloc(*methods_cnt * sizeof(method_t));
 	assert(methods);
 
 	for (i = 0; i < *methods_cnt; i++) {
+		vm_debug("Loading methods[%d].\n", i);
+
 		methods[i].name = kexe_load_string(f);
 		if (methods[i].name == NULL) {
 			vm_error("loading methods[%d].name failed\n", i);
 			return (FALSE);
 		} else {
-			vm_debug("methods[i].name = %s\n", i, methods[i].name);
+			vm_debug("methods[%d].name = \"%s\"\n", i, methods[i].name);
 		}
 
 		methods[i].args_cnt = kexe_load_uint32(f);
@@ -197,7 +200,8 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 			vm_error("Reading of methods[%d].args_cnt has failed.\n", i);
 			return (FALSE);
 		} else {
-			vm_debug("methods[i].args_cnt = " P32 "\n", i, methods[i].args_cnt);
+			vm_debug("methods[%d].args_cnt = " P32 "\n", i,
+					methods[i].args_cnt);
 		}
 
 		methods[i].locals_cnt = kexe_load_uint32(f);
@@ -205,7 +209,7 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 			vm_error("Reading of methods[%d].locals_cnt has failed.\n", i);
 			return (FALSE);
 		} else {
-			vm_debug("methods[i].locals_cnt = " P32 "\n", i,
+			vm_debug("methods[%d].locals_cnt = " P32 "\n", i,
 					methods[i].locals_cnt);
 		}
 
@@ -214,7 +218,7 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 			vm_error("Reading of methods[%d].entry.bc_addr has failed.\n", i);
 			return (FALSE);
 		} else {
-			vm_debug("methods[i].entry.bc_addr = " P32 "\n", i,
+			vm_debug("methods[%d].entry.bc_addr = " P32 "\n", i,
 					methods[i].entry.bc_addr);
 		}
 
@@ -223,7 +227,7 @@ int kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t *methods) {
 			vm_error("Reading of methods[%d].is_static has failed.\n", i);
 			return (FALSE);
 		} else {
-			vm_debug("methods[i].is_static = " P8 "\n", i,
+			vm_debug("methods[%d].is_static = " P8 "\n", i,
 					methods[i].is_static);
 		}
 	}
@@ -308,7 +312,7 @@ int kexe_load_magic(FILE *f) {
 int kexe_load(const char *filename) {
 	FILE *f;
 
-	f = fopen(filename, "r");
+	f = fopen(filename, "rb");
 	if (f == NULL) {
 		vm_error("Filename \"%s\" does not exists.\n", filename);
 		return (FALSE);
@@ -332,3 +336,46 @@ int kexe_load(const char *filename) {
 	fclose(f);
 	return (FALSE);
 }
+
+/******************************************************************************/
+/* free memory */
+
+void symbol_free(symbol_t *symbol) {
+	if (symbol == NULL) {
+		return;
+	}
+
+	free(symbol->name);
+}
+
+void method_free(method_t *method) {
+	if (method == NULL) {
+		return;
+	}
+
+	free(method->name);
+}
+
+void class_free(class_t *class) {
+	uint32_t i;
+
+	if (class == NULL) {
+		return;
+	}
+
+	free(class->name);
+	free(class->parent_name);
+
+	for (i = 0; i < class->methods_cnt; i++) {
+		method_free(&class->methods[i]);
+	}
+
+	for (i = 0; i < class->syms_static_cnt; i++) {
+		symbol_free(&class->syms_static[i]);
+	}
+
+	for (i = 0; i < class->syms_instance_cnt; i++) {
+		symbol_free(&class->syms_instance[i]);
+	}
+}
+

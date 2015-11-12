@@ -443,7 +443,7 @@ uint8_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
 	cow->classout[cow->classout_cnt] = uint8;
 	cow->classout_cnt += 1;
 
-	bco_debug("> w8 %u\n", uint8);
+	bco_debug("> w8 %u (as char = \"%c\")\n", uint8, uint8);
 
 	return (cow->classout_cnt - 1);
 }
@@ -474,13 +474,23 @@ int round_up(int numToRound, int multiple) {
 uint8_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 	size_t len;
 	len = strlen(str);
+	bco_debug("> len of \"%s\" is %d\n", str, len);
 
 	classout_w32(cow, len);
 
 	if (len > 0) {
 		classout_realloc(cow, len * sizeof(char));
-		(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
-		cow->classout_cnt += len;
+		if (0) {
+			(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
+			cow->classout_cnt += len;
+		} else {
+			size_t i;
+			assert(str[len] == '\0');
+			for (i = 0; i <= len; i++) {
+				classout_w8(cow, str[i]);
+			}
+		}
+
 		bco_debug("> wstr %s\n", str);
 	} else {
 		bco_debug("> wstr (string has not len > 0, no str\n");
@@ -584,7 +594,8 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	if (ce->parent != NULL) {
 		classout_wstr(cow, ce->parent->className);
 	} else {
-		classout_wstr(cow, "NO_PARENT");
+//		classout_wstr(cow, "NO_PARENT");
+		classout_wstr(cow, ce->className);
 	}
 
 	/* now we need to divide syms */

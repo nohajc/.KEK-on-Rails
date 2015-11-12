@@ -17,6 +17,18 @@ void usage(const char *progname) {
 	exit(1);
 }
 
+void free_globals() {
+	int i;
+
+	if (classes_g == NULL) {
+		return;
+	}
+
+	for (i = 0; i < classes_cnt_g; i++) {
+		class_free(&classes_g[i]);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	int c;
 	char *filename = NULL;
@@ -41,6 +53,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	kexe_load(filename);
+
+	free_globals();
 
 	return (EXIT_SUCCESS);
 }

@@ -25,12 +25,9 @@ enum DruhId {
 	Nedef, IdProm, IdConstNum, IdConstStr
 };
 enum Scope {
-	SC_LOCAL,
-	SC_ARG,
-	SC_INSTANCE, // instance variable
+	SC_LOCAL, SC_ARG, SC_INSTANCE, // instance variable
 	SC_CLASS // class static variable
 };
-
 
 /******************************************************************************/
 
@@ -46,8 +43,8 @@ void vm_error(const char *format, ...);
 
 /******************************************************************************/
 /*
-github.com/nohajc/.KEK-on-Rails/wiki/Class-hierarchy-representation-in-the-VM
-*/
+ github.com/nohajc/.KEK-on-Rails/wiki/Class-hierarchy-representation-in-the-VM
+ */
 
 /* Native methods also work with our stack
  * so no arguments are passed via the system stack.
@@ -55,12 +52,11 @@ github.com/nohajc/.KEK-on-Rails/wiki/Class-hierarchy-representation-in-the-VM
 typedef void (*method_ptr)(void);
 
 typedef enum _const_flag {
-	VAR = 0,
-	CONST = 1
+	VAR = 0, CONST = 1
 } const_flag_t;
 
 typedef struct _symbol {
-	const char *name;
+	char *name;
 	/* There is an index to const table in the class file. At runtime though,
 	 * there should be a kek_obj_t pointer for every static var/const instead.
 	 * So, there should be two versions of this structure (and possibly others)
@@ -78,21 +74,21 @@ typedef struct _symbol {
 } symbol_t;
 
 typedef struct _method {
-	const char *name;
+	char *name;
 	union _entry {
 		uint32_t bc_addr;
 		method_ptr func;
 	} entry;
 	uint32_t args_cnt;
 	/* We need this number to properly set SP
-	   after call, thus reserving space for locals. */
+	 after call, thus reserving space for locals. */
 	uint32_t locals_cnt;
 	uint8_t is_static;
 	uint8_t is_native;
 } method_t;
 
 typedef struct _class {
-	const char *name;
+	char *name;
 	struct _class *parent;
 
 	uint32_t methods_cnt;
@@ -108,7 +104,7 @@ typedef struct _class {
 	symbol_t *syms_instance;
 
 	/* helpers */
-	const char *parent_name;
+	char *parent_name;
 } class_t;
 
 /******************************************************************************/
