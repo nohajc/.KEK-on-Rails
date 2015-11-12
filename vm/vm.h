@@ -43,8 +43,6 @@ enum Scope {
 void vm_debug(const char *format, ...);
 void vm_error(const char *format, ...);
 
-void vm_init_builtin_classes(void);
-
 /******************************************************************************/
 /*
  github.com/nohajc/.KEK-on-Rails/wiki/Class-hierarchy-representation-in-the-VM
@@ -98,6 +96,8 @@ typedef struct _class {
 	uint32_t methods_cnt;
 	method_t *methods;
 
+	alloc_ptr allocator;
+
 	method_t *constructor;
 	method_t *static_init; /* "Static constructor" */
 
@@ -133,5 +133,10 @@ extern uint8_t *bc_arr_g;
 #define P16 "%u" /* printf uint32_t */
 #define P8 "%u" /* printf uint32_t */
 #define PSIZE "%zu" /* printf size_t */
+
+/******************************************************************************/
+
+void vm_init_builtin_classes(void);
+void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func);
 
 #endif /* VM_H_ */

@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-#include "array.h"
+#include "k_array.h"
 
 /******************************************************************************/
 /* objects ********************************************************************/
@@ -80,5 +80,7 @@ typedef union _kek_obj {
 #define IS_STR(obj) ((obj)->h.t == KEK_STR)
 #define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
 #define IS_ARR(obj) ((obj)->h.t == KEK_ARR)
+
+#define NIL CONST(0)
 
 #endif /* TYPES_H_ */

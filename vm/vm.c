@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include "vm.h"
 #include "loader.h"
@@ -47,4 +48,14 @@ void vm_debug(const char *format, ...) {
 void vm_init_builtin_classes(void) {
 	init_kek_array_class();
 	// TODO: String, ...
+}
+
+void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func) {
+	mth->name = malloc(strlen(name) + 1);
+	strcpy(mth->name, name);
+	mth->entry.func = func;
+	mth->args_cnt = args_cnt;
+	mth->locals_cnt = 0;
+	mth->is_static = is_static;
+	mth->is_native = true;
 }
