@@ -47,7 +47,7 @@ void vm_debug(const char *format, ...) {
 
 void vm_init_builtin_classes(void) {
 	init_kek_array_class();
-	// TODO: String, ...
+	init_kek_string_class();
 }
 
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func) {
@@ -58,4 +58,14 @@ void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 	mth->locals_cnt = 0;
 	mth->is_static = is_static;
 	mth->is_native = true;
+}
+
+class_t * vm_find_class(const char * name) {
+	uint32_t i;
+	for (i = 0; i < classes_cnt_g; ++i) {
+		if (!strcmp(classes_g[i].name, name)) {
+			return &classes_g[i];
+		}
+	}
+	return NULL;
 }

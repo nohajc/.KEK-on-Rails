@@ -4,8 +4,8 @@
  * https://github.com/nohajc/.KEK-on-Rails
  */
 
-#ifndef ARRAY_H_
-#define ARRAY_H_
+#ifndef K_ARRAY_H_
+#define K_ARRAY_H_
 
 void init_kek_array_class(void);
 void new_array(void);

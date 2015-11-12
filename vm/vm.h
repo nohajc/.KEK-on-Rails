@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include "bc.h"
 #include "types.h"
-#include "memory.h"
 
 /* stolen from "../compiler/tabsym.h" */
 /* We don't need DruhId and Scope in the final structures
@@ -51,7 +50,11 @@ void vm_error(const char *format, ...);
 /* Native methods also work with our stack
  * so no arguments are passed via the system stack.
  */
+
+struct _class;
+
 typedef void (*method_ptr)(void);
+typedef kek_obj_t *(*alloc_ptr)(struct _class *);
 
 typedef enum _const_flag {
 	VAR = 0, CONST = 1
@@ -138,5 +141,6 @@ extern uint8_t *bc_arr_g;
 
 void vm_init_builtin_classes(void);
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func);
+class_t * vm_find_class(const char * name);
 
 #endif /* VM_H_ */
