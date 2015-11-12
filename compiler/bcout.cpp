@@ -438,7 +438,7 @@ void classout_realloc(classout_wrapp_t *cow, size_t size) {
 	}
 }
 
-uint8_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
+uint32_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
 	classout_realloc(cow, sizeof(uint8_t));
 	cow->classout[cow->classout_cnt] = uint8;
 	cow->classout_cnt += 1;
@@ -448,7 +448,7 @@ uint8_t classout_w8(classout_wrapp_t *cow, uint8_t uint8) {
 	return (cow->classout_cnt - 1);
 }
 
-uint8_t classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
+uint32_t classout_w32(classout_wrapp_t *cow, uint32_t uint32) {
 	classout_realloc(cow, sizeof(uint32_t));
 	*(uint32_t*) &cow->classout[cow->classout_cnt] = uint32;
 	cow->classout_cnt += 4;
@@ -471,7 +471,7 @@ int round_up(int numToRound, int multiple) {
 
 /* this write lenght+string */
 /* TODO: these functions could return a pointer */
-uint8_t classout_wstr(classout_wrapp_t *cow, const char *str) {
+uint32_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 	size_t len;
 	len = strlen(str);
 	bco_debug("> len of \"%s\" is %d\n", str, len);
@@ -515,7 +515,7 @@ void classout_symbol(classout_wrapp_t *cow, PrvekTab *pt) {
 void classout_prvektab_ll(classout_wrapp_t *cow, PrvekTab *ptarg) {
 	PrvekTab *pt_ptr;
 	uint32_t pt_cnt;
-	uint8_t pt_cnt_offset;
+	uint32_t pt_cnt_offset;
 
 	pt_ptr = ptarg;
 
@@ -576,7 +576,7 @@ class_t m; /* eclipse will show me how it looks like */
 void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	MethodEnv *method;
 	uint32_t method_cnt;
-	uint8_t method_cnt_ptr;
+	uint32_t method_cnt_ptr;
 
 	PrvekTab *sym;
 	uint32_t sym_cnt;
@@ -713,7 +713,7 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 	classout_wrapp_t *cow;
 	uint32_t kek_magic = 0x42666CEC;
 
-	f = fopen(filename, "w");
+	f = fopen(filename, "wb");
 
 	/* write magic */
 	bco_debug("fwrite: kek_magic=0x%08x\n", kek_magic);
