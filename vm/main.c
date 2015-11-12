@@ -18,7 +18,7 @@ void usage(const char *progname) {
 }
 
 void free_globals() {
-	int i;
+	uint32_t i;
 
 	if (classes_g == NULL) {
 		return;
