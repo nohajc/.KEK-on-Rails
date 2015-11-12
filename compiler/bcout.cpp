@@ -480,16 +480,8 @@ uint32_t classout_wstr(classout_wrapp_t *cow, const char *str) {
 
 	if (len > 0) {
 		classout_realloc(cow, len * sizeof(char));
-		if (0) {
-			(void) strcpy((char *) &cow->classout[cow->classout_cnt], str);
-			cow->classout_cnt += len;
-		} else {
-			size_t i;
-			assert(str[len] == '\0');
-			for (i = 0; i <= len; i++) {
-				classout_w8(cow, str[i]);
-			}
-		}
+		(void) memcpy((char *) &cow->classout[cow->classout_cnt], str, len);
+		cow->classout_cnt += len;
 
 		bco_debug("> wstr %s\n", str);
 	} else {

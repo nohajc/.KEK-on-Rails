@@ -117,12 +117,13 @@ char *kexe_load_string(FILE *f) {
 	assert(string);
 
 	//fread_result = fread(string, sizeof(char), len + 1, f);
-	for (i = 0; i <= len; i++) {
+	for (i = 0; i < len; i++) {
 		string[i] = (char) kexe_load_uint8(f);
 		vm_debug("# string[%u]=\"%c\"\n", i, string[i]);
 	}
 
-	assert(string[len] == '\0');
+	//assert(string[len] == '\0');
+	string[len] = '\0';
 	assert(strlen(string) == (size_t ) len);
 
 	vm_debug("# str=\"%s\", len=%d\n", string, strlen(string));
