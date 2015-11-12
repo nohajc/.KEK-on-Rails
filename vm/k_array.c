@@ -14,7 +14,7 @@
 
 void init_kek_array_class(void) {
 	char name[] = "Array";
-	classes_g[classes_cnt_g].name = malloc(strlen(name + 1) * sizeof(char));
+	classes_g[classes_cnt_g].name = malloc((strlen(name) + 1) * sizeof(char));
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
