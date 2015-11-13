@@ -53,8 +53,12 @@ int main(int argc, char *argv[]) {
 		usage(argv[0]);
 	}
 
-	kexe_load(filename);
+	if (!kexe_load(filename)) {
+		return (EXIT_FAILURE);
+	}
 	vm_init_builtin_classes();
+
+	vm_call_main(argc, argv);
 
 	free_globals();
 

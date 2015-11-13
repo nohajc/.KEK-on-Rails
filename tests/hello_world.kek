@@ -1,5 +1,5 @@
 class Hello {
 	static main(args) {
-		write "Hello world!"
+		write "Hello world!\n"
 	}
 }

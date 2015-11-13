@@ -13,15 +13,16 @@
 /******************************************************************************/
 /* stack **********************************************************************/
 
-kek_obj_t **stack_g;
-int stack_size_g;
-int sp_g; /* stack pointer */
-int ap_g; /* argument pointer */
-int fp_g; /* frame pointer */
+extern kek_obj_t **stack_g;
+extern int stack_size_g;
+extern int sp_g; /* stack pointer */
+extern int ap_g; /* argument pointer */
+extern int fp_g; /* frame pointer */
+extern int ip_g; /* instruction pointer */
 
 void stack_init(void);
 void stack_destroy(void);
-void stack_push(kek_obj_t *);
+void stack_push(void *);
 kek_obj_t* stack_pop();
 kek_obj_t* stack_top();
 
@@ -29,8 +30,34 @@ kek_obj_t* stack_top();
 #define LOC(i) stack_g[fp_g + (i) + 1]
 #define THIS stack_g[fp_g - 3]
 
-#define PUSH(obj) stack_g[sp_g++] = obj
-#define POP(obj)  obj = stack_g[--sp_g]
-#define TOP(obj)  obj = stack_g[sp_g - 1]
+#define NATIVE -1
+
+#if defined(__LP64__)
+#define PUSH(obj) stack_push((void*)(uint64_t)(obj))
+#else
+#define PUSH(obj) stack_push((void*)(obj))
+#endif
+
+#define POP(obj) (obj) = (void*)stack_pop()
+
+#define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
+	PUSH(ret); \
+	PUSH(ap_g); \
+	ap_g = sp_g - (arg_cnt) - 3; \
+	PUSH(fp_g); \
+	fp_g = sp_g; \
+	sp_g = sp_g + (locals_cnt); \
+	ip_g = entry; \
+}
+
+#define BC_RET { \
+	kek_obj_t* ret_val = stack_pop(); \
+	sp_g = ap_g; \
+	uint32_t ret_addr = (size_t)stack_g[fp_g - 3]; \
+	ap_g = (size_t)stack_g[fp_g - 2]; \
+	fp_g = (size_t)stack_g[fp_g - 1]; \
+	PUSH(ret_val); \
+	ip_g = ret_addr; \
+}
 
 #endif /* STACK_H_ */

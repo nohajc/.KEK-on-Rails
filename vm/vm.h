@@ -8,6 +8,7 @@
 #define VM_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "bc.h"
 #include "types.h"
 
@@ -142,5 +143,9 @@ extern uint8_t *bc_arr_g;
 void vm_init_builtin_classes(void);
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func);
 class_t * vm_find_class(const char * name);
+method_t * vm_find_method_in_class(class_t * cls, const char * name, bool is_static); // searches in a given class
+method_t * vm_find_method(const char * name, bool is_static, class_t ** cls); // returns class where the method was found
+void vm_call_main(int argc, char *argv[]);
+void vm_execute_bc(void);
 
 #endif /* VM_H_ */

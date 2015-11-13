@@ -264,7 +264,7 @@ uint32_t bco_nil(bcout_t *bco) {
 		return (ret);
 	} else {
 		cn = (constant_nil_t *) ct_malloc(bco, sizeof(constant_nil_t));
-		cn->type = KEK_NIL;
+		cn->h.t = KEK_NIL;
 		ret = ((uint8_t *) cn - bco->const_table);
 		singleton = 1;
 	}
@@ -293,7 +293,7 @@ uint32_t bco_int(bcout_t *bco, int v) {
 	}
 
 	ci = (constant_int_t *) ct_malloc(bco, sizeof(constant_int_t));
-	ci->type = KEK_INT;
+	ci->h.t = KEK_INT;
 	ci->value = v;
 
 	bcout_items_add(bco, (constant_item_t *) ci);
@@ -317,7 +317,7 @@ uint32_t bco_str(bcout_t *bco, const char *str) {
 	len = (len + 3) & ~3;
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
-	cs->type = KEK_STR;
+	cs->h.t = KEK_STR;
 	cs->length = len;
 	strcpy(cs->string, str);
 
@@ -342,7 +342,7 @@ uint32_t bco_sym(bcout_t *bco, const char *str) {
 	len = (len + 3) & ~3;
 
 	cs = (constant_string_t *) ct_malloc(bco, sizeof(constant_string_t) + len);
-	cs->type = KEK_SYM;
+	cs->h.t = KEK_SYM;
 	cs->length = len;
 	strcpy(cs->string, str);
 
@@ -357,7 +357,7 @@ uint32_t bco_arr(bcout_t *bco, size_t len) {
 	// Size of the allocated memory is already a multiple of four in this case.
 	ca = (constant_array_t *) ct_malloc(bco,
 			sizeof(constant_array_t) + (len - 1) * sizeof(uint32_t));
-	ca->type = KEK_ARR;
+	ca->h.t = KEK_ARR;
 	ca->length = len;
 
 	return ((uint8_t *) ca - bco->const_table);
@@ -706,6 +706,10 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 	uint32_t kek_magic = 0x42666CEC;
 
 	f = fopen(filename, "wb");
+	if (!f) {
+		fprintf(stderr, "Vystupni soubor nelze vytvorit.\n");
+		exit(1);
+	}
 
 	/* write magic */
 	bco_debug("fwrite: kek_magic=0x%08x\n", kek_magic);

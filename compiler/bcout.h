@@ -110,23 +110,28 @@ typedef enum _constant_type {
 	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR
 } constant_type_t;
 
+typedef struct _header {
+	constant_type_t t;
+	uint64_t cls; /* Each object needs a pointer to its class - resolved at runtime. */
+} header_t;
+
 typedef struct _constant_nil {
-	constant_type_t type;
+	header_t h;
 } constant_nil_t;
 
 typedef struct _constant_int {
-	constant_type_t type;
+	header_t h;
 	int value;
 } constant_int_t;
 
 typedef struct _constant_string {
-	constant_type_t type;
+	header_t h;
 	int length;
 	char string[1];
 } constant_string_t;
 
 typedef struct _constant_array {
-	constant_type_t type;
+	header_t h;
 	int length;
 	// This is a little hack: at runtime, the last two members will be replaced
 	//     by pointer to memory allocated elsewhere.

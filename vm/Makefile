@@ -3,6 +3,7 @@ CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3 -std=c99
 OBJS=\
 	memory.o \
 	k_array.o \
+	k_string.o \
 	loader.o \
 	vm.o \
 	stack.o \

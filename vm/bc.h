@@ -7,6 +7,8 @@
 #ifndef BC_H_
 #define BC_H_
 
+#include "stack.h"
+
 /*
  * TODO: We should refactor our code a little to avoid duplication
  * of headers common to the compiler and the vm.

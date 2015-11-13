@@ -13,6 +13,10 @@
 
 #include "vm.h"
 #include "loader.h"
+#include "k_array.h"
+#include "k_string.h"
+#include "stack.h"
+#include "memory.h"
 
 
 /******************************************************************************/
@@ -68,4 +72,108 @@ class_t * vm_find_class(const char * name) {
 		}
 	}
 	return NULL;
+}
+
+method_t * vm_find_method_in_class(class_t * cls, const char * name, bool is_static) {
+	uint32_t i;
+
+	for (i = 0; i < cls->methods_cnt; ++i) {
+		if (!strcmp(cls->methods[i].name, name) && cls->methods[i].is_static == is_static) {
+			return &cls->methods[i];
+		}
+	}
+	return NULL;
+}
+
+method_t * vm_find_method(const char * name, bool is_static, class_t ** cls) {
+	uint32_t i;
+	for (i = 0; i < classes_cnt_g; ++i) {
+		method_t * m = vm_find_method_in_class(&classes_g[i], name, is_static);
+		if (m) {
+			*cls = &classes_g[i];
+			return m;
+		}
+	}
+	return NULL;
+}
+
+void vm_call_main(int argc, char *argv[]) {
+	int i;
+	class_t * entry_cls;
+	method_t * kek_main;
+	kek_array_t * kek_argv;
+
+	// Wrap argv in kek array
+	kek_argv = (kek_array_t*)alloc_array(vm_find_class("Array"));
+	native_new_array(kek_argv);
+
+	for (i = 0; i < argc; ++i) {
+		kek_obj_t * kek_str = new_string_from_cstring(argv[i]);
+		native_set(kek_argv, i, kek_str);
+	}
+
+	// Locate method main
+	kek_main = vm_find_method("main", true, &entry_cls);
+	vm_debug("found %s.%s, entry_point: %u\n", entry_cls->name, kek_main->name, kek_main->entry.bc_addr);
+
+	stack_init();
+	// push argument and class reference
+	PUSH(kek_argv);
+	PUSH(entry_cls);
+
+	// prepare stack and instruction pointer
+	BC_CALL(kek_main->entry.bc_addr, NATIVE, 1, kek_main->locals_cnt);
+
+	// call the bytecode interpreter
+	vm_execute_bc();
+}
+
+const char *op_str[] = { "NOP", "BOP", "UNM", "DR", "ST", "IFNJ", "JU", "WRT",
+		"RD", "DUP", "SWAP", "NOT", "STOP", "RET", "CALL", "CALLS", "CALLE",
+		"LVBI_C", "LVBI_ARG", "LVBI_LOC", "LVBI_IV", "LVBI_CV", "LVBI_CVE",
+		"LVBS_IVE", "LVBS_CVE", "LD_SELF", "LD_CLASS", "LABI_ARG", "LABI_LOC",
+		"LABI_IV", "LABI_CV", "LABI_CVE", "LABS_IVE", "LABS_IVE", "IDX", "IDXA",
+		"NEW" };
+
+void vm_execute_bc(void) {
+	bc_t op_c;
+	kek_obj_t * obj;
+	uint16_t arg1, arg2;
+
+	while (true) {
+		op_c = bc_arr_g[ip_g];
+		switch (op_c) {
+			case LVBI_C: {
+				arg1 = *(uint16_t*)&bc_arr_g[++ip_g];
+				ip_g += 2;
+				vm_debug("%s %u\n", "LVBI_C", arg1);
+
+				PUSH(&const_table_g[arg1]);
+				break;
+			}
+			case WRT: {
+				vm_debug("%s\n", "WRT");
+				ip_g++;
+
+				POP(obj);
+				if (IS_STR(obj)) {
+					printf("%s", obj->k_str.string);
+				}
+
+				break;
+			}
+			case RET: {
+				vm_debug("%s\n", "RET");
+				BC_RET;
+				//vm_debug("ret_addr = %d\n", ip_g);
+				if (ip_g == NATIVE) {
+					return;
+				}
+				break;
+			}
+			default:
+				fprintf(stderr, "Invalid instruction at %u", ip_g);
+				exit(1);
+		}
+	}
 }

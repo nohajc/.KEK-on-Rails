@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "vm.h"
 #include "memory.h"
 #include "k_array.h"
@@ -14,6 +15,7 @@
 
 void init_kek_array_class(void) {
 	char name[] = "Array";
+	assert(classes_g);
 	classes_g[classes_cnt_g].name = malloc((strlen(name) + 1) * sizeof(char));
 	strcpy(classes_g[classes_cnt_g].name, name);
 
@@ -43,8 +45,21 @@ void init_kek_array_class(void) {
 // Can be called from bytecode, so we use our custom stack.
 void new_array(void) {
 	kek_array_t * arr = (kek_array_t*)THIS;
-	arr->length = 0;
-	arr->elems = alloc_arr_elems(ARR_INIT_SIZE);
+	native_new_array(arr);
 
 	PUSH(NIL); // All kek methods must return something
+	BC_RET;
+}
+
+void native_new_array(kek_array_t * arr) {
+	arr->length = 0;
+	arr->elems = alloc_arr_elems(ARR_INIT_SIZE);
+}
+
+void native_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
+	if (idx >= arr->length) {
+		// TODO: check boundaries and realloc elems if needed
+		arr->length = idx + 1;
+	}
+	arr->elems[idx] = obj;
 }
