@@ -136,7 +136,7 @@ const char *op_str[] = { "NOP", "BOP", "UNM", "DR", "ST", "IFNJ", "JU", "WRT",
 
 void vm_execute_bc(void) {
 	bc_t op_c;
-	kek_obj_t * obj;
+	kek_obj_t * obj, * idx;
 	uint16_t arg1, arg2;
 
 	while (true) {
@@ -147,8 +147,25 @@ void vm_execute_bc(void) {
 				ip_g += 2;
 				vm_debug("%s %u\n", "LVBI_C", arg1);
 
-				PUSH(&const_table_g[arg1]);
+				PUSH(CONST(arg1));
 				break;
+			}
+			case LVBI_ARG: {
+				arg1 = *(uint16_t*)&bc_arr_g[++ip_g];
+				ip_g += 2;
+				vm_debug("%s %u\n", "LVBI_ARG", arg1);
+				PUSH(ARG(arg1));
+				break;
+			}
+			case IDX: {
+				vm_debug("%s\n", "IDX");
+				ip_g++;
+				POP(idx);
+				POP(obj);
+
+				if (IS_ARR(obj) && IS_INT(idx)) {
+					PUSH(obj->k_arr.elems[idx->k_int.value]);
+				}
 			}
 			case WRT: {
 				vm_debug("%s\n", "WRT");
@@ -171,7 +188,7 @@ void vm_execute_bc(void) {
 				break;
 			}
 			default:
-				fprintf(stderr, "Invalid instruction at %u", ip_g);
+				fprintf(stderr, "Invalid instruction at %u\n", ip_g);
 				exit(1);
 		}
 	}
