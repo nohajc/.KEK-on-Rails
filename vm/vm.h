@@ -55,7 +55,7 @@ void vm_error(const char *format, ...);
 struct _class;
 
 typedef void (*method_ptr)(void);
-typedef kek_obj_t *(*alloc_ptr)(struct _class *);
+typedef union _kek_obj *(*alloc_ptr)(struct _class *);
 
 typedef enum _const_flag {
 	VAR = 0, CONST = 1
@@ -115,6 +115,8 @@ typedef struct _class {
 	char *parent_name;
 } class_t;
 
+
+
 #define BUILTIN_CLASSES_CNT 16 // Maybe less but we reserve it for the future
 
 /******************************************************************************/
@@ -141,7 +143,8 @@ extern uint8_t *bc_arr_g;
 /******************************************************************************/
 
 void vm_init_builtin_classes(void);
-void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func);
+void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
+		uint8_t is_static, method_ptr func);
 class_t * vm_find_class(const char * name);
 method_t * vm_find_method_in_class(class_t * cls, const char * name, bool is_static); // searches in a given class
 method_t * vm_find_method(const char * name, bool is_static, class_t ** cls); // returns class where the method was found

@@ -8,9 +8,10 @@
 #ifndef VM_LOADER_H_
 #define VM_LOADER_H_
 
+#include <stdbool.h>
 #include "vm.h"
 
-int kexe_load(const char *filename);
+bool kexe_load(const char *filename);
 void class_free(class_t *class);
 
 #endif /* VM_LOADER_H_ */

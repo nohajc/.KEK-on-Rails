@@ -586,8 +586,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	if (ce->parent != NULL) {
 		classout_wstr(cow, ce->parent->className);
 	} else {
-//		classout_wstr(cow, "NO_PARENT");
-		classout_wstr(cow, ce->className);
+		classout_wstr(cow, "NO_PARENT");
 	}
 
 	/* now we need to divide syms */
@@ -630,8 +629,6 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	if (sym_static != NULL) {
 		sym_static->dalsi = NULL;
 	}
-	/*ce->syms_instance = sym_instance;
-	 ce->syms_static = sym_static;*/
 
 	/* print syms_{static,instance} *******************************************/
 
@@ -642,22 +639,24 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 
 	/**************************************************************************/
 
-	method_cnt = 0;
-	method_cnt_ptr = classout_w32(cow, method_cnt);
+	if (ce->static_init != NULL) {
+		classout_w8(cow, 1);
+		classout_method(cow, ce->static_init);
+	} else {
+		classout_w8(cow, 0);
+		bco_debug("class \"%s\" has no static initializer\n", ce->className);
+	}
 
 	if (ce->constructor != NULL) {
+		classout_w8(cow, 1);
 		classout_method(cow, ce->constructor);
-		method_cnt++;
 	} else {
+		classout_w8(cow, 0);
 		bco_debug("class \"%s\" has no constructor\n", ce->className);
 	}
 
-	if (ce->static_init != NULL) {
-		classout_method(cow, ce->static_init);
-		method_cnt++;
-	} else {
-		bco_debug("class \"%s\" has no static initializer\n", ce->className);
-	}
+	method_cnt = 0;
+	method_cnt_ptr = classout_w32(cow, method_cnt);
 
 	if (ce->methods != NULL) { /* TODO: this could be refactored? */
 		method = ce->methods;

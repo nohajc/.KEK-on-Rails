@@ -11,9 +11,11 @@
 
 #define ARR_INIT_SIZE 512
 
-kek_obj_t * alloc_array(class_t * arr_class);
-kek_obj_t ** alloc_arr_elems(size_t size);
+struct _class;
 
-kek_obj_t * alloc_string(class_t * str_class, size_t length);
+union _kek_obj * alloc_array(struct _class * arr_class);
+union _kek_obj ** alloc_arr_elems(size_t size);
+
+union _kek_obj * alloc_string(struct _class * str_class, size_t length);
 
 #endif

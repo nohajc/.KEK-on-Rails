@@ -10,6 +10,6 @@
 #include "types.h"
 
 void init_kek_string_class(void);
-kek_obj_t * new_string_from_cstring(const char *);
+union _kek_obj * new_string_from_cstring(const char *);
 
 #endif

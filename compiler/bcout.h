@@ -196,6 +196,12 @@ typedef struct _class {
 	uint32_t syms_method;
 	// symbol_t[syms]
 
+	uint8_t has_static_init;
+	//class_method_t[0 or 1]
+
+	uint8_t has_contructor;
+	//class_method_t[0 or 1]
+
 	uint32_t methods;
 	// class_method_t[methods]
 } class_t;
