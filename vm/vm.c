@@ -166,6 +166,7 @@ void vm_execute_bc(void) {
 				if (IS_ARR(obj) && IS_INT(idx)) {
 					PUSH(obj->k_arr.elems[idx->k_int.value]);
 				}
+				break;
 			}
 			case WRT: {
 				vm_debug("%s\n", "WRT");
