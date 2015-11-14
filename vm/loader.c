@@ -40,7 +40,8 @@ uint8_t kexe_load_uint8(FILE *f) {
 				fread_result);
 		return (UINT8_MAX);
 	} else {
-		vm_debug("# load uint8 " P8 " (as char = \"%c\")\n", ret, ret);
+		vm_debug(DBG_LOADING, "load uint8 " P8 " (as char = \"%c\")\n", ret,
+				ret);
 	}
 
 	return (ret);
@@ -56,7 +57,7 @@ uint16_t kexe_load_uint16(FILE *f) {
 				fread_result);
 		return (UINT16_MAX);
 	} else {
-		vm_debug("# load uint16 " P16 "\n", ret);
+		vm_debug(DBG_LOADING, "load uint16 " P16 "\n", ret);
 	}
 
 	return (ret);
@@ -73,7 +74,7 @@ uint32_t kexe_load_uint32(FILE *f) {
 				fread_result);
 		return (UINT32_MAX);
 	} else {
-		vm_debug("# load uint32 " P32 "\n", ret);
+		vm_debug(DBG_LOADING, "load uint32 " P32 "\n", ret);
 	}
 
 	return (ret);
@@ -89,7 +90,7 @@ size_t kexe_load_size(FILE *f) {
 				fread_result);
 		return (SIZE_MAX);
 	} else {
-		vm_debug("# load size " PSIZE "\n", ret);
+		vm_debug(DBG_LOADING, "load size " PSIZE "\n", ret);
 	}
 
 	return (ret);
@@ -107,7 +108,7 @@ char *kexe_load_string(FILE *f) {
 		vm_error("Failed to read the \"len\" of the string.\n");
 		return (NULL);
 	} else {
-		vm_debug("# Length of the string is " P32 "\n", len);
+		vm_debug(DBG_LOADING, "Length of the string is " P32 "\n", len);
 	}
 
 	if (len == 0) {
@@ -121,14 +122,14 @@ char *kexe_load_string(FILE *f) {
 	//fread_result = fread(string, sizeof(char), len + 1, f);
 	for (i = 0; i < len; i++) {
 		string[i] = (char) kexe_load_uint8(f);
-		vm_debug("# string[%u]=\"%c\"\n", i, string[i]);
+		vm_debug(DBG_LOADING, "string[%u]=\"%c\"\n", i, string[i]);
 	}
 
 	//assert(string[len] == '\0');
 	string[len] = '\0';
 	assert(strlen(string) == (size_t ) len);
 
-	vm_debug("# str=\"%s\", len=%d\n", string, strlen(string));
+	vm_debug(DBG_LOADING, "str=\"%s\", len=%d\n", string, strlen(string));
 
 	return (string);
 }
@@ -142,7 +143,7 @@ bool kexe_load_sym(FILE *f, symbol_t *sym) {
 		vm_error("sym->name failed\n");
 		return (false);
 	} else {
-		vm_debug("loaded symbol = \"%s\"\n", sym->name);
+		vm_debug(DBG_LOADING, "loaded symbol = \"%s\"\n", sym->name);
 	}
 
 	sym->addr = kexe_load_uint32(f);
@@ -150,7 +151,8 @@ bool kexe_load_sym(FILE *f, symbol_t *sym) {
 		vm_error("sym->addr failed\n");
 		return (false);
 	} else {
-		vm_debug("addr of symbol \"%s\" is " P32 "\n", sym->name, sym->addr);
+		vm_debug(DBG_LOADING, "addr of symbol \"%s\" is " P32 "\n", sym->name,
+				sym->addr);
 	}
 
 	sym->const_ptr = kexe_load_uint32(f);
@@ -158,8 +160,8 @@ bool kexe_load_sym(FILE *f, symbol_t *sym) {
 		vm_error("sym->const_ptr failed\n");
 		return (false);
 	} else {
-		vm_debug("const ptr of symbol \"%s\" is " P32 "\n", sym->name,
-				sym->const_ptr);
+		vm_debug(DBG_LOADING, "const ptr of symbol \"%s\" is " P32 "\n",
+				sym->name, sym->const_ptr);
 	}
 
 	sym->const_flag = 0; /* FIXME TODO */
@@ -178,7 +180,7 @@ bool kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t **sym_array) {
 		vm_error("Reading of sym_cnt has failed.\n");
 		return (false);
 	} else {
-		vm_debug("*sym_cnt = " P32 "\n", *sym_cnt);
+		vm_debug(DBG_LOADING, "*sym_cnt = " P32 "\n", *sym_cnt);
 	}
 
 	*sym_array = malloc(*sym_cnt * sizeof(symbol_t));
@@ -201,7 +203,7 @@ bool kexe_load_method(FILE *f, method_t **method) {
 		vm_error("loading method.name failed\n");
 		return (false);
 	} else {
-		vm_debug("method.name = \"%s\"\n", (*method)->name);
+		vm_debug(DBG_LOADING, "method.name = \"%s\"\n", (*method)->name);
 	}
 
 	(*method)->args_cnt = kexe_load_uint32(f);
@@ -209,7 +211,8 @@ bool kexe_load_method(FILE *f, method_t **method) {
 		vm_error("Reading of method.args_cnt has failed.\n");
 		return (false);
 	} else {
-		vm_debug("method.args_cnt = " P32 "\n", (*method)->args_cnt);
+		vm_debug(DBG_LOADING, "method.args_cnt = " P32 "\n",
+				(*method)->args_cnt);
 	}
 
 	(*method)->locals_cnt = kexe_load_uint32(f);
@@ -217,7 +220,8 @@ bool kexe_load_method(FILE *f, method_t **method) {
 		vm_error("Reading of method.locals_cnt has failed.\n");
 		return (false);
 	} else {
-		vm_debug("method.locals_cnt = " P32 "\n", (*method)->locals_cnt);
+		vm_debug(DBG_LOADING, "method.locals_cnt = " P32 "\n",
+				(*method)->locals_cnt);
 	}
 
 	(*method)->entry.bc_addr = kexe_load_uint32(f);
@@ -225,7 +229,8 @@ bool kexe_load_method(FILE *f, method_t **method) {
 		vm_error("Reading of method.entry.bc_addr has failed.\n");
 		return (false);
 	} else {
-		vm_debug("method.entry.bc_addr = " P32 "\n", (*method)->entry.bc_addr);
+		vm_debug(DBG_LOADING, "method.entry.bc_addr = " P32 "\n",
+				(*method)->entry.bc_addr);
 	}
 
 	(*method)->is_static = kexe_load_uint8(f);
@@ -233,7 +238,8 @@ bool kexe_load_method(FILE *f, method_t **method) {
 		vm_error("Reading of methods.is_static has failed.\n");
 		return (false);
 	} else {
-		vm_debug("method.is_static = " P8 "\n", (*method)->is_static);
+		vm_debug(DBG_LOADING, "method.is_static = " P8 "\n",
+				(*method)->is_static);
 	}
 
 	return (true);
@@ -247,21 +253,22 @@ bool kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t **methods) {
 		vm_error("Reading of methods_cnt has failed.\n");
 		return (false);
 	} else {
-		vm_debug("*methods_cnt = \"%d\"\n", *methods_cnt);
+		vm_debug(DBG_LOADING, "*methods_cnt = \"%d\"\n", *methods_cnt);
 	}
 
 	*methods = malloc(*methods_cnt * sizeof(method_t));
 	assert(*methods);
 
 	for (i = 0; i < *methods_cnt; i++) {
-		vm_debug("Loading methods[%d].\n", i);
+		vm_debug(DBG_LOADING, "Loading methods[%d].\n", i);
 
 		(*methods)[i].name = kexe_load_string(f);
 		if ((*methods)[i].name == NULL) {
 			vm_error("loading methods[%d].name failed\n", i);
 			return (false);
 		} else {
-			vm_debug("methods[%d].name = \"%s\"\n", i, (*methods)[i].name);
+			vm_debug(DBG_LOADING, "methods[%d].name = \"%s\"\n", i,
+					(*methods)[i].name);
 		}
 
 		(*methods)[i].args_cnt = kexe_load_uint32(f);
@@ -269,7 +276,7 @@ bool kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t **methods) {
 			vm_error("Reading of methods[%d].args_cnt has failed.\n", i);
 			return (false);
 		} else {
-			vm_debug("methods[%d].args_cnt = " P32 "\n", i,
+			vm_debug(DBG_LOADING, "methods[%d].args_cnt = " P32 "\n", i,
 					(*methods)->args_cnt);
 		}
 
@@ -278,7 +285,7 @@ bool kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t **methods) {
 			vm_error("Reading of methods[%d].locals_cnt has failed.\n", i);
 			return (false);
 		} else {
-			vm_debug("methods[%d].locals_cnt = " P32 "\n", i,
+			vm_debug(DBG_LOADING, "methods[%d].locals_cnt = " P32 "\n", i,
 					(*methods)[i].locals_cnt);
 		}
 
@@ -287,7 +294,7 @@ bool kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t **methods) {
 			vm_error("Reading of methods[%d].entry.bc_addr has failed.\n", i);
 			return (false);
 		} else {
-			vm_debug("methods[%d].entry.bc_addr = " P32 "\n", i,
+			vm_debug(DBG_LOADING, "methods[%d].entry.bc_addr = " P32 "\n", i,
 					(*methods)[i].entry.bc_addr);
 		}
 
@@ -296,7 +303,7 @@ bool kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t **methods) {
 			vm_error("Reading of methods[%d].is_static has failed.\n", i);
 			return (false);
 		} else {
-			vm_debug("methods[%d].is_static = " P8 "\n", i,
+			vm_debug(DBG_LOADING, "methods[%d].is_static = " P8 "\n", i,
 					(*methods)[i].is_static);
 		}
 	}
@@ -314,21 +321,22 @@ bool kexe_load_classes(FILE *f) {
 		vm_error("Reading of \"classes\" has failed.\n");
 		return (false);
 	} else {
-		vm_debug("classes_cnt_g = " P32 "\n", classes_cnt_g);
+		vm_debug(DBG_LOADING, "classes_cnt_g = " P32 "\n", classes_cnt_g);
 	}
 
 	classes_g = calloc(classes_cnt_g + BUILTIN_CLASSES_CNT, sizeof(class_t));
 	assert(classes_g);
 
 	for (i = 0; i < classes_cnt_g; i++) {
-		vm_debug("kexe_load_classes i=%u\n", i);
+		vm_debug(DBG_LOADING, "kexe_load_classes i=%u\n", i);
 
 		classes_g[i].name = kexe_load_string(f);
 		if (classes_g[i].name == NULL) {
 			vm_error("loading classes_g[%d].name failed\n", i);
 			return (false);
 		} else {
-			vm_debug("classes_g[%d].name = \"%s\"\n", i, classes_g[i].name);
+			vm_debug(DBG_LOADING, "classes_g[%d].name = \"%s\"\n", i,
+					classes_g[i].name);
 		}
 
 		classes_g[i].parent_name = kexe_load_string(f);
@@ -336,11 +344,11 @@ bool kexe_load_classes(FILE *f) {
 			vm_error("loading classes_g[%d].parent_name failed\n", i);
 			return (false);
 		} else {
-			vm_debug("classes_g[%d].parent_name = %s\n", i,
+			vm_debug(DBG_LOADING, "classes_g[%d].parent_name = %s\n", i,
 					classes_g[i].parent_name);
 		}
 
-		vm_debug("going to load static syms\n");
+		vm_debug(DBG_LOADING, "going to load static syms\n");
 		if (!kexe_load_syms(f, &classes_g[i].syms_static_cnt,
 				&classes_g[i].syms_static)) {
 			vm_error("loading classes_g[%d].syms_static{,_cnt} failed\n", i);
@@ -350,7 +358,7 @@ bool kexe_load_classes(FILE *f) {
 			assert(classes_g[i].syms_static != NULL);
 		}
 
-		vm_debug("going to load instance syms\n");
+		vm_debug(DBG_LOADING, "going to load instance syms\n");
 		if (!kexe_load_syms(f, &classes_g[i].syms_instance_cnt,
 				&classes_g[i].syms_instance)) {
 			vm_error("loading classes_g[%d].syms_instance{,_cnt} failed\n", i);
@@ -365,7 +373,8 @@ bool kexe_load_classes(FILE *f) {
 			vm_error("has_static_init\n");
 			return (false);
 		} else {
-			vm_debug("has_static_init = " P8 "\n", has_static_init);
+			vm_debug(DBG_LOADING, "has_static_init = " P8 "\n",
+					has_static_init);
 		}
 		if (has_static_init) {
 			if (!kexe_load_method(f, &classes_g[i].static_init)) {
@@ -379,7 +388,7 @@ bool kexe_load_classes(FILE *f) {
 			vm_error("has_contructor\n");
 			return (false);
 		} else {
-			vm_debug("has_contructor = " P8 "\n", has_contructor);
+			vm_debug(DBG_LOADING, "has_contructor = " P8 "\n", has_contructor);
 		}
 		if (has_contructor) {
 			if (!kexe_load_method(f, &classes_g[i].constructor)) {

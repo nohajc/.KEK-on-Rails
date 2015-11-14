@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3 -std=c99
+CFLAGS=-Wall -Wextra -pedantic -Og -ggdb3 -std=c99 -Wno-unused-variable
 OBJS=\
 	memory.o \
 	k_array.o \

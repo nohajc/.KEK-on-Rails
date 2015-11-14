@@ -7,14 +7,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <string.h>
 
 #include "loader.h"
 #include "vm.h"
 
+uint32_t debug_level_g = 0;
+
 void usage(const char *progname) {
 	printf("Usage:\n");
-	printf("%s -f [filename]\n", progname);
-	exit(1);
+	printf("%s -d [s|sf|l|b] -f [filename]\n", progname);
+	exit(EXIT_FAILURE);
 }
 
 void free_globals() {
@@ -28,14 +31,38 @@ void free_globals() {
 
 	free(bc_arr_g);
 	free(const_table_g);
+
+#ifdef DEBUG
+	/* free the buffer inside */
+	(void) kek_obj_print(NULL);
+#endif
+}
+
+void debug_add(char *level) {
+	if (strcmp(level, "s") == 0 || strcmp(level, "stack") == 0) {
+		debug_level_g |= DBG_STACK;
+	} else if (strcmp(level, "sf") == 0 || strcmp(level, "stack_full") == 0) {
+		debug_level_g |= DBG_STACK_FULL;
+	} else if (strcmp(level, "l") == 0 || strcmp(level, "loading") == 0) {
+		debug_level_g |= DBG_LOADING;
+	} else if (strcmp(level, "b") == 0 || strcmp(level, "bc") == 0) {
+		debug_level_g |= DBG_BC;
+	} else if (strcmp(level, "v") == 0 || strcmp(level, "v") == 0) {
+		debug_level_g |= DBG_VM;
+	} else if (strcmp(level, "a") == 0 || strcmp(level, "all") == 0) {
+		debug_level_g |= DBG_ALL;
+	}
 }
 
 int main(int argc, char *argv[]) {
 	int c;
 	char *filename = NULL;
 
-	while ((c = getopt(argc, argv, "f:")) != -1) {
+	while ((c = getopt(argc, argv, "d:f:")) != -1) {
 		switch (c) {
+		case 'd':
+			debug_add(optarg);
+			break;
 		case 'f':
 			filename = optarg;
 			break;

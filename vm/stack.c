@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "vm.h"
 #include "stack.h"
 
 kek_obj_t **stack_g;
@@ -36,12 +37,17 @@ void stack_push(void *obj) {
 		stack_g = realloc(stack_g, stack_size_g * sizeof(kek_obj_t));
 		assert(stack_g != NULL);
 	}
+	vm_debug(DBG_STACK, "stack_push: \"%s\"\n", kek_obj_print(obj));
 	stack_g[sp_g++] = obj;
 }
 
 kek_obj_t* stack_pop() {
+	vm_debug(DBG_STACK, "stack_pop: \"%s\"\n",
+			kek_obj_print(stack_g[sp_g - 1]));
 	return (stack_g[--sp_g]);
 }
 kek_obj_t* stack_top() {
+	vm_debug(DBG_STACK, "stack_top: \"%s\"\n",
+			kek_obj_print(stack_g[sp_g - 1]));
 	return (stack_g[sp_g - 1]);
 }

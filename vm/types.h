@@ -63,6 +63,9 @@ typedef struct _kek_udo {
 	union _kek_obj * inst_var[1]; /* inst_var[syms_instance_cnt] */
 } kek_udo_t;
 
+/* shortcut to type of the kek_obj_t */
+#define type h.t
+
 typedef union _kek_obj {
 	header_t h;
 	kek_nil_t k_nil;

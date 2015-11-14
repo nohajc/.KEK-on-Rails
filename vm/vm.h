@@ -33,15 +33,24 @@ enum Scope {
 
 /******************************************************************************/
 
-#define DEBUG 1
-#define TRUE 1
-#define FALSE 0
+#define EXIT_ON_ERROR 1
 #define KEK_MAGIC 0x42666CEC
 
 /******************************************************************************/
 
-void vm_debug(const char *format, ...);
+#define DEBUG 1
+#define DBG_NONE		0x00000000 /* no debug */
+#define DBG_LOADING		0x00000001 /* loading */
+#define DBG_BC			0x00000002 /* bytecode */
+#define DBG_STACK		0x00000004 /* what happens on top of the stack */
+#define DBG_STACK_FULL	0x00000008 /* print all stack after every stack manip */
+#define DBG_VM			0x00000010 /* */
+
+#define DBG_ALL (DBG_LOADING|DBG_BC|DBG_STACK|DBG_STACK_FULL|DBG_VM)
+
+void vm_debug(uint32_t level, const char *format, ...);
 void vm_error(const char *format, ...);
+char *kek_obj_print(kek_obj_t *kek_obj);
 
 /******************************************************************************/
 /*
@@ -115,8 +124,6 @@ typedef struct _class {
 	char *parent_name;
 } class_t;
 
-
-
 #define BUILTIN_CLASSES_CNT 16 // Maybe less but we reserve it for the future
 
 /******************************************************************************/
@@ -130,6 +137,8 @@ extern uint8_t *const_table_g;
 
 extern size_t bc_arr_cnt_g;
 extern uint8_t *bc_arr_g;
+
+extern uint32_t debug_level_g;
 
 /******************************************************************************/
 
@@ -146,7 +155,8 @@ void vm_init_builtin_classes(void);
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 		uint8_t is_static, method_ptr func);
 class_t * vm_find_class(const char * name);
-method_t * vm_find_method_in_class(class_t * cls, const char * name, bool is_static); // searches in a given class
+method_t * vm_find_method_in_class(class_t * cls, const char * name,
+		bool is_static); // searches in a given class
 method_t * vm_find_method(const char * name, bool is_static, class_t ** cls); // returns class where the method was found
 void vm_call_main(int argc, char *argv[]);
 void vm_execute_bc(void);

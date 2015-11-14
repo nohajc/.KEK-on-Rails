@@ -22,7 +22,6 @@
 /* global variables */
 
 //class_t *classes_g;
-
 /******************************************************************************/
 /* debugging/printing code */
 
@@ -32,18 +31,76 @@ void vm_error(const char *format, ...) {
 	vfprintf(stderr, format, args);
 	va_end(args);
 	fflush(stderr);
+
+#ifdef EXIT_ON_ERROR
+	exit(EXIT_FAILURE);
+#endif
 }
 
 #if DEBUG
-void vm_debug(const char *format, ...) {
+
+/* this function is not thread safe */
+char *kek_obj_print(kek_obj_t *kek_obj) {
+	static char str[1024];
+
+	if (kek_obj == (kek_obj_t *) 0xffffffffffffffff) {
+		(void) snprintf(str, 1024, "kek_obj == 0xffffffffffffffff");
+		goto out;
+	}
+
+	if (kek_obj == NULL) {
+		(void) snprintf(str, 1024, "kek_obj == NULL");
+		goto out;
+	}
+
+	/* vm_debug(DBG_STACK | DBG_STACK_FULL, "kek_obj = %p\n", kek_obj); */
+	switch (kek_obj->type) {
+	case KEK_INT:
+		(void) snprintf(str, 1024, "int -%d-", ((kek_int_t *) kek_obj)->value);
+		break;
+	case KEK_STR:
+		(void) snprintf(str, 1024, "str -%s-",
+				((kek_string_t *) kek_obj)->string);
+		break;
+	case KEK_ARR:
+		(void) snprintf(str, 1024, "arr");
+		break;
+	case KEK_SYM:
+		(void) snprintf(str, 1024, "sym -%s-",
+				((kek_symbol_t *) kek_obj)->symbol);
+		break;
+	case KEK_NIL:
+		(void) snprintf(str, 1024, "nil");
+		break;
+	default:
+		(void) snprintf(str, 1024, "unknown type %d", kek_obj->type);
+		/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
+		 assert(0 && "unhandled kek_obj->type"); */
+		break;
+	}
+
+	out: /* */
+	return ((char *) (&str));
+}
+
+void vm_debug(uint32_t level_flag, const char *format, ...) {
 	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-	fflush(stderr);
+
+	if (debug_level_g & level_flag) {
+		va_start(args, format);
+		vfprintf(stderr, format, args);
+		va_end(args);
+		fflush(stderr);
+	}
 }
 #else
+
+char *kek_obj_print(kek_obj_t *kek_obj) {
+	return (NULL);
+}
+
 void vm_debug(const char *format, ...) {
+	((void)0);
 }
 #endif
 /******************************************************************************/
@@ -53,7 +110,8 @@ void vm_init_builtin_classes(void) {
 	init_kek_string_class();
 }
 
-void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt, uint8_t is_static, method_ptr func) {
+void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
+		uint8_t is_static, method_ptr func) {
 	mth->name = malloc(strlen(name) + 1);
 	strcpy(mth->name, name);
 	mth->entry.func = func;
@@ -73,11 +131,13 @@ class_t * vm_find_class(const char * name) {
 	return NULL;
 }
 
-method_t * vm_find_method_in_class(class_t * cls, const char * name, bool is_static) {
+method_t * vm_find_method_in_class(class_t * cls, const char * name,
+bool is_static) {
 	uint32_t i;
 
 	for (i = 0; i < cls->methods_cnt; ++i) {
-		if (!strcmp(cls->methods[i].name, name) && cls->methods[i].is_static == is_static) {
+		if (!strcmp(cls->methods[i].name, name)
+				&& cls->methods[i].is_static == is_static) {
 			return &cls->methods[i];
 		}
 	}
@@ -103,7 +163,7 @@ void vm_call_main(int argc, char *argv[]) {
 	kek_array_t * kek_argv;
 
 	// Wrap argv in kek array
-	kek_argv = (kek_array_t*)alloc_array(vm_find_class("Array"));
+	kek_argv = (kek_array_t*) alloc_array(vm_find_class("Array"));
 	native_new_array(kek_argv);
 
 	for (i = 0; i < argc; ++i) {
@@ -113,7 +173,11 @@ void vm_call_main(int argc, char *argv[]) {
 
 	// Locate method main
 	kek_main = vm_find_method("main", true, &entry_cls);
-	vm_debug("found %s.%s, entry_point: %u\n", entry_cls->name, kek_main->name, kek_main->entry.bc_addr);
+	if (kek_main == NULL) {
+		vm_error("Cannot find the main method.\n");
+	}
+	vm_debug(DBG_VM, "found %s.%s, entry_point: %u\n", entry_cls->name,
+			kek_main->name, kek_main->entry.bc_addr);
 
 	stack_init();
 	// push argument and class reference
@@ -136,61 +200,62 @@ const char *op_str[] = { "NOP", "BOP", "UNM", "DR", "ST", "IFNJ", "JU", "WRT",
 
 void vm_execute_bc(void) {
 	bc_t op_c;
-	kek_obj_t * obj, * idx;
+	kek_obj_t * obj, *idx;
 	uint16_t arg1, arg2;
 
 	while (true) {
 		op_c = bc_arr_g[ip_g];
 		switch (op_c) {
-			case LVBI_C: {
-				arg1 = *(uint16_t*)&bc_arr_g[++ip_g];
-				ip_g += 2;
-				vm_debug("%s %u\n", "LVBI_C", arg1);
+		case LVBI_C: {
+			arg1 = *(uint16_t*) &bc_arr_g[++ip_g];
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBI_C", arg1);
 
-				PUSH(CONST(arg1));
-				break;
-			}
-			case LVBI_ARG: {
-				arg1 = *(uint16_t*)&bc_arr_g[++ip_g];
-				ip_g += 2;
-				vm_debug("%s %u\n", "LVBI_ARG", arg1);
-				PUSH(ARG(arg1));
-				break;
-			}
-			case IDX: {
-				vm_debug("%s\n", "IDX");
-				ip_g++;
-				POP(idx);
-				POP(obj);
+			PUSH(CONST(arg1));
+			break;
+		}
+		case LVBI_ARG: {
+			arg1 = *(uint16_t*) &bc_arr_g[++ip_g];
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBI_ARG", arg1);
+			PUSH(ARG(arg1));
+			break;
+		}
+		case IDX: {
+			vm_debug(DBG_BC, "%s\n", "IDX");
+			ip_g++;
+			POP(idx);
+			POP(obj);
 
-				if (IS_ARR(obj) && IS_INT(idx)) {
-					PUSH(obj->k_arr.elems[idx->k_int.value]);
-				}
-				break;
+			if (IS_ARR(obj) && IS_INT(idx)) {
+				PUSH(obj->k_arr.elems[idx->k_int.value]);
 			}
-			case WRT: {
-				vm_debug("%s\n", "WRT");
-				ip_g++;
+			break;
+		}
+		case WRT: {
+			vm_debug(DBG_BC, "%s\n", "WRT");
+			ip_g++;
 
-				POP(obj);
-				if (IS_STR(obj)) {
-					printf("%s", obj->k_str.string);
-				}
+			POP(obj);
+			if (IS_STR(obj)) {
+				printf("%s", obj->k_str.string);
+			}
 
-				break;
+			break;
+		}
+		case RET: {
+			vm_debug(DBG_BC, "%s\n", "RET");
+			BC_RET
+			;
+			//vm_debug("ret_addr = %d\n", ip_g);
+			if (ip_g == NATIVE) {
+				return;
 			}
-			case RET: {
-				vm_debug("%s\n", "RET");
-				BC_RET;
-				//vm_debug("ret_addr = %d\n", ip_g);
-				if (ip_g == NATIVE) {
-					return;
-				}
-				break;
-			}
-			default:
-				fprintf(stderr, "Invalid instruction at %u\n", ip_g);
-				exit(1);
+			break;
+		}
+		default:
+			vm_error("Invalid instruction at %u\n", ip_g);
+			break;
 		}
 	}
 }
