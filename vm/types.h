@@ -55,6 +55,7 @@ typedef struct _kek_array {
 	int length;
 	/* Loader will need to transform each constant_array_t to this format */
 	union _kek_obj ** elems;
+	int alloc_size;
 } kek_array_t;
 
 /* user-defined object */

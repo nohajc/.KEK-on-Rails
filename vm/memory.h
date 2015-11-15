@@ -16,7 +16,8 @@ struct _class;
 // Integers are primitive objects without methods - they don't need a class pointer
 union _kek_obj * alloc_integer(void);
 union _kek_obj * alloc_array(struct _class * arr_class);
-union _kek_obj ** alloc_arr_elems(size_t size);
-union _kek_obj * alloc_string(struct _class * str_class, size_t length);
+void alloc_arr_elems(struct _kek_array * arr);
+void realloc_arr_elems(struct _kek_array * arr, int length);
+union _kek_obj * alloc_string(struct _class * str_class, int length);
 
 #endif

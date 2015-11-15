@@ -16,5 +16,6 @@ void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj);
 kek_obj_t * native_arr_elem_get(kek_array_t * arr, int idx);
 void array_length(void);
 kek_obj_t * native_array_length(kek_array_t * arr);
+void native_grow_array(kek_array_t * arr, int length);
 
 #endif

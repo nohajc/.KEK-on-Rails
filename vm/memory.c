@@ -18,14 +18,21 @@ kek_obj_t * alloc_array(class_t * arr_class) {
 	return ret;
 }
 
-kek_obj_t ** alloc_arr_elems(size_t size) {
-	kek_obj_t **ret = malloc(size * sizeof(kek_obj_t*));
-	assert(ret);
-
-	return ret;
+void alloc_arr_elems(kek_array_t * arr) {
+	arr->elems = malloc(ARR_INIT_SIZE * sizeof(kek_obj_t*));
+	assert(arr->elems);
+	arr->alloc_size = ARR_INIT_SIZE;
 }
 
-kek_obj_t * alloc_string(class_t * str_class, size_t length) {
+void realloc_arr_elems(struct _kek_array * arr, int length) {
+	while (arr->alloc_size < length) {
+		arr->alloc_size *= 2;
+	}
+
+	arr->elems = realloc(arr->elems, arr->alloc_size);
+}
+
+kek_obj_t * alloc_string(class_t * str_class, int length) {
 	kek_obj_t * ret = malloc(sizeof(kek_string_t) + length);
 	assert(ret);
 	ret->h.t = KEK_STR;

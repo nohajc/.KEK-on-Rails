@@ -341,7 +341,13 @@ void vm_execute_bc(void) {
 			POP(obj);
 
 			if (IS_ARR(obj) && IS_INT(idx)) {
-				PUSH(obj->k_arr.elems[INT_VALUE(idx)]);
+				int idx_n = INT_VALUE(idx);
+				if (idx_n < obj->k_arr.length) {
+					PUSH(obj->k_arr.elems[idx_n]);
+				}
+				else {
+					vm_error("Array index out of bounds.\n");
+				}
 			}
 			else {
 				vm_error("Invalid array or index.\n");
@@ -355,6 +361,10 @@ void vm_execute_bc(void) {
 			POP(obj);
 
 			if (IS_ARR(obj) && IS_INT(idx)) {
+				int idx_n = INT_VALUE(idx);
+				if (idx_n >= obj->k_arr.alloc_size) {
+					native_grow_array(&obj->k_arr, idx_n + 1);
+				}
 				PUSH(&obj->k_arr.elems[INT_VALUE(idx)]);
 			}
 			else {

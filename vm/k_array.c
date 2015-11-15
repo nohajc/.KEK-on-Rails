@@ -56,13 +56,12 @@ void new_array(void) {
 
 void native_new_array(kek_array_t * arr) {
 	arr->length = 0;
-	arr->elems = alloc_arr_elems(ARR_INIT_SIZE);
+	alloc_arr_elems(arr);
 }
 
 void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 	if (idx >= arr->length) {
-		// TODO: check boundaries and realloc elems if needed
-		arr->length = idx + 1;
+		native_grow_array(arr, idx + 1);
 	}
 	arr->elems[idx] = obj;
 }
@@ -82,4 +81,14 @@ kek_obj_t * native_array_length(kek_array_t * arr) {
 	native_new_integer((kek_int_t*)kek_len, arr->length);
 
 	return kek_len;
+}
+
+void native_grow_array(kek_array_t * arr, int length) {
+	int i;
+	realloc_arr_elems(arr, length);
+
+	for (i = arr->length; i < length - 1; ++i) {
+		arr->elems = NIL;
+	}
+	arr->length = length;
 }
