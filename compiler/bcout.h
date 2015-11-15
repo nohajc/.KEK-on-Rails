@@ -134,6 +134,7 @@ typedef struct _constant_string {
 typedef struct _constant_array {
 	header_t h;
 	int length;
+	int alloc_size;
 	// This is a little hack: at runtime, the last two members will be replaced
 	//     by pointer to memory allocated elsewhere.
 	// Padding is here in case of 64-bit pointers and an array with one element.
@@ -149,7 +150,6 @@ typedef struct _constant_array {
 	//     store the actual element pointers in it.
 	// The pointers will be computed from offsets and constant table location 
 	//     in memory (after it's loaded).
-	int alloc_size;
 } constant_array_t;
 
 typedef union _constant_item {

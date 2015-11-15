@@ -596,6 +596,27 @@ void vm_execute_bc(void) {
 			}
 			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n",
 					cls->syms_static[arg1].name);
+			if (cls->syms_static[arg1].const_flag) {
+				vm_error("Lvalue cannot be a constant.\n");
+			}
+			PUSH(&cls->syms_static[arg1].value);
+			break;
+		}
+		case LABI_CVE: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LABI_CVE", arg1);
+			POP(obj);
+			if (obj->h.t == KEK_CLASS) {
+				cls = (class_t*) obj;
+			} else {
+				vm_error("Expected class pointer on the stack.\n");
+			}
+			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n",
+					cls->syms_static[arg1].name);
+			if (cls->syms_static[arg1].const_flag) {
+				vm_error("Lvalue cannot be a constant.\n");
+			}
 			PUSH(&cls->syms_static[arg1].value);
 			break;
 		}
@@ -608,6 +629,21 @@ void vm_execute_bc(void) {
 				cls = (class_t*) obj;
 			} else {
 				cls = obj->h.cls;
+			}
+			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
+					cls->syms_static[arg1].name);
+			PUSH(cls->syms_static[arg1].value);
+			break;
+		}
+		case LVBI_CVE: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBI_CVE", arg1);
+			POP(obj);
+			if (obj->h.t == KEK_CLASS) {
+				cls = (class_t*) obj;
+			} else {
+				vm_error("Expected class pointer on the stack.\n");
 			}
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
 					cls->syms_static[arg1].name);
@@ -681,10 +717,8 @@ void vm_execute_bc(void) {
 			PUSH(obj->k_udo.inst_var[arg1]);
 			break;
 		}
-		case LVBI_CVE:
 		case LVBS_IVE:
 		case LVBS_CVE:
-		case LABI_CVE:
 		case LABS_IVE:
 		case LABS_CVE:
 
