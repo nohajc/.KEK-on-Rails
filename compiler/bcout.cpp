@@ -78,7 +78,7 @@ bcout_t *bcout_init() {
 	bco->bc_lab = (uint8_t *) malloc(bco->bc_arr_size * sizeof(uint8_t));
 	assert(bco->bc_lab);
 
-	/* alocate array for bytecode */
+	/* alocate array for const table */
 	bco->const_table_size = DEFAULT_BUFFER_SIZE;
 	bco->const_table_cnt = 0;
 	bco->const_table = (uint8_t *) calloc(bco->const_table_size,
@@ -587,7 +587,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	if (ce->parent != NULL) {
 		classout_wstr(cow, ce->parent->className);
 	} else {
-		classout_wstr(cow, "NO_PARENT");
+		classout_wstr(cow, "");
 	}
 
 	/* now we need to divide syms */

@@ -101,6 +101,7 @@ char *kexe_load_string(FILE *f) {
 	uint32_t len;
 	uint32_t i;
 	char *string;
+	size_t fread_result;
 
 	assert(sizeof(char) == sizeof(uint8_t));
 
@@ -112,23 +113,18 @@ char *kexe_load_string(FILE *f) {
 		vm_debug(DBG_LOADING, "Length of the string is " P32 "\n", len);
 	}
 
-	if (len == 0) {
-		assert(0 && "this shouldn't happen I think");
-		return NULL;
-	}
-
 	string = malloc((len + 1) * sizeof(char));
 	assert(string);
 
-	//fread_result = fread(string, sizeof(char), len + 1, f);
-	for (i = 0; i < len; i++) {
-		string[i] = (char) kexe_load_uint8(f);
-		vm_debug(DBG_LOADING, "string[%u]=\"%c\"\n", i, string[i]);
+	fread_result = fread(string, sizeof(char), len, f);
+	if (fread_result != len) {
+		vm_error("Reading of \"string\" has failed. len="
+		P32 ", fread_result=%zu\n", len, fread_result);
+		return (NULL);
 	}
 
-	//assert(string[len] == '\0');
 	string[len] = '\0';
-	assert(strlen(string) == (size_t ) len);
+	assert(strlen(string) == (size_t )len);
 
 	vm_debug(DBG_LOADING, "str=\"%s\", len=%d\n", string, strlen(string));
 
@@ -482,20 +478,9 @@ static void init_const_sym_pointers(void) {
 	for (i = 0; i < classes_cnt_g; ++i) {
 		for (j = 0; j < classes_g[i].syms_static_cnt; ++j) {
 			if (classes_g[i].syms_static[j].const_flag) {
-				classes_g[i].syms_static[j].value = CONST(classes_g[i].syms_static[j].const_ptr);
+				classes_g[i].syms_static[j].value = CONST(
+						classes_g[i].syms_static[j].const_ptr);
 			}
-		}
-	}
-}
-
-static void init_parent_pointers(void) {
-	uint32_t i;
-	for (i = 0; i < classes_cnt_g; i++) {
-		if (strcmp(classes_g[i].parent_name, "NO_PARENT") == 0) {
-			classes_g[i].parent = NULL;
-		} else {
-			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
-			assert(classes_g[i].parent != NULL);
 		}
 	}
 }
@@ -530,7 +515,6 @@ bool kexe_load(const char *filename) {
 	}
 
 	init_const_sym_pointers();
-	init_parent_pointers();
 
 	assert(IS_NIL(CONST(0)));
 

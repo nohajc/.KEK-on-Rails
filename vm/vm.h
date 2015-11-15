@@ -154,6 +154,7 @@ extern uint32_t debug_level_g;
 /******************************************************************************/
 
 void vm_init_builtin_classes(void);
+void vm_init_parent_pointers(void);
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 		uint8_t is_static, method_ptr func);
 class_t * vm_find_class(const char * name);

@@ -51,7 +51,7 @@ kek_obj_t* stack_top();
 	ip_g = entry; \
 }
 
-#define BC_RET { \
+#define BC_RET do { \
 	kek_obj_t* ret_val = stack_pop(); \
 	sp_g = ap_g; \
 	uint32_t ret_addr = (size_t)stack_g[fp_g - 3]; \
@@ -59,7 +59,7 @@ kek_obj_t* stack_top();
 	fp_g = (size_t)stack_g[fp_g - 1]; \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
-}
+} while (0)
 
 // Read 8-bit instruction operand
 #define BC_OP8(i) bc_arr_g[(i)]
