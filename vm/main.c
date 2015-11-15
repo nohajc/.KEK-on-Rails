@@ -83,7 +83,9 @@ int main(int argc, char *argv[]) {
 	if (!kexe_load(filename)) {
 		return (EXIT_FAILURE);
 	}
+
 	vm_init_builtin_classes();
+	vm_init_parent_pointers();
 
 	stack_init();
 	// Call static initializers of all classes

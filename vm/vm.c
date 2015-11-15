@@ -114,6 +114,19 @@ void vm_init_builtin_classes(void) {
 	init_kek_string_class();
 }
 
+void vm_init_parent_pointers(void) {
+	uint32_t i;
+	for (i = 0; i < classes_cnt_g; i++) {
+		if (!classes_g[i].parent_name
+				|| strlen(classes_g[i].parent_name) == 0) {
+			classes_g[i].parent = NULL;
+		} else {
+			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
+			assert(classes_g[i].parent != NULL);
+		}
+	}
+}
+
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 		uint8_t is_static, method_ptr func) {
 	mth->name = malloc(strlen(name) + 1);
@@ -167,7 +180,8 @@ void vm_call_class_initializers(void) {
 		if (classes_g[i].static_init) {
 			method_t * init = classes_g[i].static_init;
 			if (init->args_cnt != 0) {
-				vm_error("Static class initializer should have no arguments.\n");
+				vm_error(
+						"Static class initializer should have no arguments.\n");
 			}
 			PUSH(&classes_g[i]);
 			BC_CALL(init->entry.bc_addr, NATIVE, 0, init->locals_cnt);
@@ -214,25 +228,24 @@ void vm_call_main(int argc, char *argv[]) {
 }
 
 /*const char *op_str[] = { "NOP", "BOP", "UNM", "DR", "ST", "IFNJ", "JU", "WRT",
-		"RD", "DUP", "SWAP", "NOT", "STOP", "RET", "CALL", "CALLS", "CALLE",
-		"LVBI_C", "LVBI_ARG", "LVBI_LOC", "LVBI_IV", "LVBI_CV", "LVBI_CVE",
-		"LVBS_IVE", "LVBS_CVE", "LD_SELF", "LD_CLASS", "LABI_ARG", "LABI_LOC",
-		"LABI_IV", "LABI_CV", "LABI_CVE", "LABS_IVE", "LABS_IVE", "IDX", "IDXA",
-		"NEW" };*/
+ "RD", "DUP", "SWAP", "NOT", "STOP", "RET", "CALL", "CALLS", "CALLE",
+ "LVBI_C", "LVBI_ARG", "LVBI_LOC", "LVBI_IV", "LVBI_CV", "LVBI_CVE",
+ "LVBS_IVE", "LVBS_CVE", "LD_SELF", "LD_CLASS", "LABI_ARG", "LABI_LOC",
+ "LABI_IV", "LABI_CV", "LABI_CVE", "LABS_IVE", "LABS_IVE", "IDX", "IDXA",
+ "NEW" };*/
 
-const char *bop_str[] = {"Plus", "Minus", "Times", "Divide", "Modulo", "Eq",
-	"NotEq", "Less", "Greater", "LessOrEq", "GreaterOrEq", "LogOr", "LogAnd",
-	"BitOr", "BitAnd", "Xor", "Lsh", "Rsh", "Error"};
+const char *bop_str[] = { "Plus", "Minus", "Times", "Divide", "Modulo", "Eq",
+		"NotEq", "Less", "Greater", "LessOrEq", "GreaterOrEq", "LogOr",
+		"LogAnd", "BitOr", "BitAnd", "Xor", "Lsh", "Rsh", "Error" };
 
-const char *type_str[] = {"KEK_NIL", "KEK_INT", "KEK_STR", "KEK_SYM",
-	"KEK_ARR", "KEK_UDO", "KEK_CLASS"};
+const char *type_str[] = { "KEK_NIL", "KEK_INT", "KEK_STR", "KEK_SYM",
+		"KEK_ARR", "KEK_UDO", "KEK_CLASS" };
 
-const char *call_str[] = {"CALLE", "CALL", "CALLS"};
-
+const char *call_str[] = { "CALLE", "CALL", "CALLS" };
 
 static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	if (a->h.t == KEK_INT && b->h.t == KEK_INT) {
-		kek_int_t *res = (kek_int_t*)alloc_integer();
+		kek_int_t *res = (kek_int_t*) alloc_integer();
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VALUE(a), INT_VALUE(b));
 
@@ -291,14 +304,16 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		case Rsh:
 			native_new_integer(res, INT_VALUE(a) >> INT_VALUE(b));
 			break;
-		default:;
+		default:
+			vm_error("bc_bop: unknown bop %d\n", o);
+			break;
 		}
-		vm_debug(DBG_BC, " = %d\n", INT_VALUE((kek_obj_t*)res));
+		vm_debug(DBG_BC, " = %d\n", INT_VALUE((kek_obj_t* )res));
 		return (kek_obj_t*) res;
-	}
-	else {
+	} else {
 		// TODO: implement operations for other types
-		vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o], type_str[a->h.t], type_str[b->h.t]);
+		vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
+				type_str[a->h.t], type_str[b->h.t]);
 	}
 	return NULL;
 }
@@ -309,7 +324,9 @@ void vm_execute_bc(void) {
 	class_t * cls;
 	method_t * mth;
 	uint16_t arg1, arg2;
-	enum {E, I, S} call_type;
+	enum {
+		E, I, S
+	} call_type;
 
 	while (true) {
 		call_type = -1;
@@ -371,12 +388,12 @@ void vm_execute_bc(void) {
 				int idx_n = INT_VALUE(idx);
 				if (idx_n < obj->k_arr.length) {
 					PUSH(obj->k_arr.elems[idx_n]);
+				} else {
+					vm_error(
+							"Array index (%d) out of bounds. Array length is %d\n",
+							idx_n, obj->k_arr.length);
 				}
-				else {
-					vm_error("Array index (%d) out of bounds. Array length is %d\n", idx_n, obj->k_arr.length);
-				}
-			}
-			else {
+			} else {
 				vm_error("Invalid array or index.\n");
 			}
 			break;
@@ -391,13 +408,11 @@ void vm_execute_bc(void) {
 				int idx_n = INT_VALUE(idx);
 				if (idx_n >= obj->k_arr.alloc_size) {
 					native_grow_array(&obj->k_arr, idx_n + 1);
-				}
-				else if (idx_n >= obj->k_arr.length) {
+				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
 				PUSH(&obj->k_arr.elems[INT_VALUE(idx)]);
-			}
-			else {
+			} else {
 				vm_error("Invalid array or index.\n");
 			}
 			break;
@@ -418,28 +433,26 @@ void vm_execute_bc(void) {
 			ip_g++;
 			TOP(obj);
 			if (IS_INT(obj)) {
-				kek_int_t *n = (kek_int_t*)alloc_integer();
+				kek_int_t *n = (kek_int_t*) alloc_integer();
 				native_new_integer(n, -obj->k_int.value);
-				stack_g[sp_g - 1] = (kek_obj_t*)n;
-			}
-			else {
+				stack_g[sp_g - 1] = (kek_obj_t*) n;
+			} else {
 				vm_error("Unary minus expects an integer.\n");
 			}
 			break;
 		}
 		case NOT: {
-			kek_int_t *n = (kek_int_t*)alloc_integer();
+			kek_int_t *n = (kek_int_t*) alloc_integer();
 			vm_debug(DBG_BC, "%s\n", "NOT");
 			ip_g++;
 			TOP(obj);
-			if((obj->h.t == KEK_INT && !INT_VALUE(obj))
-				|| obj->h.t == KEK_NIL) {
+			if ((obj->h.t == KEK_INT && !INT_VALUE(obj))
+					|| obj->h.t == KEK_NIL) {
 				native_new_integer(n, 1);
-			}
-			else {
+			} else {
 				native_new_integer(n, 0);
 			}
-			stack_g[sp_g - 1] = (kek_obj_t*)n;
+			stack_g[sp_g - 1] = (kek_obj_t*) n;
 
 			break;
 		}
@@ -462,12 +475,11 @@ void vm_execute_bc(void) {
 			POP(obj);
 			if (IS_STR(obj)) {
 				printf("%s", obj->k_str.string);
-			}
-			else if(IS_INT(obj)) {
+			} else if (IS_INT(obj)) {
 				printf("%d\n", obj->k_int.value);
-			}
-			else {
-				vm_error("Cannot write object which is not string or integer.\n");
+			} else {
+				vm_error(
+						"Cannot write object which is not string or integer.\n");
 			}
 
 			break;
@@ -488,11 +500,9 @@ void vm_execute_bc(void) {
 				if (!INT_VALUE(obj)) {
 					ip_g = arg1;
 				}
-			}
-			else if (obj->h.t == KEK_NIL) { // Jump if false or nil
+			} else if (obj->h.t == KEK_NIL) { // Jump if false or nil
 				ip_g = arg1;
-			}
-			else {
+			} else {
 				vm_error("Expected integer as the evaluated condition.\n");
 			}
 
@@ -510,8 +520,7 @@ void vm_execute_bc(void) {
 		}
 		case CALLE: {
 			bool static_call;
-			calle:
-			call_type++;
+			calle: call_type++;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
@@ -523,8 +532,7 @@ void vm_execute_bc(void) {
 				vm_debug(DBG_BC, " - Static method call\n");
 				cls = (class_t*) obj;
 				static_call = true;
-			}
-			else { // Call of instance method
+			} else { // Call of instance method
 				vm_debug(DBG_BC, " - Instance method call\n");
 				cls = obj->h.cls;
 				static_call = false;
@@ -541,7 +549,8 @@ void vm_execute_bc(void) {
 			assert(cls);
 			mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
 			if (mth == NULL) {
-				vm_error("%s has no method %s.\n", (static_call ? "Class" : "Object"), sym->k_sym.symbol);
+				vm_error("%s has no method %s.\n",
+						(static_call ? "Class" : "Object"), sym->k_sym.symbol);
 			}
 			if (mth->args_cnt != arg2) {
 				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
@@ -550,9 +559,9 @@ void vm_execute_bc(void) {
 				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
 				mth->entry.func();
 				vm_debug(DBG_BC, " - returned value is %s\n", kek_obj_print(stack_top()));
-			}
-			else {
-				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
+			} else {
+				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt,
+						mth->locals_cnt);
 			}
 
 			break;
@@ -582,11 +591,11 @@ void vm_execute_bc(void) {
 			obj = THIS;
 			if (obj->h.t == KEK_CLASS) {
 				cls = (class_t*) obj;
-			}
-			else {
+			} else {
 				cls = obj->h.cls;
 			}
-			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n", cls->syms_static[arg1].name);
+			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n",
+					cls->syms_static[arg1].name);
 			PUSH(&cls->syms_static[arg1].value);
 			break;
 		}
@@ -597,11 +606,11 @@ void vm_execute_bc(void) {
 			obj = THIS;
 			if (obj->h.t == KEK_CLASS) {
 				cls = (class_t*) obj;
-			}
-			else {
+			} else {
 				cls = obj->h.cls;
 			}
-			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n", cls->syms_static[arg1].name);
+			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
+					cls->syms_static[arg1].name);
 			PUSH(cls->syms_static[arg1].value);
 			break;
 		}
@@ -626,9 +635,9 @@ void vm_execute_bc(void) {
 			if (mth->is_native) {
 				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
 				mth->entry.func();
-			}
-			else {
-				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
+			} else {
+				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt,
+						mth->locals_cnt);
 			}
 			break;
 		}
