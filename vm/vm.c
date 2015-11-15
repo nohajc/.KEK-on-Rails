@@ -158,6 +158,21 @@ method_t * vm_find_method(const char * name, bool is_static, class_t ** cls) {
 	return NULL;
 }
 
+void vm_call_class_initializers(void) {
+	uint32_t i;
+	for (i = 0; i < classes_cnt_g; ++i) {
+		if (classes_g[i].static_init) {
+			method_t * init = classes_g[i].static_init;
+			if (init->args_cnt != 0) {
+				vm_error("Static class initializer should have no arguments.\n");
+			}
+			PUSH(&classes_g[i]);
+			BC_CALL(init->entry.bc_addr, NATIVE, 0, init->locals_cnt);
+			vm_execute_bc();
+		}
+	}
+}
+
 void vm_call_main(int argc, char *argv[]) {
 	int i;
 	class_t * entry_cls;
@@ -178,10 +193,12 @@ void vm_call_main(int argc, char *argv[]) {
 	if (kek_main == NULL) {
 		vm_error("Cannot find the main method.\n");
 	}
+	if (kek_main->args_cnt != 1) {
+		vm_error("Method main should have one argument.\n");
+	}
 	vm_debug(DBG_VM, "found %s.%s, entry_point: %u\n", entry_cls->name,
 			kek_main->name, kek_main->entry.bc_addr);
 
-	stack_init();
 	// push argument and class reference
 	PUSH(kek_argv);
 	PUSH(entry_cls);

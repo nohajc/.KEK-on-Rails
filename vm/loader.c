@@ -173,7 +173,7 @@ bool kexe_load_sym(FILE *f, symbol_t *sym) {
  * sym_cnt is a pointer to classes_g->syms_*_cnt
  */
 bool kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t **sym_array) {
-	uint32_t i;
+	int i;
 
 	*sym_cnt = kexe_load_uint32(f);
 	if (*sym_cnt == UINT32_MAX) {
@@ -187,7 +187,7 @@ bool kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t **sym_array) {
 	assert(sym_array);
 
 	/* FIXME: this is in another function. refactor the rest of the loading? */
-	for (i = 0; i < *sym_cnt; i++) {
+	for (i = *sym_cnt - 1; i >= 0; i--) {
 		if (!kexe_load_sym(f, &((*sym_array)[i]))) {
 			vm_error("loading sym_array[%d] failed\n", i);
 			return (false);
@@ -198,6 +198,8 @@ bool kexe_load_syms(FILE *f, uint32_t *sym_cnt, symbol_t **sym_array) {
 }
 
 bool kexe_load_method(FILE *f, method_t **method) {
+	*method = malloc(sizeof(method_t));
+	assert(*method);
 	(*method)->name = kexe_load_string(f);
 	if ((*method)->name == NULL) {
 		vm_error("loading method.name failed\n");

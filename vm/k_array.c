@@ -88,7 +88,7 @@ void native_grow_array(kek_array_t * arr, int length) {
 	realloc_arr_elems(arr, length);
 
 	for (i = arr->length; i < length - 1; ++i) {
-		arr->elems = NIL;
+		arr->elems[i] = NIL;
 	}
 	arr->length = length;
 }
