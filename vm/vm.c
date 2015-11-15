@@ -172,8 +172,6 @@ void vm_call_main(int argc, char *argv[]) {
 		kek_obj_t * kek_str = new_string_from_cstring(argv[i]);
 		native_arr_elem_set(kek_argv, i, kek_str);
 	}
-	vm_debug(DBG_BC, "kek_argv = %p\n", kek_argv);
-	vm_debug(DBG_BC, "kek_argv->length = %d\n", kek_argv->length);
 
 	// Locate method main
 	kek_main = vm_find_method("main", true, &entry_cls);
@@ -208,6 +206,8 @@ const char *bop_str[] = {"Plus", "Minus", "Times", "Divide", "Modulo", "Eq",
 
 const char *type_str[] = {"KEK_NIL", "KEK_INT", "KEK_STR", "KEK_SYM",
 	"KEK_ARR", "KEK_UDO", "KEK_CLASS"};
+
+const char *call_str[] = {"CALLE", "CALL", "CALLS"};
 
 
 static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
@@ -289,10 +289,12 @@ void vm_execute_bc(void) {
 	class_t * cls;
 	method_t * mth;
 	uint16_t arg1, arg2;
+	enum {E, I, S} call_type;
 
 	while (true) {
+		call_type = -1;
 		op_c = bc_arr_g[ip_g];
-		decode_instr:
+		decode_instr: // For debugging (gdb can set a breakpoint at label)
 		switch (op_c) {
 		case LVBI_C: {
 			arg1 = BC_OP16(++ip_g);
@@ -341,6 +343,23 @@ void vm_execute_bc(void) {
 			if (IS_ARR(obj) && IS_INT(idx)) {
 				PUSH(obj->k_arr.elems[INT_VALUE(idx)]);
 			}
+			else {
+				vm_error("Invalid array or index.\n");
+			}
+			break;
+		}
+		case IDXA: {
+			vm_debug(DBG_BC, "%s\n", "IDXA");
+			ip_g++;
+			POP(idx);
+			POP(obj);
+
+			if (IS_ARR(obj) && IS_INT(idx)) {
+				PUSH(&obj->k_arr.elems[INT_VALUE(idx)]);
+			}
+			else {
+				vm_error("Invalid array or index.\n");
+			}
 			break;
 		}
 		case BOP: {
@@ -352,6 +371,36 @@ void vm_execute_bc(void) {
 			POP(op1);
 			res = bc_bop(arg1, op1, op2);
 			PUSH(res);
+			break;
+		}
+		case UNM: {
+			vm_debug(DBG_BC, "%s\n", "UNM");
+			ip_g++;
+			TOP(obj);
+			if (IS_INT(obj)) {
+				kek_int_t *n = (kek_int_t*)alloc_integer();
+				native_new_integer(n, -obj->k_int.value);
+				stack_g[sp_g - 1] = (kek_obj_t*)n;
+			}
+			else {
+				vm_error("Unary minus expects an integer.\n");
+			}
+			break;
+		}
+		case NOT: {
+			kek_int_t *n = (kek_int_t*)alloc_integer();
+			vm_debug(DBG_BC, "%s\n", "NOT");
+			ip_g++;
+			TOP(obj);
+			if((obj->h.t == KEK_INT && !INT_VALUE(obj))
+				|| obj->h.t == KEK_NIL) {
+				native_new_integer(n, 1);
+			}
+			else {
+				native_new_integer(n, 0);
+			}
+			stack_g[sp_g - 1] = (kek_obj_t*)n;
+
 			break;
 		}
 		case DUP: {
@@ -374,6 +423,12 @@ void vm_execute_bc(void) {
 			if (IS_STR(obj)) {
 				printf("%s", obj->k_str.string);
 			}
+			else if(IS_INT(obj)) {
+				printf("%d\n", obj->k_int.value);
+			}
+			else {
+				vm_error("Cannot write object which is not string or integer.\n");
+			}
 
 			break;
 		}
@@ -389,50 +444,69 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "IFNJ", arg1);
 			POP(obj);
-			if (obj->h.t != KEK_INT) {
-				vm_error("Expected integer as the evaluated condition.\n");
+			if (obj->h.t == KEK_INT) {
+				if (!INT_VALUE(obj)) {
+					ip_g = arg1;
+				}
 			}
-			if (!INT_VALUE(obj)) { // Jump if false
+			else if (obj->h.t == KEK_NIL) { // Jump if false or nil
 				ip_g = arg1;
+			}
+			else {
+				vm_error("Expected integer as the evaluated condition.\n");
 			}
 
 			break;
 		}
+		case CALLS: {
+			call_type++;
+			// Here is an intentional fallthrough to CALL
+		}
 		case CALL: {
+			call_type++;
 			PUSH(THIS);
 			// Here is an intentional fallthrough to CALLE
 		}
 		case CALLE: {
+			bool static_call;
+			call_type++;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u %u\n", "CALL(E)", arg1, arg2);
+			vm_debug(DBG_BC, "%s %u %u\n", call_str[call_type], arg1, arg2);
 			TOP(obj);
 
 			if (obj->h.t == KEK_CLASS) { // Call of static method
 				vm_debug(DBG_BC, " - Static method call\n");
 				cls = (class_t*) obj;
-				// TODO: implement
+				static_call = true;
 			}
 			else { // Call of instance method
 				vm_debug(DBG_BC, " - Instance method call\n");
-				sym = CONST(arg1); // name of the method
-				if (sym->h.t != KEK_SYM) {
-					vm_error("Expected symbol as the first argument of CALL.\n");
-				}
-				assert(obj->h.cls);
-				mth = vm_find_method_in_class(obj->h.cls, sym->k_sym.symbol, false);
-				if (mth == NULL) {
-					vm_error("Object has no method %s.\n", sym->k_sym.symbol);
-				}
-				if (mth->is_native) {
-					BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
-					mth->entry.func();
-				}
-				else {
-					BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
-				}
+				cls = obj->h.cls;
+				static_call = false;
+			}
+
+			if (call_type == S) {
+				cls = cls->parent;
+			}
+
+			sym = CONST(arg1); // name of the method
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the first argument of CALL.\n");
+			}
+			assert(cls);
+			mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
+			if (mth == NULL) {
+				vm_error("%s has no method %s.\n", (static_call ? "Class" : "Object"), sym->k_sym.symbol);
+			}
+			if (mth->is_native) {
+				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
+				mth->entry.func();
+			}
+			else {
+				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
 			}
 			vm_debug(DBG_BC, " - %s\n", kek_obj_print(stack_top()));
 
@@ -447,6 +521,21 @@ void vm_execute_bc(void) {
 			}
 			break;
 		}
+		case LVBI_IV:
+		case LVBI_CV:
+		case LVBI_CVE:
+		case LVBS_IVE:
+		case LVBS_CVE:
+		case LD_SELF:
+		case LD_CLASS:
+		case LABI_ARG:
+		case LABI_IV:
+		case LABI_CV:
+		case LABI_CVE:
+		case LABS_IVE:
+		case LABS_CVE:
+		case NEW:
+
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
 			break;

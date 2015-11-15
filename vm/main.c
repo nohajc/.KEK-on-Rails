@@ -85,6 +85,8 @@ int main(int argc, char *argv[]) {
 	}
 	vm_init_builtin_classes();
 
+	// TODO: Call static initializers of all classes
+	// or we could do some sort of lazy loading.
 	vm_call_main(argc, argv);
 
 	free_globals();
