@@ -506,6 +506,7 @@ void vm_execute_bc(void) {
 		}
 		case CALLE: {
 			bool static_call;
+			calle:
 			call_type++;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
@@ -634,12 +635,31 @@ void vm_execute_bc(void) {
 			PUSH(cls);
 			break;
 		}
-
-		case LVBI_IV:
+		case LABI_IV: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
+			obj = THIS;
+			if (obj->h.t != KEK_UDO) {
+				vm_error("Invalid THIS pointer.\n");
+			}
+			PUSH(&obj->k_udo.inst_var[arg1]);
+			break;
+		}
+		case LVBI_IV: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBI_IV", arg1);
+			obj = THIS;
+			if (obj->h.t != KEK_UDO) {
+				vm_error("Invalid THIS pointer.\n");
+			}
+			PUSH(obj->k_udo.inst_var[arg1]);
+			break;
+		}
 		case LVBI_CVE:
 		case LVBS_IVE:
 		case LVBS_CVE:
-		case LABI_IV:
 		case LABI_CVE:
 		case LABS_IVE:
 		case LABS_CVE:

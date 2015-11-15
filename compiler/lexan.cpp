@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 typedef enum {
-	LETTER, NUMBER, WHITE_SPACE, NEW_LINE, END, NO_TYPE
+	LETTER, NUMBER, UNDERSCORE, WHITE_SPACE, NEW_LINE, END, NO_TYPE
 } InputCharType;
 
 const char *symbTable[] = { "IDENT", "NUMB", "STR", "PLUS", "MINUS", "TIMES",
@@ -30,6 +30,8 @@ void readInput(void) {
 		input = LETTER;
 	else if (character >= '0' && character <= '9')
 		input = NUMBER;
+	else if (character == '_')
+		input = UNDERSCORE;
 	else if (character == EOF)
 		input = END;
 	else if (character == '\n')
@@ -258,6 +260,7 @@ LexicalSymbol readLexemInternal(void) {
 		data.type = EOI;
 		return data;
 	case LETTER:
+	case UNDERSCORE:
 		delkaId = 1;
 		data.ident[0] = character;
 		readInput();
@@ -331,6 +334,7 @@ LexicalSymbol readLexemInternal(void) {
 	switch (input) {
 	case LETTER:
 	case NUMBER:
+	case UNDERSCORE:
 		data.ident[delkaId] = character;
 		delkaId++;
 		readInput();
