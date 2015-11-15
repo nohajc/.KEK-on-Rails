@@ -10,9 +10,9 @@
 #include "strom.h"
 #include "bcout.h"
 
-
 int main(int argc, char *argv[]) {
 	char *fileName;
+	char *fileNameOut = NULL;
 	char outName[256];
 	int ast_print;
 	Prog *prog;
@@ -31,10 +31,14 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	if (argc >= 2) {
+		fileNameOut = argv[2];
+	}
+
 	bcout_g = bcout_init();
 
 	prog = Program();
-	if(!prog){
+	if (!prog) {
 		printf("Vstupni soubor je prazdny.\n");
 		return 0;
 	}
@@ -49,12 +53,13 @@ int main(int argc, char *argv[]) {
 
 	assert(TabClass != NULL);
 
-	if (fileName) {
+	if (fileNameOut) {
+		bcout_to_file(bcout_g, TabClass, fileNameOut);
+	} else if (fileName) {
 		char * name = strtok(fileName, ".");
 		sprintf(outName, "%s.kexe", name);
 		bcout_to_file(bcout_g, TabClass, outName);
-	}
-	else {
+	} else {
 		bcout_to_file(bcout_g, TabClass, "out.kexe");
 	}
 
