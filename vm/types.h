@@ -16,7 +16,7 @@ struct _class;
 union _kek_obj;
 
 typedef enum _type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_UDO, KEK_CLASS
 } type_t;
 
 typedef struct _header {
@@ -81,6 +81,8 @@ typedef union _kek_obj {
 #define IS_STR(obj) ((obj)->h.t == KEK_STR)
 #define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
 #define IS_ARR(obj) ((obj)->h.t == KEK_ARR)
+
+#define INT_VALUE(obj) (obj)->k_int.value
 
 #define NIL CONST(0)
 

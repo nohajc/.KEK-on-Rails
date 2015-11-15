@@ -1,7 +1,13 @@
 class Hello {
 	static main(args) {
+		var i
 		write "Hello world from \""
 		write args[0]
 		write "\"!\n"
+
+		write "Args:\n"
+		for (i = 1; i < args.length(); i++) {
+			write args[i]; write "\n"
+		}
 	}
 }

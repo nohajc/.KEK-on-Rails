@@ -373,7 +373,7 @@ size_t bco_get_ip(bcout_t *bco) {
 }
 
 void bco_fix_forward_jmpw(bcout_t *bco, size_t idx) {
-	*(uint16_t*) &bco->bc_arr[idx + 1] = (uint16_t) idx;
+	*(uint16_t*) &bco->bc_arr[idx + 1] = (uint16_t) bco->bc_arr_cnt;
 }
 
 void bco_resolve_break(bcout_t *bco, size_t a1, size_t a2) {

@@ -330,6 +330,7 @@ bool kexe_load_classes(FILE *f) {
 	for (i = 0; i < classes_cnt_g; i++) {
 		vm_debug(DBG_LOADING, "kexe_load_classes i=%u\n", i);
 
+		classes_g[i].t = KEK_CLASS;
 		classes_g[i].name = kexe_load_string(f);
 		if (classes_g[i].name == NULL) {
 			vm_error("loading classes_g[%d].name failed\n", i);

@@ -7,12 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "k_string.h"
 #include "vm.h"
 #include "memory.h"
 
 void init_kek_string_class(void) {
 	char name[] = "String";
+	assert(classes_g);
+	classes_g[classes_cnt_g].t = KEK_CLASS;
 	classes_g[classes_cnt_g].name = malloc((strlen(name) + 1) * sizeof(char));
 	strcpy(classes_g[classes_cnt_g].name, name);
 

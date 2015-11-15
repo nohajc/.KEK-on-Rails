@@ -14,7 +14,7 @@
  * of headers common to the compiler and the vm.
  */
 
-enum Operator {
+typedef enum _op {
 	Plus,
 	Minus,
 	Times,
@@ -34,7 +34,7 @@ enum Operator {
 	Lsh,
 	Rsh,
 	Error
-};
+} op_t;
 typedef enum _bc {
 	NOP, /**/
 	BOP, /**/

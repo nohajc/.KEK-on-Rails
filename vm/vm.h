@@ -103,6 +103,7 @@ typedef struct _method {
 } method_t;
 
 typedef struct _class {
+	type_t t;
 	char *name;
 	struct _class *parent;
 

@@ -33,3 +33,13 @@ kek_obj_t * alloc_string(class_t * str_class, size_t length) {
 
 	return ret;
 }
+
+kek_obj_t * alloc_integer(void) {
+	kek_obj_t * ret = malloc(sizeof(kek_int_t));
+	assert(ret);
+
+	ret->h.t = KEK_INT;
+	ret->h.cls = NULL;
+
+	return ret;
+}

@@ -11,18 +11,21 @@
 #include "vm.h"
 #include "memory.h"
 #include "k_array.h"
+#include "k_integer.h"
 #include "stack.h"
 
 void init_kek_array_class(void) {
 	char name[] = "Array";
 	assert(classes_g);
+	classes_g[classes_cnt_g].t = KEK_CLASS;
 	classes_g[classes_cnt_g].name = malloc((strlen(name) + 1) * sizeof(char));
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 0;
+	classes_g[classes_cnt_g].methods_cnt = 1;
 	// TODO: add native methods such as length(), get_idx(), get_idxa()
-	classes_g[classes_cnt_g].methods = NULL;
+	classes_g[classes_cnt_g].methods = malloc(1 * sizeof(method_t));
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0, false, array_length);
 
 	classes_g[classes_cnt_g].allocator = alloc_array;
 
@@ -56,10 +59,27 @@ void native_new_array(kek_array_t * arr) {
 	arr->elems = alloc_arr_elems(ARR_INIT_SIZE);
 }
 
-void native_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
+void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 	if (idx >= arr->length) {
 		// TODO: check boundaries and realloc elems if needed
 		arr->length = idx + 1;
 	}
 	arr->elems[idx] = obj;
+}
+
+void array_length(void) {
+	kek_array_t * arr = (kek_array_t*)THIS;
+	kek_obj_t * kek_len = native_array_length(arr);
+
+	PUSH(kek_len);
+	BC_RET;
+}
+
+// TODO: We could cache the kek_int object containing length
+// so we don't have to create a new one on each call.
+kek_obj_t * native_array_length(kek_array_t * arr) {
+	kek_obj_t * kek_len = alloc_integer();
+	native_new_integer((kek_int_t*)kek_len, arr->length);
+
+	return kek_len;
 }

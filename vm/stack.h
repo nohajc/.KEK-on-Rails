@@ -27,8 +27,8 @@ kek_obj_t* stack_pop();
 kek_obj_t* stack_top();
 
 #define ARG(i) stack_g[ap_g + (i)]
-#define LOC(i) stack_g[fp_g + (i) + 1]
-#define THIS stack_g[fp_g - 3]
+#define LOC(i) stack_g[fp_g + (i)]
+#define THIS stack_g[fp_g - 4]
 
 #define NATIVE -1
 
@@ -39,6 +39,7 @@ kek_obj_t* stack_top();
 #endif
 
 #define POP(obj) (obj) = (void*)stack_pop()
+#define TOP(obj) (obj) = (void*)stack_top()
 
 #define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
 	PUSH(ret); \
@@ -59,5 +60,11 @@ kek_obj_t* stack_top();
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 }
+
+// Read 8-bit instruction operand
+#define BC_OP8(i) bc_arr_g[(i)]
+// Read 16-bit instruction operand
+#define BC_OP16(i) *(uint16_t*) &bc_arr_g[(i)]
+
 
 #endif /* STACK_H_ */
