@@ -73,6 +73,9 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 	case KEK_NIL:
 		(void) snprintf(str, 1024, "nil");
 		break;
+	case KEK_UDO:
+		(void) snprintf(str, 1024, "udo");
+		break;
 	default:
 		(void) snprintf(str, 1024, "unknown type %d", kek_obj->type);
 		/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
@@ -502,6 +505,7 @@ void vm_execute_bc(void) {
 		case CALL: {
 			call_type++;
 			PUSH(THIS);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(stack_top()));
 			// Here is an intentional fallthrough to CALLE
 		}
 		case CALLE: {
@@ -539,20 +543,32 @@ void vm_execute_bc(void) {
 			if (mth == NULL) {
 				vm_error("%s has no method %s.\n", (static_call ? "Class" : "Object"), sym->k_sym.symbol);
 			}
+			if (mth->args_cnt != arg2) {
+				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
+			}
 			if (mth->is_native) {
 				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
 				mth->entry.func();
+				vm_debug(DBG_BC, " - returned value is %s\n", kek_obj_print(stack_top()));
 			}
 			else {
 				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
 			}
-			vm_debug(DBG_BC, " - %s\n", kek_obj_print(stack_top()));
 
 			break;
 		}
 		case RET: {
 			vm_debug(DBG_BC, "%s\n", "RET");
 			BC_RET;
+			//vm_debug("ret_addr = %d\n", ip_g);
+			if (ip_g == NATIVE) {
+				return;
+			}
+			break;
+		}
+		case RETVOID: {
+			vm_debug(DBG_BC, "%s\n", "RETVOID");
+			BC_RETVOID;
 			//vm_debug("ret_addr = %d\n", ip_g);
 			if (ip_g == NATIVE) {
 				return;
@@ -592,7 +608,7 @@ void vm_execute_bc(void) {
 		case NEW: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u\n", "NEW", arg1);
+			vm_debug(DBG_BC, "%s %u\n", "NEW", arg1); // NEW should have a second argument like CALL
 			sym = CONST(arg1);
 			if (sym->h.t != KEK_SYM) {
 				vm_error("Expected symbol as the argument of NEW.\n");
@@ -604,6 +620,7 @@ void vm_execute_bc(void) {
 			obj = cls->allocator(cls); // Allocate tagged memory for the object
 			mth = cls->constructor;
 
+			PUSH(obj); // Return value of NEW
 			PUSH(obj); // Push instance pointer (THIS)
 			// Call constructor
 			if (mth->is_native) {
@@ -613,8 +630,6 @@ void vm_execute_bc(void) {
 			else {
 				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
 			}
-			// Constructor returns NIL but we want to return the new object pointer
-			stack_g[sp_g - 1] = obj;
 			break;
 		}
 		case LD_SELF: {

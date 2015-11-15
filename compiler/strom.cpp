@@ -286,9 +286,10 @@ ClassList::~ClassList() {
 	delete next;
 }
 
-Method::Method(const char * n, bool sttc, int nArgs, unsigned int * bc_ep, StatmList * b) {
+Method::Method(const char * n, bool sttc, bool cons, int nArgs, unsigned int * bc_ep, StatmList * b) {
 	name = new char[strlen(n) + 1];
 	isStatic = sttc;
+	isConstructor = cons;
 	numArgs = nArgs;
 	body = b;
 	bc_entrypoint = bc_ep;
@@ -856,7 +857,12 @@ uint32_t Method::Translate() {
 
 	// Add implicit return if missing
 	if (!dynamic_cast<Return*>(s->statm)) {
-		s->next = new StatmList(new Return(new Nil), NULL);
+		if (isConstructor) {
+			s->next = new StatmList(new Return(NULL), NULL);
+		}
+		else {
+			s->next = new StatmList(new Return(new Nil), NULL);
+		}
 	}
 
 	body->Translate();
@@ -864,8 +870,13 @@ uint32_t Method::Translate() {
 }
 
 uint32_t Return::Translate() {
-	expr->Translate();
-	bco_w0(bcout_g, RET);
+	if (!expr) {
+		bco_w0(bcout_g, RETVOID);
+	}
+	else {
+		expr->Translate();
+		bco_w0(bcout_g, RET);
+	}
 	return 0;
 }
 

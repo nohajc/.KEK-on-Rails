@@ -50,8 +50,7 @@ void new_array(void) {
 	kek_array_t * arr = (kek_array_t*)THIS;
 	native_new_array(arr);
 
-	PUSH(NIL); // All kek methods must return something
-	BC_RET;
+	BC_RETVOID;
 }
 
 void native_new_array(kek_array_t * arr) {

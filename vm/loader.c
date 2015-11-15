@@ -244,6 +244,7 @@ bool kexe_load_method(FILE *f, method_t **method) {
 		vm_debug(DBG_LOADING, "method.is_static = " P8 "\n",
 				(*method)->is_static);
 	}
+	(*method)->is_native = false;
 
 	return (true);
 }
@@ -309,6 +310,7 @@ bool kexe_load_methods(FILE *f, uint32_t *methods_cnt, method_t **methods) {
 			vm_debug(DBG_LOADING, "methods[%d].is_static = " P8 "\n", i,
 					(*methods)[i].is_static);
 		}
+		(*methods)[i].is_native = false;
 	}
 
 	return (true);

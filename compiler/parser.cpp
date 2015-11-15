@@ -409,7 +409,7 @@ Statm * Metoda(Env env, bool isStatic) {
 	}
 	Srovnani(RPAR);
 
-	return new Method(mth_id, isStatic, numArgs, &mthEnv->bc_entrypoint, SlozPrikaz(env));
+	return new Method(mth_id, isStatic, isConstructor, numArgs, &mthEnv->bc_entrypoint, SlozPrikaz(env));
 }
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {
@@ -793,6 +793,9 @@ Statm * Prikaz(Env env, Context ctxt) {
 		return Dekl(env, false);
 	case kwRETURN:
 		Symb = readLexem();
+		if (!strcmp(env.clsEnv->className, env.mthEnv->methodName)) {
+			Chyba("Konstruktor nesmi obsahovat return.");
+		}
 		if (Symb.type == SEMICOLON || Symb.type == NEWLINE) {
 			Symb = readLexem();
 			return new Return(new Nil);

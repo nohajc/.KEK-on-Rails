@@ -85,8 +85,9 @@ typedef enum _bc {
 
 	IDXA, /* return address of an item at index */
 
-	NEW /* arg: index to constant table.
+	NEW, /* arg: index to constant table.
 	 creates a new object and returns its address */
+	RETVOID
 } bc_t;
 
 #endif /* BC_H_ */

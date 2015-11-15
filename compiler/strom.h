@@ -318,11 +318,12 @@ public:
 class Method: public Statm {
 	char * name;
 	bool isStatic;
+	bool isConstructor;
 	int numArgs;
 	StatmList * body;
 	unsigned int * bc_entrypoint; // Points to symbol table MethodEnv object
 public:
-	Method(const char *, bool, int, unsigned int *, StatmList *);
+	Method(const char *, bool, bool, int, unsigned int *, StatmList *);
 	virtual ~Method();
 	virtual Node *Optimize();
 	virtual uint32_t Translate();

@@ -61,6 +61,14 @@ kek_obj_t* stack_top();
 	ip_g = ret_addr; \
 }
 
+#define BC_RETVOID { \
+	sp_g = ap_g; \
+	uint32_t ret_addr = (size_t)stack_g[fp_g - 3]; \
+	ap_g = (size_t)stack_g[fp_g - 2]; \
+	fp_g = (size_t)stack_g[fp_g - 1]; \
+	ip_g = ret_addr; \
+}
+
 // Read 8-bit instruction operand
 #define BC_OP8(i) bc_arr_g[(i)]
 // Read 16-bit instruction operand
