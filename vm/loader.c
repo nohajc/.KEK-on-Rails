@@ -488,6 +488,18 @@ static void init_const_sym_pointers(void) {
 	}
 }
 
+static void init_parent_pointers(void) {
+	uint32_t i;
+	for (i = 0; i < classes_cnt_g; i++) {
+		if (strcmp(classes_g[i].parent_name, "NO_PARENT") == 0) {
+			classes_g[i].parent = NULL;
+		} else {
+			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
+			assert(classes_g[i].parent != NULL);
+		}
+	}
+}
+
 bool kexe_load(const char *filename) {
 	FILE *f;
 
@@ -518,6 +530,7 @@ bool kexe_load(const char *filename) {
 	}
 
 	init_const_sym_pointers();
+	init_parent_pointers();
 
 	assert(IS_NIL(CONST(0)));
 
