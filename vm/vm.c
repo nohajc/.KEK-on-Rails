@@ -625,6 +625,7 @@ void vm_execute_bc(void) {
 		case LD_CLASS: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LD_CLASS", arg1);
 			sym = CONST(arg1);
 			if (sym->h.t != KEK_SYM) {
 				vm_error("Expected symbol as the argument of LD_CLASS.\n");
