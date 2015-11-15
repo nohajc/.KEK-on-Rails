@@ -335,6 +335,13 @@ void vm_execute_bc(void) {
 			PUSH(LOC(arg1));
 			break;
 		}
+		case LABI_ARG: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LABI_ARG", arg1);
+			PUSH(&ARG(arg1));
+			break;
+		}
 		case LABI_LOC: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
@@ -609,13 +616,28 @@ void vm_execute_bc(void) {
 			stack_g[sp_g - 1] = obj;
 			break;
 		}
+		case LD_SELF: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "LD_SELF");
+			PUSH(THIS);
+			break;
+		}
+		case LD_CLASS: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			sym = CONST(arg1);
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the argument of LD_CLASS.\n");
+			}
+			cls = vm_find_class(sym->k_sym.symbol);
+			PUSH(cls);
+			break;
+		}
+
 		case LVBI_IV:
 		case LVBI_CVE:
 		case LVBS_IVE:
 		case LVBS_CVE:
-		case LD_SELF:
-		case LD_CLASS:
-		case LABI_ARG:
 		case LABI_IV:
 		case LABI_CVE:
 		case LABS_IVE:

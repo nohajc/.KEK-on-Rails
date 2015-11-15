@@ -148,6 +148,7 @@ typedef struct _constant_array {
 	//     store the actual element pointers in it.
 	// The pointers will be computed from offsets and constant table location 
 	//     in memory (after it's loaded).
+	int alloc_size;
 } constant_array_t;
 
 typedef union _constant_item {

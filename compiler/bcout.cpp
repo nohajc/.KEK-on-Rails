@@ -359,6 +359,7 @@ uint32_t bco_arr(bcout_t *bco, size_t len) {
 			sizeof(constant_array_t) + (len - 1) * sizeof(uint32_t));
 	ca->h.t = KEK_ARR;
 	ca->length = len;
+	ca->alloc_size = 0; // This will be initialized at runtime
 
 	return ((uint8_t *) ca - bco->const_table);
 }
