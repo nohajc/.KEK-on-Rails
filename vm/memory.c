@@ -50,3 +50,13 @@ kek_obj_t * alloc_integer(void) {
 
 	return ret;
 }
+
+kek_obj_t * alloc_udo(class_t * udo_class) {
+	kek_obj_t * ret = malloc(sizeof(kek_udo_t) + udo_class->syms_instance_cnt - 1);
+	assert(ret);
+
+	ret->h.t = KEK_UDO;
+	ret->h.cls = udo_class;
+
+	return ret;
+}

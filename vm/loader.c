@@ -13,6 +13,7 @@
 
 #include "vm.h"
 #include "types.h"
+#include "memory.h"
 #include "loader.h"
 
 /******************************************************************************/
@@ -164,7 +165,7 @@ bool kexe_load_sym(FILE *f, symbol_t *sym) {
 				sym->name, sym->const_ptr);
 	}
 
-	sym->const_flag = 0; /* FIXME TODO */
+	sym->const_flag = sym->const_ptr != 0; /* this could work */
 
 	return (true);
 }
@@ -342,6 +343,8 @@ bool kexe_load_classes(FILE *f) {
 					classes_g[i].name);
 		}
 
+		classes_g[i].allocator = alloc_udo;
+
 		classes_g[i].parent_name = kexe_load_string(f);
 		if (classes_g[i].parent_name == NULL) {
 			vm_error("loading classes_g[%d].parent_name failed\n", i);
@@ -473,6 +476,18 @@ bool kexe_load_bc_arr(FILE *f) {
 	return (true);
 }
 
+static void init_const_sym_pointers(void) {
+	uint32_t i, j;
+
+	for (i = 0; i < classes_cnt_g; ++i) {
+		for (j = 0; j < classes_g[i].syms_static_cnt; ++j) {
+			if (classes_g[i].syms_static[j].const_flag) {
+				classes_g[i].syms_static[j].value = CONST(classes_g[i].syms_static[j].const_ptr);
+			}
+		}
+	}
+}
+
 bool kexe_load(const char *filename) {
 	FILE *f;
 
@@ -501,6 +516,8 @@ bool kexe_load(const char *filename) {
 		vm_error("kexe_load_bc_arr has failed.\n");
 		goto error;
 	}
+
+	init_const_sym_pointers();
 
 	assert(IS_NIL(CONST(0)));
 

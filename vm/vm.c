@@ -363,7 +363,7 @@ void vm_execute_bc(void) {
 					PUSH(obj->k_arr.elems[idx_n]);
 				}
 				else {
-					vm_error("Array index out of bounds.\n");
+					vm_error("Array index (%d) out of bounds. Array length is %d\n", idx_n, obj->k_arr.length);
 				}
 			}
 			else {
@@ -381,6 +381,9 @@ void vm_execute_bc(void) {
 				int idx_n = INT_VALUE(idx);
 				if (idx_n >= obj->k_arr.alloc_size) {
 					native_grow_array(&obj->k_arr, idx_n + 1);
+				}
+				else if (idx_n >= obj->k_arr.length) {
+					obj->k_arr.length = idx_n + 1;
 				}
 				PUSH(&obj->k_arr.elems[INT_VALUE(idx)]);
 			}
@@ -548,8 +551,65 @@ void vm_execute_bc(void) {
 			}
 			break;
 		}
+		case LABI_CV: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LABI_CV", arg1);
+			obj = THIS;
+			if (obj->h.t == KEK_CLASS) {
+				cls = (class_t*) obj;
+			}
+			else {
+				cls = obj->h.cls;
+			}
+			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n", cls->syms_static[arg1].name);
+			PUSH(&cls->syms_static[arg1].value);
+			break;
+		}
+		case LVBI_CV: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBI_CV", arg1);
+			obj = THIS;
+			if (obj->h.t == KEK_CLASS) {
+				cls = (class_t*) obj;
+			}
+			else {
+				cls = obj->h.cls;
+			}
+			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n", cls->syms_static[arg1].name);
+			PUSH(cls->syms_static[arg1].value);
+			break;
+		}
+		case NEW: {
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "NEW", arg1);
+			sym = CONST(arg1);
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the argument of NEW.\n");
+			}
+			cls = vm_find_class(sym->k_sym.symbol);
+			if (!cls) {
+				vm_error("Cannot find class %s.\n", sym->k_sym.symbol);
+			}
+			obj = cls->allocator(cls); // Allocate tagged memory for the object
+			mth = cls->constructor;
+
+			PUSH(obj); // Push instance pointer (THIS)
+			// Call constructor
+			if (mth->is_native) {
+				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
+				mth->entry.func();
+			}
+			else {
+				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt, mth->locals_cnt);
+			}
+			// Constructor returns NIL but we want to return the new object pointer
+			stack_g[sp_g - 1] = obj;
+			break;
+		}
 		case LVBI_IV:
-		case LVBI_CV:
 		case LVBI_CVE:
 		case LVBS_IVE:
 		case LVBS_CVE:
@@ -557,11 +617,9 @@ void vm_execute_bc(void) {
 		case LD_CLASS:
 		case LABI_ARG:
 		case LABI_IV:
-		case LABI_CV:
 		case LABI_CVE:
 		case LABS_IVE:
 		case LABS_CVE:
-		case NEW:
 
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
