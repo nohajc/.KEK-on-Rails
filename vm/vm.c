@@ -158,6 +158,9 @@ method_t * vm_find_method_in_class(class_t * cls, const char * name,
 			return &cls->methods[i];
 		}
 	}
+	if (cls->parent) {
+		return vm_find_method_in_class(cls->parent, name, is_static);
+	}
 	return NULL;
 }
 
@@ -169,6 +172,9 @@ symbol_t * vm_find_static_sym_in_class(class_t * cls, const char * name) {
 			return &cls->syms_static[i];
 		}
 	}
+	if (cls->parent) {
+		return vm_find_static_sym_in_class(cls->parent, name);
+	}
 	return NULL;
 }
 
@@ -179,6 +185,9 @@ symbol_t * vm_find_instance_sym_in_class(class_t * cls, const char * name) {
 		if (!strcmp(cls->syms_instance[i].name, name)) {
 			return &cls->syms_instance[i];
 		}
+	}
+	if (cls->parent) {
+		return vm_find_instance_sym_in_class(cls->parent, name);
 	}
 	return NULL;
 }
@@ -192,7 +201,6 @@ method_t * vm_find_method(const char * name, bool is_static, class_t ** cls) {
 			return m;
 		}
 	}
-	// TODO: search through parent classes if not found in the given class
 	return NULL;
 }
 
@@ -406,7 +414,7 @@ void vm_execute_bc(void) {
 			POP(idx);
 			POP(obj);
 
-			if (IS_ARR(obj) && IS_INT(idx)) {
+			if (obj && IS_ARR(obj) && IS_INT(idx)) {
 				int idx_n = INT_VALUE(idx);
 				if (idx_n < obj->k_arr.length) {
 					PUSH(obj->k_arr.elems[idx_n]);
@@ -426,7 +434,7 @@ void vm_execute_bc(void) {
 			POP(idx);
 			POP(obj);
 
-			if (IS_ARR(obj) && IS_INT(idx)) {
+			if (obj && IS_ARR(obj) && IS_INT(idx)) {
 				int idx_n = INT_VALUE(idx);
 				if (idx_n >= obj->k_arr.alloc_size) {
 					native_grow_array(&obj->k_arr, idx_n + 1);
@@ -743,6 +751,9 @@ void vm_execute_bc(void) {
 			mth = cls->constructor;
 
 			PUSH(obj); // Return value of NEW
+			if (!mth) { // no constructor
+				break;
+			}
 			PUSH(obj); // Push instance pointer (THIS)
 			// Call constructor
 			if (mth->is_native) {
