@@ -85,8 +85,14 @@ typedef union _kek_obj {
 
 #if defined(__LP64__)
 #define IS_PTR(obj) (((uint64_t)(obj) & 3) == 0)
+#define IS_CHAR(obj) (((uint64_t)(obj) & 3) == 2)
+#define MAKE_CHAR(c) (((uint64_t)(c) << 2) | 2)
+#define CHAR_VAL(c) (char)((uint64_t)(c) >> 2)
 #else
 #define IS_PTR(obj) (((uint32_t)(obj) & 3) == 0)
+#define IS_CHAR(obj) (((uint32_t)(obj) & 3) == 2)
+#define MAKE_CHAR(c) (((uint32_t)(c) << 2) | 2)
+#define CHAR_VAL(c) (char)((uint32_t)(c) >> 2)
 #endif
 
 #define IS_NIL(obj) ((obj)->h.t == KEK_NIL)
@@ -97,8 +103,10 @@ typedef union _kek_obj {
 #define IS_UDO(obj) ((obj)->h.t == KEK_UDO)
 #define IS_CLASS(obj) ((obj)->h.t == KEK_CLASS)
 
-#define INT_VALUE(obj) (obj)->k_int.value
+#define INT_VAL(obj) (obj)->k_int.value
 
 #define NIL CONST(0)
+
+
 
 #endif /* TYPES_H_ */

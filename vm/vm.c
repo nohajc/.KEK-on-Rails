@@ -276,73 +276,114 @@ const char *type_str[] = { "KEK_NIL", "KEK_INT", "KEK_STR", "KEK_SYM",
 const char *call_str[] = { "CALLE", "CALL", "CALLS" };
 
 static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
-	if (a->h.t == KEK_INT && b->h.t == KEK_INT) {
+	char * str_a, * str_b;
+	char chr_a[2], chr_b[2];
+	chr_a[1] = chr_b[1] = '\0';
+
+	if(( // This is intentionally complicated :D
+			(IS_CHAR(a) && (chr_a[0] = CHAR_VAL(a)) && (str_a = chr_a))
+			|| (IS_STR(a) && (str_a = a->k_str.string))
+			) && (
+			(IS_CHAR(b) && (chr_b[0] = CHAR_VAL(b)) && (str_b = chr_b))
+			|| (IS_STR(b) && (str_b = b->k_str.string)))) {
+		/* After the condition is evaluated, we know this is a str/str
+		 * char/str or str/char comparison. Furthermore, we have set up
+		 * str_a and str_b to point to the string/char values. */
 		kek_int_t *res = (kek_int_t*) alloc_integer();
 
-		vm_debug(DBG_BC, " - %d, %d", INT_VALUE(a), INT_VALUE(b));
+		switch (o) {
+		case Eq:
+			native_new_integer(res, !strcmp(str_a, str_b));
+			break;
+		case NotEq:
+			native_new_integer(res, strcmp(str_a, str_b));
+			break;
+		case Less:
+			native_new_integer(res, strcmp(str_a, str_b) < 0);
+			break;
+		case Greater:
+			native_new_integer(res, strcmp(str_a, str_b) > 0);
+			break;
+		case LessOrEq:
+			native_new_integer(res, strcmp(str_a, str_b) <= 0);
+			break;
+		case GreaterOrEq:
+			native_new_integer(res, strcmp(str_a, str_b) >= 0);
+			break;
+		// TODO: implement more operators
+		default:
+			vm_error("bc_bop: unsupported bop %d on chars/strings\n", o);
+			break;
+		}
+		return (kek_obj_t*) res;
+	} else if (IS_INT(a) && IS_INT(b)) {
+		kek_int_t *res = (kek_int_t*) alloc_integer();
+
+		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
 
 		switch (o) {
 		case Plus:
-			native_new_integer(res, INT_VALUE(a) + INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) + INT_VAL(b));
 			break;
 		case Minus:
-			native_new_integer(res, INT_VALUE(a) - INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) - INT_VAL(b));
 			break;
 		case Times:
-			native_new_integer(res, INT_VALUE(a) * INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) * INT_VAL(b));
 			break;
 		case Divide:
-			native_new_integer(res, INT_VALUE(a) / INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) / INT_VAL(b));
 			break;
 		case Modulo:
-			native_new_integer(res, INT_VALUE(a) % INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) % INT_VAL(b));
 			break;
 		case Eq:
-			native_new_integer(res, INT_VALUE(a) == INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) == INT_VAL(b));
 			break;
 		case NotEq:
-			native_new_integer(res, INT_VALUE(a) != INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) != INT_VAL(b));
 			break;
 		case Less:
-			native_new_integer(res, INT_VALUE(a) < INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) < INT_VAL(b));
 			break;
 		case Greater:
-			native_new_integer(res, INT_VALUE(a) > INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) > INT_VAL(b));
 			break;
 		case LessOrEq:
-			native_new_integer(res, INT_VALUE(a) <= INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) <= INT_VAL(b));
 			break;
 		case GreaterOrEq:
-			native_new_integer(res, INT_VALUE(a) >= INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) >= INT_VAL(b));
 			break;
 		case LogOr:
-			native_new_integer(res, INT_VALUE(a) || INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) || INT_VAL(b));
 			break;
 		case LogAnd:
-			native_new_integer(res, INT_VALUE(a) && INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) && INT_VAL(b));
 			break;
 		case BitOr:
-			native_new_integer(res, INT_VALUE(a) | INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) | INT_VAL(b));
 			break;
 		case BitAnd:
-			native_new_integer(res, INT_VALUE(a) & INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) & INT_VAL(b));
 			break;
 		case Xor:
-			native_new_integer(res, INT_VALUE(a) ^ INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) ^ INT_VAL(b));
 			break;
 		case Lsh:
-			native_new_integer(res, INT_VALUE(a) << INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) << INT_VAL(b));
 			break;
 		case Rsh:
-			native_new_integer(res, INT_VALUE(a) >> INT_VALUE(b));
+			native_new_integer(res, INT_VAL(a) >> INT_VAL(b));
 			break;
 		default:
-			vm_error("bc_bop: unknown bop %d\n", o);
+			vm_error("bc_bop: unsupported bop %d on integers\n", o);
 			break;
 		}
-		vm_debug(DBG_BC, " = %d\n", INT_VALUE((kek_obj_t* )res));
+		vm_debug(DBG_BC, " = %d\n", INT_VAL((kek_obj_t* )res));
 		return (kek_obj_t*) res;
-	} else {
+	}
+	else {
 		// TODO: implement operations for other types
 		vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
 				type_str[a->h.t], type_str[b->h.t]);
@@ -416,8 +457,16 @@ void vm_execute_bc(void) {
 			POP(idx);
 			POP(obj);
 
-			if (obj && IS_ARR(obj) && IS_INT(idx)) {
-				int idx_n = INT_VALUE(idx);
+			if (!obj) {
+				vm_error("Invalid pointer.\n");
+			}
+
+			if (!IS_INT(idx)) {
+				vm_error("Invalid index.\n");
+			}
+			int idx_n = INT_VAL(idx);
+
+			if (IS_ARR(obj)) {
 				if (idx_n < obj->k_arr.length) {
 					PUSH(obj->k_arr.elems[idx_n]);
 				} else {
@@ -425,8 +474,16 @@ void vm_execute_bc(void) {
 							"Array index (%d) out of bounds. Array length is %d\n",
 							idx_n, obj->k_arr.length);
 				}
+			} else if (IS_STR(obj)) {
+				if (idx_n < obj->k_str.length) {
+					PUSH(MAKE_CHAR(obj->k_str.string[idx_n]));
+				} else {
+					vm_error(
+							"String index (%d) out of bounds. String length is %d\n",
+							idx_n, obj->k_str.length);
+				}
 			} else {
-				vm_error("Invalid array or index.\n");
+				vm_error("Cannot access this object elements by index.\n");
 			}
 			break;
 		}
@@ -437,15 +494,15 @@ void vm_execute_bc(void) {
 			POP(obj);
 
 			if (obj && IS_ARR(obj) && IS_INT(idx)) {
-				int idx_n = INT_VALUE(idx);
+				int idx_n = INT_VAL(idx);
 				if (idx_n >= obj->k_arr.alloc_size) {
 					native_grow_array(&obj->k_arr, idx_n + 1);
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
-				PUSH(&obj->k_arr.elems[INT_VALUE(idx)]);
+				PUSH(&obj->k_arr.elems[INT_VAL(idx)]);
 			} else {
-				vm_error("Invalid array or index.\n");
+				vm_error("Invalid object or index.\n");
 			}
 			break;
 		}
@@ -478,7 +535,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s\n", "NOT");
 			ip_g++;
 			TOP(obj);
-			if ((IS_INT(obj) && !INT_VALUE(obj))
+			if ((IS_INT(obj) && !INT_VAL(obj))
 					|| IS_NIL(obj)) {
 				native_new_integer(n, 1);
 			} else {
@@ -505,7 +562,9 @@ void vm_execute_bc(void) {
 			ip_g++;
 
 			POP(obj);
-			if (IS_STR(obj)) {
+			if(IS_CHAR(obj)) {
+				printf("%c\n", CHAR_VAL(obj));
+			} else if (IS_STR(obj)) {
 				printf("%s", obj->k_str.string);
 			} else if (IS_INT(obj)) {
 				printf("%d\n", obj->k_int.value);
@@ -529,7 +588,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "IFNJ", arg1);
 			POP(obj);
 			if (IS_INT(obj)) {
-				if (!INT_VALUE(obj)) {
+				if (!INT_VAL(obj)) {
 					ip_g = arg1;
 				}
 			} else if (IS_NIL(obj)) { // Jump if false or nil

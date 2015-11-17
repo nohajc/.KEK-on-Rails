@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "k_string.h"
+#include "k_integer.h"
+#include "k_array.h"
 #include "vm.h"
 #include "memory.h"
 
@@ -20,9 +22,12 @@ void init_kek_string_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 0;
-	// TODO: add native methods such as length(), get_idx(), get_idxa()
-	classes_g[classes_cnt_g].methods = NULL;
+	classes_g[classes_cnt_g].methods_cnt = 2;
+
+	classes_g[classes_cnt_g].methods = malloc(
+		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0, false, string_length);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "split", 1, false, string_split);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -46,4 +51,41 @@ kek_obj_t * new_string_from_cstring(const char * cstr) {
 	strcpy(kstr->string, cstr);
 
 	return ((kek_obj_t *) kstr);
+}
+
+void string_length(void) {
+	kek_string_t * str = (kek_string_t*)THIS;
+	kek_obj_t * kek_len = alloc_integer();
+	native_new_integer((kek_int_t*)kek_len, str->length);
+
+	PUSH(kek_len);
+	BC_RET;
+}
+
+void string_split(void) {
+	kek_string_t * str = (kek_string_t*)THIS;
+	kek_obj_t * delims = ARG(0);
+	class_t * arr_class;
+	kek_array_t * arr;
+	char * token;
+	kek_obj_t * tok_str;
+	int i = 0;
+
+	if (!IS_STR(delims)) {
+		vm_error("Expected string as argument.\n");
+	}
+
+	arr_class = vm_find_class("Array");
+	arr = (kek_array_t*) alloc_array(arr_class);
+	native_new_array(arr);
+
+	token = strtok(str->string, delims->k_str.string);
+	while (token) {
+		tok_str = new_string_from_cstring(token);
+		native_arr_elem_set(arr, i++, tok_str);
+		token = strtok(NULL, delims->k_str.string);
+	}
+
+	PUSH(arr);
+	BC_RET;
 }

@@ -83,7 +83,7 @@ typedef enum {
 
 extern const char *symbTable[];
 
-#define MAX_IDENT_LEN 32
+#define MAX_IDENT_LEN 1024
 
 typedef struct LexicalSymbol {
 	LexSymbolType type;
