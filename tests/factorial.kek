@@ -1,0 +1,22 @@
+class Main {
+	static factorial(n) {
+		if (n == 0 || n == 1) return 1
+		return n * factorial(n - 1)
+	}
+
+	static main(args) {
+		write factorial(0)
+		write factorial(1)
+		write factorial(2)
+		write factorial(3)
+		write factorial(4)
+		write factorial(5)
+		write factorial(6)
+		write factorial(7)
+		write factorial(8)
+		write factorial(9)
+		write factorial(10)
+		write factorial(11)
+		write factorial(12)
+	}
+}
