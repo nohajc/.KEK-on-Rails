@@ -83,11 +83,19 @@ typedef union _kek_obj {
 	kek_udo_t k_udo;
 } kek_obj_t;
 
+#if defined(__LP64__)
+#define IS_PTR(obj) (((uint64_t)(obj) & 3) == 0)
+#else
+#define IS_PTR(obj) (((uint32_t)(obj) & 3) == 0)
+#endif
+
 #define IS_NIL(obj) ((obj)->h.t == KEK_NIL)
 #define IS_INT(obj) ((obj)->h.t == KEK_INT)
 #define IS_STR(obj) ((obj)->h.t == KEK_STR)
 #define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
 #define IS_ARR(obj) ((obj)->h.t == KEK_ARR)
+#define IS_UDO(obj) ((obj)->h.t == KEK_UDO)
+#define IS_CLASS(obj) ((obj)->h.t == KEK_CLASS)
 
 #define INT_VALUE(obj) (obj)->k_int.value
 

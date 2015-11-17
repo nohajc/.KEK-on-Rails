@@ -478,8 +478,8 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s\n", "NOT");
 			ip_g++;
 			TOP(obj);
-			if ((obj->h.t == KEK_INT && !INT_VALUE(obj))
-					|| obj->h.t == KEK_NIL) {
+			if ((IS_INT(obj) && !INT_VALUE(obj))
+					|| IS_NIL(obj)) {
 				native_new_integer(n, 1);
 			} else {
 				native_new_integer(n, 0);
@@ -528,11 +528,11 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "IFNJ", arg1);
 			POP(obj);
-			if (obj->h.t == KEK_INT) {
+			if (IS_INT(obj)) {
 				if (!INT_VALUE(obj)) {
 					ip_g = arg1;
 				}
-			} else if (obj->h.t == KEK_NIL) { // Jump if false or nil
+			} else if (IS_NIL(obj)) { // Jump if false or nil
 				ip_g = arg1;
 			} else {
 				vm_error("Expected integer as the evaluated condition.\n");
@@ -560,7 +560,11 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u %u\n", call_str[call_type], arg1, arg2);
 			TOP(obj);
 
-			if (obj->h.t == KEK_CLASS) { // Call of static method
+			if (!IS_PTR(obj)) {
+				vm_error("Invalid class/object pointer.\n");
+			}
+
+			if (IS_CLASS(obj)) { // Call of static method
 				vm_debug(DBG_BC, " - Static method call\n");
 				cls = (class_t*) obj;
 				static_call = true;
@@ -579,7 +583,7 @@ void vm_execute_bc(void) {
 			}
 
 			sym = CONST(arg1); // name of the method
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the first argument of CALL.\n");
 			}
 			assert(cls);
@@ -625,7 +629,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_CV", arg1);
 			obj = THIS;
-			if (obj->h.t == KEK_CLASS) {
+			if (IS_CLASS(obj)) {
 				cls = (class_t*) obj;
 			} else {
 				cls = obj->h.cls;
@@ -643,7 +647,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_CVE", arg1);
 			POP(obj);
-			if (obj->h.t == KEK_CLASS) {
+			if (IS_PTR(obj) && IS_CLASS(obj)) {
 				cls = (class_t*) obj;
 			} else {
 				vm_error("Expected class pointer on the stack.\n");
@@ -661,7 +665,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_CV", arg1);
 			obj = THIS;
-			if (obj->h.t == KEK_CLASS) {
+			if (IS_CLASS(obj)) {
 				cls = (class_t*) obj;
 			} else {
 				cls = obj->h.cls;
@@ -676,7 +680,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_CVE", arg1);
 			POP(obj);
-			if (obj->h.t == KEK_CLASS) {
+			if (IS_PTR(obj) && IS_CLASS(obj)) {
 				cls = (class_t*) obj;
 			} else {
 				vm_error("Expected class pointer on the stack.\n");
@@ -692,13 +696,13 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBS_CVE", arg1);
 			POP(obj);
-			if (obj->h.t == KEK_CLASS) {
+			if (IS_PTR(obj) && IS_CLASS(obj)) {
 				cls = (class_t*) obj;
 			} else {
 				vm_error("Expected class pointer on the stack.\n");
 			}
 			sym = CONST(arg1); // name of the static member
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of LVBS_CVE.\n");
 			}
 			cls_memb = vm_find_static_sym_in_class(cls, sym->k_sym.symbol);
@@ -716,13 +720,13 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBS_CVE", arg1);
 			POP(obj);
-			if (obj->h.t == KEK_CLASS) {
+			if (IS_PTR(obj) && IS_CLASS(obj)) {
 				cls = (class_t*) obj;
 			} else {
 				vm_error("Expected class pointer on the stack.\n");
 			}
 			sym = CONST(arg1); // name of the static member
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of LVBS_CVE.\n");
 			}
 			cls_memb = vm_find_static_sym_in_class(cls, sym->k_sym.symbol);
@@ -742,7 +746,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "NEW", arg1); // NEW should have a second argument like CALL
 			sym = CONST(arg1);
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of NEW.\n");
 			}
 			cls = vm_find_class(sym->k_sym.symbol);
@@ -777,7 +781,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LD_CLASS", arg1);
 			sym = CONST(arg1);
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of LD_CLASS.\n");
 			}
 			cls = vm_find_class(sym->k_sym.symbol);
@@ -792,9 +796,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
 			obj = THIS;
-			if (obj->h.t != KEK_UDO) {
-				vm_error("Invalid THIS pointer.\n");
-			}
+			assert(IS_UDO(obj));
 			PUSH(&obj->k_udo.inst_var[arg1]);
 			break;
 		}
@@ -803,9 +805,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_IV", arg1);
 			obj = THIS;
-			if (obj->h.t != KEK_UDO) {
-				vm_error("Invalid THIS pointer.\n");
-			}
+			assert(IS_UDO(obj));
 			PUSH(obj->k_udo.inst_var[arg1]);
 			break;
 		}
@@ -815,9 +815,12 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBS_IVE", arg1);
 			POP(obj);
-			assert(obj->h.t != KEK_CLASS);
+			if (!IS_PTR(obj)) {
+				vm_error("Invalid object pointer.\n");
+			}
+			assert(!IS_CLASS(obj));
 			sym = CONST(arg1);
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of LVBS_IVE.\n");
 			}
 			if (!obj->h.cls) {
@@ -836,9 +839,12 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABS_IVE", arg1);
 			POP(obj);
-			assert(obj->h.t != KEK_CLASS);
+			if (!IS_PTR(obj)) {
+				vm_error("Invalid object pointer.\n");
+			}
+			assert(!IS_CLASS(obj));
 			sym = CONST(arg1);
-			if (sym->h.t != KEK_SYM) {
+			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of LABS_IVE.\n");
 			}
 			if (!obj->h.cls) {
