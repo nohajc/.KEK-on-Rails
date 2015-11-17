@@ -160,6 +160,8 @@ void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 class_t * vm_find_class(const char * name);
 method_t * vm_find_method_in_class(class_t * cls, const char * name,
 		bool is_static); // searches in a given class
+symbol_t * vm_find_static_sym_in_class(class_t * cls, const char * name);
+symbol_t * vm_find_instance_sym_in_class(class_t * cls, const char * name);
 method_t * vm_find_method(const char * name, bool is_static, class_t ** cls); // returns class where the method was found
 void vm_call_class_initializers(void);
 void vm_call_main(int argc, char *argv[]);

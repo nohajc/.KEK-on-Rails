@@ -149,13 +149,35 @@ class_t * vm_find_class(const char * name) {
 }
 
 method_t * vm_find_method_in_class(class_t * cls, const char * name,
-bool is_static) {
+		bool is_static) {
 	uint32_t i;
 
 	for (i = 0; i < cls->methods_cnt; ++i) {
 		if (!strcmp(cls->methods[i].name, name)
 				&& cls->methods[i].is_static == is_static) {
 			return &cls->methods[i];
+		}
+	}
+	return NULL;
+}
+
+symbol_t * vm_find_static_sym_in_class(class_t * cls, const char * name) {
+	uint32_t i;
+
+	for (i = 0; i < cls->syms_static_cnt; ++i) {
+		if (!strcmp(cls->syms_static[i].name, name)) {
+			return &cls->syms_static[i];
+		}
+	}
+	return NULL;
+}
+
+symbol_t * vm_find_instance_sym_in_class(class_t * cls, const char * name) {
+	uint32_t i;
+
+	for (i = 0; i < cls->syms_instance_cnt; ++i) {
+		if (!strcmp(cls->syms_instance[i].name, name)) {
+			return &cls->syms_instance[i];
 		}
 	}
 	return NULL;
@@ -533,9 +555,13 @@ void vm_execute_bc(void) {
 				cls = (class_t*) obj;
 				static_call = true;
 			} else { // Call of instance method
-				vm_debug(DBG_BC, " - Instance method call\n");
 				cls = obj->h.cls;
 				static_call = false;
+
+				if (!cls) {
+					vm_error("Primitive object does not have any methods.\n");
+				}
+				vm_debug(DBG_BC, " - Instance method call\n");
 			}
 
 			if (call_type == S) {
@@ -650,6 +676,57 @@ void vm_execute_bc(void) {
 			PUSH(cls->syms_static[arg1].value);
 			break;
 		}
+		case LVBS_CVE: {
+			symbol_t * cls_memb;
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBS_CVE", arg1);
+			POP(obj);
+			if (obj->h.t == KEK_CLASS) {
+				cls = (class_t*) obj;
+			} else {
+				vm_error("Expected class pointer on the stack.\n");
+			}
+			sym = CONST(arg1); // name of the static member
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the argument of LVBS_CVE.\n");
+			}
+			cls_memb = vm_find_static_sym_in_class(cls, sym->k_sym.symbol);
+			if (!cls_memb) {
+				vm_error("Static class member %s not found in %s.\n", sym->k_sym.symbol, cls->name);
+			}
+			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
+					cls_memb->name);
+			PUSH(cls_memb->value);
+			break;
+		}
+		case LABS_CVE: {
+			symbol_t * cls_memb;
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBS_CVE", arg1);
+			POP(obj);
+			if (obj->h.t == KEK_CLASS) {
+				cls = (class_t*) obj;
+			} else {
+				vm_error("Expected class pointer on the stack.\n");
+			}
+			sym = CONST(arg1); // name of the static member
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the argument of LVBS_CVE.\n");
+			}
+			cls_memb = vm_find_static_sym_in_class(cls, sym->k_sym.symbol);
+			if (!cls_memb) {
+				vm_error("Static class member %s not found in %s.\n", sym->k_sym.symbol, cls->name);
+			}
+			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
+					cls_memb->name);
+			if (cls_memb->const_flag) {
+				vm_error("Lvalue cannot be a constant.\n");
+			}
+			PUSH(&cls_memb->value);
+			break;
+		}
 		case NEW: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
@@ -692,6 +769,9 @@ void vm_execute_bc(void) {
 				vm_error("Expected symbol as the argument of LD_CLASS.\n");
 			}
 			cls = vm_find_class(sym->k_sym.symbol);
+			if (!cls) {
+				vm_error("Cannot find class %d.\n", sym->k_sym.symbol);
+			}
 			PUSH(cls);
 			break;
 		}
@@ -717,10 +797,48 @@ void vm_execute_bc(void) {
 			PUSH(obj->k_udo.inst_var[arg1]);
 			break;
 		}
-		case LVBS_IVE:
-		case LVBS_CVE:
-		case LABS_IVE:
-		case LABS_CVE:
+		case LVBS_IVE: {
+			symbol_t * obj_memb;
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LVBS_IVE", arg1);
+			POP(obj);
+			assert(obj->h.t != KEK_CLASS);
+			sym = CONST(arg1);
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the argument of LVBS_IVE.\n");
+			}
+			if (!obj->h.cls) {
+				vm_error("Primitive object does not have any members.\n");
+			}
+			obj_memb = vm_find_instance_sym_in_class(obj->h.cls, sym->k_sym.symbol);
+			if (!obj_memb) {
+				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
+			}
+			PUSH(obj->k_udo.inst_var[obj_memb->addr]);
+			break;
+		}
+		case LABS_IVE: {
+			symbol_t * obj_memb;
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "LABS_IVE", arg1);
+			POP(obj);
+			assert(obj->h.t != KEK_CLASS);
+			sym = CONST(arg1);
+			if (sym->h.t != KEK_SYM) {
+				vm_error("Expected symbol as the argument of LABS_IVE.\n");
+			}
+			if (!obj->h.cls) {
+				vm_error("Primitive object does not have any members.\n");
+			}
+			obj_memb = vm_find_instance_sym_in_class(obj->h.cls, sym->k_sym.symbol);
+			if (!obj_memb) {
+				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
+			}
+			PUSH(&obj->k_udo.inst_var[obj_memb->addr]);
+			break;
+		}
 
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
