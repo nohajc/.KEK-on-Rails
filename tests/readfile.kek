@@ -1,0 +1,17 @@
+class Main {
+	static main(args) {
+		if (args.length() != 2) {
+			write "Please, specify a file to read.\n"
+			return
+		}
+
+		var f = new File(args[1], "r")
+
+		while (1) {
+			var line = f.readln()
+			if (!line) break;
+			write line
+		}
+		f.close()
+	}
+}

@@ -62,3 +62,13 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 
 	return ret;
 }
+
+kek_obj_t * alloc_file(class_t * file_class) {
+	kek_obj_t * ret = malloc(sizeof(kek_file_t));
+	assert(ret);
+
+	ret->h.t = KEK_FILE;
+	ret->h.cls = file_class;
+
+	return ret;
+}

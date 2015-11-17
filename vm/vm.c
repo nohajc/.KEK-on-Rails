@@ -16,6 +16,7 @@
 #include "k_array.h"
 #include "k_string.h"
 #include "k_integer.h"
+#include "k_file.h"
 #include "stack.h"
 #include "memory.h"
 
@@ -112,6 +113,7 @@ void vm_debug(const char *format, ...) {
 void vm_init_builtin_classes(void) {
 	init_kek_array_class();
 	init_kek_string_class();
+	init_kek_file_class();
 }
 
 void vm_init_parent_pointers(void) {
@@ -750,11 +752,10 @@ void vm_execute_bc(void) {
 			obj = cls->allocator(cls); // Allocate tagged memory for the object
 			mth = cls->constructor;
 
-			PUSH(obj); // Return value of NEW
-			if (!mth) { // no constructor
+			PUSH(obj); // Push instance pointer (THIS)
+			if (!mth) { // no constructor	
 				break;
 			}
-			PUSH(obj); // Push instance pointer (THIS)
 			// Call constructor
 			if (mth->is_native) {
 				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);

@@ -62,10 +62,12 @@ kek_obj_t* stack_top();
 } while (0)
 
 #define BC_RETVOID { \
+	kek_obj_t* ret_val = THIS; \
 	sp_g = ap_g; \
 	uint32_t ret_addr = (size_t)stack_g[fp_g - 3]; \
 	ap_g = (size_t)stack_g[fp_g - 2]; \
 	fp_g = (size_t)stack_g[fp_g - 1]; \
+	PUSH(ret_val); \
 	ip_g = ret_addr; \
 }
 

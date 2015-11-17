@@ -58,13 +58,10 @@ int main(int argc, char *argv[]) {
 	int c;
 	char *filename = NULL;
 
-	while ((c = getopt(argc, argv, "d:f:")) != -1) {
+	while ((c = getopt(argc, argv, "d:")) != -1) {
 		switch (c) {
 		case 'd':
 			debug_add(optarg);
-			break;
-		case 'f':
-			filename = optarg;
 			break;
 		case '?':
 			fprintf(stderr, "unknown opt: \"%c\"\n", c);
@@ -76,9 +73,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (filename == NULL) {
+	if (optind == argc) {
 		usage(argv[0]);
 	}
+
+	filename = argv[optind];
 
 	if (!kexe_load(filename)) {
 		return (EXIT_FAILURE);
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]) {
 	// Call static initializers of all classes
 	// or we could do some sort of lazy loading.
 	vm_call_class_initializers();
-	vm_call_main(argc, argv);
+	vm_call_main(argc - optind, argv + optind);
 
 	free_globals();
 

@@ -8,6 +8,7 @@
 #define TYPES_H_
 
 #include <stdlib.h>
+#include <stdio.h>
 
 /******************************************************************************/
 /* objects ********************************************************************/
@@ -16,7 +17,7 @@ struct _class;
 union _kek_obj;
 
 typedef enum _type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_UDO, KEK_CLASS
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_FILE, KEK_UDO, KEK_CLASS
 } type_t;
 
 typedef struct _header {
@@ -57,6 +58,11 @@ typedef struct _kek_array {
 	/* Loader will need to transform each constant_array_t to this format */
 	union _kek_obj ** elems;
 } kek_array_t;
+
+typedef struct _kek_file {
+	header_t h;
+	FILE * f_handle;
+} kek_file_t;
 
 /* user-defined object */
 typedef struct _kek_udo {

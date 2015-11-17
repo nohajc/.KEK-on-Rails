@@ -656,6 +656,9 @@ uint32_t MethodRef::Translate() {
 }
 
 uint32_t New::Translate() {
+	if (args) {
+		args->Translate();
+	}
 	uint32_t cons_idx = constructor->Translate();
 	bco_ww1(bcout_g, NEW, cons_idx);
 	return 0;
