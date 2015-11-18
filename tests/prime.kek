@@ -41,8 +41,18 @@ class Prime {
 
 class Main {
 	static main(args) {
+		var n, sqrtn
 		var prime_gen = new Prime()
-		prime_gen.prepare(10000, 100)
+
+		Sys.out.writeln("Enter n:\n")
+		n = Sys.in.readln()
+		n = n.toInt()
+
+		Sys.out.writeln("Enter sqrt(n):\n")
+		sqrtn = Sys.in.readln()
+		sqrtn = sqrtn.toInt()
+
+		prime_gen.prepare(n, sqrtn)
 		prime_gen.print()
 	}
 }

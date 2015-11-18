@@ -22,12 +22,13 @@ void init_kek_string_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 2;
+	classes_g[classes_cnt_g].methods_cnt = 3;
 
 	classes_g[classes_cnt_g].methods = malloc(
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0, false, string_length);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "split", 1, false, string_split);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "toInt", 0, false, string_toInt);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -55,8 +56,7 @@ kek_obj_t * new_string_from_cstring(const char * cstr) {
 
 void string_length(void) {
 	kek_string_t * str = (kek_string_t*)THIS;
-	kek_obj_t * kek_len = alloc_integer();
-	native_new_integer((kek_int_t*)kek_len, str->length);
+	kek_int_t * kek_len = make_integer(str->length);
 
 	PUSH(kek_len);
 	BC_RET;
@@ -87,5 +87,19 @@ void string_split(void) {
 	}
 
 	PUSH(arr);
+	BC_RET;
+}
+
+void string_toInt(void) {
+	kek_string_t * str = (kek_string_t*)THIS;
+	kek_int_t * kek_n;
+	int n;
+	if (sscanf(str->string, "%d", &n) != 1) {
+		PUSH(NIL);
+		BC_RET;
+		return;
+	}
+	kek_n = make_integer(n);
+	PUSH(kek_n);
 	BC_RET;
 }

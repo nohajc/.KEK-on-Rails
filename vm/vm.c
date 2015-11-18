@@ -57,32 +57,42 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 	}
 
 	/* vm_debug(DBG_STACK | DBG_STACK_FULL, "kek_obj = %p\n", kek_obj); */
-	switch (kek_obj->type) {
-	case KEK_INT:
-		(void) snprintf(str, 1024, "int -%d-", ((kek_int_t *) kek_obj)->value);
-		break;
-	case KEK_STR:
-		(void) snprintf(str, 1024, "str -%s-",
-				((kek_string_t *) kek_obj)->string);
-		break;
-	case KEK_ARR:
-		(void) snprintf(str, 1024, "arr -%p-", (void*)kek_obj);
-		break;
-	case KEK_SYM:
-		(void) snprintf(str, 1024, "sym -%s-",
-				((kek_symbol_t *) kek_obj)->symbol);
-		break;
-	case KEK_NIL:
-		(void) snprintf(str, 1024, "nil");
-		break;
-	case KEK_UDO:
-		(void) snprintf(str, 1024, "udo");
-		break;
-	default:
-		(void) snprintf(str, 1024, "unknown type %d", kek_obj->type);
-		/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
-		 assert(0 && "unhandled kek_obj->type"); */
-		break;
+	if (!IS_PTR(kek_obj)) {
+		if (IS_INT(kek_obj)) {
+			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
+		}
+		else if (IS_CHAR(kek_obj)) {
+			(void) snprintf(str, 1024, "char -%c-", CHAR_VAL(kek_obj));
+		}
+	}
+	else {
+		switch (kek_obj->type) {
+		case KEK_INT:
+			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
+			break;
+		case KEK_STR:
+			(void) snprintf(str, 1024, "str -%s-",
+					((kek_string_t *) kek_obj)->string);
+			break;
+		case KEK_ARR:
+			(void) snprintf(str, 1024, "arr -%p-", (void*)kek_obj);
+			break;
+		case KEK_SYM:
+			(void) snprintf(str, 1024, "sym -%s-",
+					((kek_symbol_t *) kek_obj)->symbol);
+			break;
+		case KEK_NIL:
+			(void) snprintf(str, 1024, "nil");
+			break;
+		case KEK_UDO:
+			(void) snprintf(str, 1024, "udo");
+			break;
+		default:
+			(void) snprintf(str, 1024, "unknown type %d", kek_obj->type);
+			/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
+			 assert(0 && "unhandled kek_obj->type"); */
+			break;
+		}
 	}
 
 	out: /* */
@@ -282,101 +292,65 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if(( // This is intentionally complicated :D
-			(IS_CHAR(a) && (chr_a[0] = CHAR_VAL(a)) && (str_a = chr_a))
-			|| (IS_STR(a) && (str_a = a->k_str.string))
-			) && (
-			(IS_CHAR(b) && (chr_b[0] = CHAR_VAL(b)) && (str_b = chr_b))
-			|| (IS_STR(b) && (str_b = b->k_str.string)))) {
-		/* After the condition is evaluated, we know this is a str/str
-		 * char/str or str/char comparison. Furthermore, we have set up
-		 * str_a and str_b to point to the string/char values. */
-		kek_int_t *res = (kek_int_t*) alloc_integer();
-
-		switch (o) {
-		case Eq:
-			native_new_integer(res, !strcmp(str_a, str_b));
-			break;
-		case NotEq:
-			native_new_integer(res, strcmp(str_a, str_b));
-			break;
-		case Less:
-			native_new_integer(res, strcmp(str_a, str_b) < 0);
-			break;
-		case Greater:
-			native_new_integer(res, strcmp(str_a, str_b) > 0);
-			break;
-		case LessOrEq:
-			native_new_integer(res, strcmp(str_a, str_b) <= 0);
-			break;
-		case GreaterOrEq:
-			native_new_integer(res, strcmp(str_a, str_b) >= 0);
-			break;
-		// TODO: implement more operators
-		default:
-			vm_error("bc_bop: unsupported bop %d on chars/strings\n", o);
-			break;
-		}
-		return (kek_obj_t*) res;
-	} else if (IS_INT(a) && IS_INT(b)) {
-		kek_int_t *res = (kek_int_t*) alloc_integer();
+	if (IS_INT(a) && IS_INT(b)) {
+		kek_int_t *res;
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
 
 		switch (o) {
 		case Plus:
-			native_new_integer(res, INT_VAL(a) + INT_VAL(b));
+			res = make_integer(INT_VAL(a) + INT_VAL(b));
 			break;
 		case Minus:
-			native_new_integer(res, INT_VAL(a) - INT_VAL(b));
+			res = make_integer(INT_VAL(a) - INT_VAL(b));
 			break;
 		case Times:
-			native_new_integer(res, INT_VAL(a) * INT_VAL(b));
+			res = make_integer(INT_VAL(a) * INT_VAL(b));
 			break;
 		case Divide:
-			native_new_integer(res, INT_VAL(a) / INT_VAL(b));
+			res = make_integer(INT_VAL(a) / INT_VAL(b));
 			break;
 		case Modulo:
-			native_new_integer(res, INT_VAL(a) % INT_VAL(b));
+			res = make_integer(INT_VAL(a) % INT_VAL(b));
 			break;
 		case Eq:
-			native_new_integer(res, INT_VAL(a) == INT_VAL(b));
+			res = make_integer(INT_VAL(a) == INT_VAL(b));
 			break;
 		case NotEq:
-			native_new_integer(res, INT_VAL(a) != INT_VAL(b));
+			res = make_integer(INT_VAL(a) != INT_VAL(b));
 			break;
 		case Less:
-			native_new_integer(res, INT_VAL(a) < INT_VAL(b));
+			res = make_integer(INT_VAL(a) < INT_VAL(b));
 			break;
 		case Greater:
-			native_new_integer(res, INT_VAL(a) > INT_VAL(b));
+			res = make_integer(INT_VAL(a) > INT_VAL(b));
 			break;
 		case LessOrEq:
-			native_new_integer(res, INT_VAL(a) <= INT_VAL(b));
+			res = make_integer(INT_VAL(a) <= INT_VAL(b));
 			break;
 		case GreaterOrEq:
-			native_new_integer(res, INT_VAL(a) >= INT_VAL(b));
+			res = make_integer(INT_VAL(a) >= INT_VAL(b));
 			break;
 		case LogOr:
-			native_new_integer(res, INT_VAL(a) || INT_VAL(b));
+			res = make_integer(INT_VAL(a) || INT_VAL(b));
 			break;
 		case LogAnd:
-			native_new_integer(res, INT_VAL(a) && INT_VAL(b));
+			res = make_integer(INT_VAL(a) && INT_VAL(b));
 			break;
 		case BitOr:
-			native_new_integer(res, INT_VAL(a) | INT_VAL(b));
+			res = make_integer(INT_VAL(a) | INT_VAL(b));
 			break;
 		case BitAnd:
-			native_new_integer(res, INT_VAL(a) & INT_VAL(b));
+			res = make_integer(INT_VAL(a) & INT_VAL(b));
 			break;
 		case Xor:
-			native_new_integer(res, INT_VAL(a) ^ INT_VAL(b));
+			res = make_integer(INT_VAL(a) ^ INT_VAL(b));
 			break;
 		case Lsh:
-			native_new_integer(res, INT_VAL(a) << INT_VAL(b));
+			res = make_integer(INT_VAL(a) << INT_VAL(b));
 			break;
 		case Rsh:
-			native_new_integer(res, INT_VAL(a) >> INT_VAL(b));
+			res = make_integer(INT_VAL(a) >> INT_VAL(b));
 			break;
 		default:
 			vm_error("bc_bop: unsupported bop %d on integers\n", o);
@@ -385,7 +359,43 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		vm_debug(DBG_BC, " = %d\n", INT_VAL((kek_obj_t* )res));
 		return (kek_obj_t*) res;
 	}
-	else {
+	else if(( // This is intentionally complicated :D
+			(IS_CHAR(a) && (chr_a[0] = CHAR_VAL(a)) && (str_a = chr_a))
+			|| (IS_STR(a) && (str_a = a->k_str.string))
+			) && (
+			(IS_CHAR(b) && (chr_b[0] = CHAR_VAL(b)) && (str_b = chr_b))
+			|| (IS_STR(b) && (str_b = b->k_str.string)))) {
+		/* After the condition is evaluated, we know this is a str/str
+		 * char/str or str/char comparison. Furthermore, we have set up
+		 * str_a and str_b to point to the string/char values. */
+		kek_int_t *res;
+
+		switch (o) {
+		case Eq:
+			res = make_integer(!strcmp(str_a, str_b));
+			break;
+		case NotEq:
+			res = make_integer(strcmp(str_a, str_b));
+			break;
+		case Less:
+			res = make_integer(strcmp(str_a, str_b) < 0);
+			break;
+		case Greater:
+			res = make_integer(strcmp(str_a, str_b) > 0);
+			break;
+		case LessOrEq:
+			res = make_integer(strcmp(str_a, str_b) <= 0);
+			break;
+		case GreaterOrEq:
+			res = make_integer(strcmp(str_a, str_b) >= 0);
+			break;
+		// TODO: implement more operators
+		default:
+			vm_error("bc_bop: unsupported bop %d on chars/strings\n", o);
+			break;
+		}
+		return (kek_obj_t*) res;
+	} else {
 		// TODO: implement operations for other types
 		vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
 				type_str[a->h.t], type_str[b->h.t]);
@@ -526,8 +536,7 @@ void vm_execute_bc(void) {
 			ip_g++;
 			TOP(obj);
 			if (IS_INT(obj)) {
-				kek_int_t *n = (kek_int_t*) alloc_integer();
-				native_new_integer(n, -obj->k_int.value);
+				kek_int_t *n = make_integer(-INT_VAL(obj));
 				stack_g[sp_g - 1] = (kek_obj_t*) n;
 			} else {
 				vm_error("Unary minus expects an integer.\n");
@@ -535,15 +544,15 @@ void vm_execute_bc(void) {
 			break;
 		}
 		case NOT: {
-			kek_int_t *n = (kek_int_t*) alloc_integer();
+			kek_int_t *n;
 			vm_debug(DBG_BC, "%s\n", "NOT");
 			ip_g++;
 			TOP(obj);
 			if ((IS_INT(obj) && !INT_VAL(obj))
 					|| IS_NIL(obj)) {
-				native_new_integer(n, 1);
+				n = make_integer(1);
 			} else {
-				native_new_integer(n, 0);
+				n = make_integer(0);
 			}
 			stack_g[sp_g - 1] = (kek_obj_t*) n;
 
@@ -568,10 +577,10 @@ void vm_execute_bc(void) {
 			POP(obj);
 			if(IS_CHAR(obj)) {
 				printf("%c\n", CHAR_VAL(obj));
+			} else if (IS_INT(obj)) {
+				printf("%d\n", INT_VAL(obj));
 			} else if (IS_STR(obj)) {
 				printf("%s", obj->k_str.string);
-			} else if (IS_INT(obj)) {
-				printf("%d\n", obj->k_int.value);
 			} else {
 				vm_error(
 						"Cannot write object which is not string or integer.\n");

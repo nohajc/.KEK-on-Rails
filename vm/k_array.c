@@ -80,8 +80,7 @@ void array_length(void) {
 // TODO: We could cache the kek_int object containing length
 // so we don't have to create a new one on each call.
 kek_obj_t * native_array_length(kek_array_t * arr) {
-	kek_obj_t * kek_len = alloc_integer();
-	native_new_integer((kek_int_t*)kek_len, arr->length);
+	kek_obj_t * kek_len = (kek_obj_t*)make_integer(arr->length);
 
 	return kek_len;
 }
