@@ -23,7 +23,7 @@ void stack_init(void) {
 	sp_g = 0;
 	fp_g = 0;
 
-	stack_g = malloc(stack_size_g * sizeof(kek_obj_t));
+	stack_g = malloc(stack_size_g * sizeof(kek_obj_t*));
 	assert(stack_g);
 }
 
@@ -34,7 +34,7 @@ void stack_destroy(void) {
 void stack_push(void *obj) {
 	if (sp_g == stack_size_g) {
 		stack_size_g *= 2;
-		stack_g = realloc(stack_g, stack_size_g * sizeof(kek_obj_t));
+		stack_g = realloc(stack_g, stack_size_g * sizeof(kek_obj_t*));
 		assert(stack_g != NULL);
 	}
 	// causes segfault when trying to print non-objects

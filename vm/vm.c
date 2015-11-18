@@ -66,7 +66,7 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 				((kek_string_t *) kek_obj)->string);
 		break;
 	case KEK_ARR:
-		(void) snprintf(str, 1024, "arr");
+		(void) snprintf(str, 1024, "arr -%p-", (void*)kek_obj);
 		break;
 	case KEK_SYM:
 		(void) snprintf(str, 1024, "sym -%s-",
@@ -428,6 +428,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_LOC", arg1);
 			PUSH(LOC(arg1));
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(LOC(arg1)));
 			break;
 		}
 		case LABI_ARG: {
@@ -449,8 +450,8 @@ void vm_execute_bc(void) {
 			ip_g++;
 			POP(obj);
 			POP(addr);
+			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
 			*addr = obj;
-			vm_debug(DBG_BC, " - %s\n", kek_obj_print(obj));
 			break;
 		}
 		case IDX: {
@@ -471,6 +472,7 @@ void vm_execute_bc(void) {
 			if (IS_ARR(obj)) {
 				if (idx_n < obj->k_arr.length) {
 					PUSH(obj->k_arr.elems[idx_n]);
+					vm_debug(DBG_BC, " - %s\n", kek_obj_print(obj->k_arr.elems[idx_n]));
 				} else {
 					vm_error(
 							"Array index (%d) out of bounds. Array length is %d\n",
@@ -502,7 +504,7 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
-				PUSH(&obj->k_arr.elems[INT_VAL(idx)]);
+				PUSH(&obj->k_arr.elems[idx_n]);
 			} else {
 				vm_error("Invalid object or index.\n");
 			}
@@ -868,6 +870,7 @@ void vm_execute_bc(void) {
 			obj = THIS;
 			assert(IS_UDO(obj));
 			PUSH(obj->k_udo.inst_var[arg1]);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(obj->k_udo.inst_var[arg1]));
 			break;
 		}
 		case LVBS_IVE: {

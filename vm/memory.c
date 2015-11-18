@@ -29,7 +29,7 @@ void realloc_arr_elems(struct _kek_array * arr, int length) {
 		arr->alloc_size *= 2;
 	}
 
-	arr->elems = realloc(arr->elems, arr->alloc_size);
+	arr->elems = realloc(arr->elems, arr->alloc_size * sizeof(kek_obj_t*));
 }
 
 kek_obj_t * alloc_string(class_t * str_class, int length) {
