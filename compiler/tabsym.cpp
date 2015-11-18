@@ -182,9 +182,8 @@ PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me, bool recursive
 	if (me) {
 		FIND_SYM(me->syms);	// Try to search through local vars first
 		FIND_SYM(me->args); // Then try method args
+		if (!recursive) return NULL;
 	}
-
-	if (!recursive) return NULL;
 
 	// If we get here, we try class members
 	if (ce == CLASS_ANY) {
@@ -200,6 +199,8 @@ PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me, bool recursive
 	}
 
 	FIND_SYM(ce->syms);
+
+	if (!recursive) return NULL;
 
 	if (ce->parent) {
 		return hledejMember(id, ce->parent, NULL);
