@@ -6,6 +6,7 @@ OBJS=\
 	k_array.o \
 	k_string.o \
 	k_file.o \
+	k_sys.o \
 	loader.o \
 	stack.o \
 	vm.o \
@@ -14,7 +15,7 @@ OBJS=\
 kek: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
-$(OBJS): stack.h vm.h types.h bc.h loader.h k_integer.h k_array.h k_string.h k_file.h memory.h
+$(OBJS): stack.h vm.h types.h bc.h loader.h k_integer.h k_array.h k_string.h k_file.h k_sys.h memory.h
 
 clean:
 	rm $(OBJS)

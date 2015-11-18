@@ -28,7 +28,7 @@ void init_kek_file_class(void) {
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "close", 0, false, file_close);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "readln", 0, false, file_readln);
-	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "writeln", 1, false, file_readln);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "writeln", 1, false, file_writeln);
 
 	classes_g[classes_cnt_g].allocator = alloc_file;
 
@@ -107,8 +107,22 @@ void file_readln(void) {
 	free(buf);
 	PUSH(str);
 	BC_RET;
+	// TODO: error handling
 }
 
 void file_writeln(void) {
-	// TODO: implement
+	kek_file_t * fil = (kek_file_t*)THIS;
+	kek_obj_t * str = ARG(0);
+
+	if (!fil->f_handle) {
+		vm_error("Invalid file handle.\n");
+	}
+	if (!IS_STR(str)) {
+		vm_error("Expected string as argument.\n");
+	}
+
+	fputs(str->k_str.string, fil->f_handle);
+	PUSH(NIL);
+	BC_RET;
+	// TODO: error handling
 }

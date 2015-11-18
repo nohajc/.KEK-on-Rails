@@ -1,0 +1,14 @@
+class Main {
+	static main(args) {
+		var str = ""
+		while (str != "exit\n") {
+			write "> "
+			str = Sys.in.readln()
+			if (!str) {
+				write "\n"
+				break
+			}
+			Sys.out.writeln(str)
+		}
+	}
+}

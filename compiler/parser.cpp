@@ -592,7 +592,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 				curr_cls = env.clsEnv;
 				env.self = false;
 				env.clsEnv = CLASS_ANY;
-				return new ObjRef(id, (env.clsEnv == CLASS_ANY ? SC_INSTANCE : SC_CLASS), offset,
+				return new ObjRef(id, (curr_cls == CLASS_ANY ? SC_INSTANCE : SC_CLASS), offset,
 					true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rvalue, external));
 			}
 		}

@@ -17,6 +17,7 @@
 #include "k_string.h"
 #include "k_integer.h"
 #include "k_file.h"
+#include "k_sys.h"
 #include "stack.h"
 #include "memory.h"
 
@@ -114,6 +115,7 @@ void vm_init_builtin_classes(void) {
 	init_kek_array_class();
 	init_kek_string_class();
 	init_kek_file_class();
+	init_kek_sys_class();
 }
 
 void vm_init_parent_pointers(void) {

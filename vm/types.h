@@ -80,6 +80,7 @@ typedef union _kek_obj {
 	kek_string_t k_str;
 	kek_symbol_t k_sym;
 	kek_array_t k_arr;
+	kek_file_t k_fil;
 	kek_udo_t k_udo;
 } kek_obj_t;
 
