@@ -113,8 +113,8 @@ typedef union _kek_obj {
 #define IS_NIL(obj) (IS_PTR(obj) && (obj)->h.t == KEK_NIL)
 #define IS_STR(obj) (IS_PTR(obj) && (obj)->h.t == KEK_STR)
 #define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
-#define IS_ARR(obj) ((obj)->h.t == KEK_ARR)
-#define IS_UDO(obj) ((obj)->h.t == KEK_UDO)
+#define IS_ARR(obj) (IS_PTR(obj) && (obj)->h.t == KEK_ARR)
+#define IS_UDO(obj) (IS_PTR(obj) && (obj)->h.t == KEK_UDO)
 #define IS_CLASS(obj) ((obj)->h.t == KEK_CLASS)
 
 #define NIL CONST(0)

@@ -3,15 +3,24 @@
 
 class Scheme {
 	static var input
+	static var out
+
+	static Scheme() {
+		out = Sys.out
+	}
 
 	static REPL() {
 		var expr
 		while(1) {
-			Sys.out.writeln("> ")
+			out.writeln("> ")
 			expr = input.read()
 			if (!expr) {
-				Sys.out.writeln("\n")
+				out.writeln("\n")
 				break
+			}
+			else {
+				out.writeln(expr);
+				out.writeln("\n");
 			}
 		}
 	}

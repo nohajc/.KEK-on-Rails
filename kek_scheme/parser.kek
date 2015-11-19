@@ -1,3 +1,5 @@
+#include "types.kek"
+
 class Parser {
 	var rd
 
@@ -40,7 +42,7 @@ class Parser {
 			i++
 		}
 
-		return token
+		return String.fromArray(token)
 	}
 
 	readList() {

@@ -22,13 +22,14 @@ void init_kek_string_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 3;
+	classes_g[classes_cnt_g].methods_cnt = 4;
 
 	classes_g[classes_cnt_g].methods = malloc(
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0, false, string_length);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "split", 1, false, string_split);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "toInt", 0, false, string_toInt);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[3], "fromArray", 1, true, string_fromArray);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -101,5 +102,36 @@ void string_toInt(void) {
 	}
 	kek_n = make_integer(n);
 	PUSH(kek_n);
+	BC_RET;
+}
+
+void string_fromArray(void) {
+	kek_obj_t * obj = ARG(0);
+	kek_array_t * arr;
+	kek_obj_t * str;
+	int i;
+	char * buf;
+
+	if (!IS_ARR(obj)) {
+		vm_error("Expected array as argument.\n");
+	}
+
+	arr = &obj->k_arr;
+	buf = malloc((arr->length + 1) * sizeof(char));
+
+	for (i = 0; i < arr->length; ++i) {
+		kek_obj_t * el = arr->elems[i];
+		if (IS_CHAR(el)) {
+			buf[i] = CHAR_VAL(el);
+		}
+		else {
+			buf[i] = ' ';
+		}
+	}
+	buf[i] = '\0';
+	str = new_string_from_cstring(buf);
+	free(buf);
+
+	PUSH(str);
 	BC_RET;
 }
