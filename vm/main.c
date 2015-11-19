@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "loader.h"
+#include "memory.h"
 #include "vm.h"
 
 uint32_t debug_level_g = 0;
@@ -22,9 +23,21 @@ void usage(const char *progname) {
 
 void free_globals() {
 	uint32_t i;
+	uint32_t j;
 
 	if (classes_g != NULL) {
 		for (i = 0; i < classes_cnt_g; i++) {
+			/* why this doesn't work? */
+			for (j = 0; j < classes_g[i].syms_instance_cnt; j++) {
+				//free(classes_g[i].syms_instance[i].name);
+				//free(classes_g[i].syms_instance[i].value);
+			}
+
+			for (j = 0; j < classes_g[i].syms_static_cnt; j++) {
+				//free(classes_g[i].syms_static[i].name);
+				//free(classes_g[i].syms_static[i].value);
+			}
+
 			class_free(&classes_g[i]);
 		}
 	}
@@ -36,6 +49,8 @@ void free_globals() {
 	/* free the buffer inside */
 	(void) kek_obj_print(NULL);
 #endif
+
+	gc_delete_all();
 }
 
 void debug_add(char *level) {
@@ -51,6 +66,8 @@ void debug_add(char *level) {
 		debug_level_g |= DBG_VM;
 	} else if (strcmp(level, "a") == 0 || strcmp(level, "all") == 0) {
 		debug_level_g |= DBG_ALL;
+	} else if (strcmp(level, "g") == 0 || strcmp(level, "gc") == 0) {
+		debug_level_g |= DBG_GC;
 	}
 }
 

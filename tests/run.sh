@@ -13,7 +13,7 @@ make -C compiler
 valgrind --leak-check=full --track-origins=yes -q  $compilerdir/main $testsdir/hello_world.ke{k,xe}
 
 make -C vm
-valgrind --leak-check=full --track-origins=yes -q  $vmdir/kek $@ $testsdir/hello_world.kexe
+valgrind --leak-check=full --track-origins=yes -q  $vmdir/kek $@ $testsdir/hello_world.kexe yo feel the flow
 
 set +exv
 

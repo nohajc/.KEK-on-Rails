@@ -43,11 +43,21 @@ extern segment_t *segments_g;
 /******************************************************************************/
 /* gc */
 
+typedef struct _gc_obj {
+	kek_obj_t *obj;
+	size_t size;
+	struct _gc_obj *next;
+} gc_obj_t;
+
 #define GC_TICKS_DEFAULT 10
 extern int gc_ticks_g; /* how often will gc run */
+extern gc_obj_t *gc_obj_g;
+extern gc_obj_t *gc_obj_root_g;
 
 /* this function will be called from the main loop in vm */
 void gc(void);
+void gc_delete_all(void);
+
 
 /******************************************************************************/
 

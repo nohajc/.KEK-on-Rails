@@ -8,6 +8,58 @@
 #include <assert.h>
 #include "memory.h"
 
+gc_obj_t *gc_obj_g = NULL;
+gc_obj_t *gc_obj_root_g = NULL;
+
+void gc_obj_add(kek_obj_t *obj, size_t size) {
+	gc_obj_t *go;
+
+	vm_debug(DBG_GC, "gc_obj_add objptr=%p\n");
+
+	go = malloc(sizeof(gc_obj_t));
+	assert(go);
+
+	go->obj = obj;
+	go->size = size;
+	go->next = NULL;
+
+	if (gc_obj_root_g == NULL) {
+		gc_obj_root_g = go;
+		gc_obj_g = gc_obj_root_g;
+	} else {
+		gc_obj_g->next = go;
+		gc_obj_g = go;
+	}
+}
+
+void gc_obj_free(gc_obj_t *obj) {
+	switch (obj->obj->h.t) {
+	case KEK_ARR:
+		/* TODO FIXME: shouldn't we delete also the elems? */
+		free(obj->obj->k_arr.elems);
+		break;
+	default:
+		break;
+	}
+
+	free(obj->obj);
+	free(obj);
+}
+
+void gc_delete_all() {
+	gc_obj_t *gcptr = gc_obj_root_g;
+	gc_obj_t *gcptr_next;
+
+	vm_debug(DBG_GC, "gc_delete_all\n");
+
+	while (gcptr != NULL) {
+		vm_debug(DBG_GC, "gc_delete_all objptr=%p\n", gcptr->obj);
+		gcptr_next = gcptr->next;
+		gc_obj_free(gcptr);
+		gcptr = gcptr_next;
+	}
+}
+
 /******************************************************************************/
 /* memory managment */
 
@@ -41,7 +93,8 @@ inline void *mem_obj_malloc(type_t type, class_t *cls, size_t size) {
 
 	obj->h.t = type;
 	obj->h.cls = cls;
-	obj->h.size = size;
+
+	gc_obj_add(obj, size);
 
 	return (obj);
 }
@@ -54,7 +107,8 @@ inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) 
 
 	obj->h.t = type;
 	obj->h.cls = cls;
-	obj->h.size = size;
+
+	gc_obj_add(obj, size);
 
 	return (obj);
 }

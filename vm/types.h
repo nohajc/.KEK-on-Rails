@@ -23,7 +23,6 @@ typedef enum _type {
 typedef struct _header {
 	type_t t;
 	struct _class * cls; /* Each object needs a pointer to its class. */
-	size_t size; /* total size of the object */
 } header_t;
 
 /* nil - immutable, singleton */
