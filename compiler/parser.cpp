@@ -809,13 +809,13 @@ Statm * Prikaz(Env env, Context ctxt) {
 	case kwWRITE:
 		Symb = readLexem();
 		return new Write(Vyraz(env));
-	case kwREAD:
+	/*case kwREAD:
 		Symb = readLexem();
 		var = dynamic_cast<Var*>(Ident(env, false)); // var
 		if (!var) {
 			Chyba("Ocekava se promenna.");
 		}
-		return new Read(var);
+		return new Read(var);*/
 	case kwIF: {
 		Symb = readLexem();
 		Srovnani(LPAR);

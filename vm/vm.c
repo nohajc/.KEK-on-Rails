@@ -58,11 +58,11 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 
 	/* vm_debug(DBG_STACK | DBG_STACK_FULL, "kek_obj = %p\n", kek_obj); */
 	if (!IS_PTR(kek_obj)) {
-		if (IS_INT(kek_obj)) {
-			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
-		}
-		else if (IS_CHAR(kek_obj)) {
+		if (IS_CHAR(kek_obj)) {
 			(void) snprintf(str, 1024, "char -%c-", CHAR_VAL(kek_obj));
+		}
+		else if (IS_INT(kek_obj)) {
+			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
 		}
 	}
 	else {
@@ -292,7 +292,23 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if (IS_INT(a) && IS_INT(b)) {
+	if (IS_NIL(a) || IS_NIL(b)) {
+		kek_int_t *res;
+
+		switch (o) {
+		case Eq:
+			res = make_integer(a == b);
+			break;
+		case NotEq:
+			res = make_integer(a != b);
+			break;
+		default:
+		vm_error("bc_bop: unsupported bop %d\n", o);
+		break;
+		}
+		return (kek_obj_t*) res;
+	}
+	else if (IS_INT(a) && IS_INT(b)) {
 		kek_int_t *res;
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
@@ -397,8 +413,10 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		return (kek_obj_t*) res;
 	} else {
 		// TODO: implement operations for other types
-		vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
-				type_str[a->h.t], type_str[b->h.t]);
+		/*vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
+				type_str[a->h.t], type_str[b->h.t]);*/
+		// TODO: macro for object type
+		vm_error("Cannot apply operation %s.\n", bop_str[o]);
 	}
 	return NULL;
 }
@@ -664,6 +682,7 @@ void vm_execute_bc(void) {
 				vm_error("%s has no method %s.\n",
 						(static_call ? "Class" : "Object"), sym->k_sym.symbol);
 			}
+			vm_debug(DBG_BC, " - method name: %s\n", sym->k_sym.symbol);
 			if (mth->args_cnt != arg2) {
 				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}

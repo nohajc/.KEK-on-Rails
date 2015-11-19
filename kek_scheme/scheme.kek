@@ -1,0 +1,25 @@
+#include "reader.kek"
+#include "parser.kek"
+
+class Scheme {
+	static var input
+
+	static REPL() {
+		var expr
+		while(1) {
+			Sys.out.writeln("> ")
+			expr = input.read()
+			if (!expr) {
+				Sys.out.writeln("\n")
+				break
+			}
+		}
+	}
+
+	static main(args) {
+		var rd = new Reader(Sys.in)
+		input = new Parser(rd)
+
+		REPL()
+	}
+}

@@ -1,0 +1,32 @@
+class Reader {
+	var f, line, idx, len, last
+
+	Reader(f) {
+		this.f = f
+		idx = 1
+		len = 1
+		last = nil
+	}
+
+	readChar() {
+		if (idx == -1) {
+			idx++
+			return last
+		}
+		if (!len) return nil
+		if (idx < len) {
+			last = line[idx]
+			idx++
+			return last
+		}
+		line = f.readln()
+		if (!line) len = 0
+		else len = line.length()
+		idx = 0
+		return readChar()
+	}
+
+	unreadChar() {
+		idx--
+	}
+}

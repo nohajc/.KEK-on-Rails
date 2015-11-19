@@ -13,7 +13,7 @@ typedef enum {
 const char *symbTable[] = { "IDENT", "NUMB", "STR", "PLUS", "MINUS", "TIMES",
 		"DIVIDE", "MODULO", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "LPAR", "RPAR",
 		"ASSIGN", "COMMA", "SEMICOLON", "NEWLINE", "kwVAR", "kwCONST", "LCURLY", "RCURLY",
-		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE", "kwREAD",
+		"kwIF", "kwTHEN", "kwELSE", "kwWHILE", "kwDO", "kwWRITE",
 		"EOI", "ERR" /* <nesro> */, "kwSWITCH", "kwCASE", "kwDEFAULT", "DOT", "DOUBLE_DOT",
 		"COLON", "DASH", "kwINTEGER", "kwRECORD", "LBRAC", "RBRAC", "kwFOR", "kwTO", "kwDOWNTO", "kwBREAK",
 		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN", "INCREMENT", "DECREMENT",
@@ -57,7 +57,6 @@ const struct {
 		{ "while", kwWHILE }, //
 //		{ "do", kwDO }, //
 		{ "write", kwWRITE }, //
-		{ "read", kwREAD }, //
 		{ "switch", kwSWITCH },
 		{ "case", kwCASE }, //
 		{ "default", kwDEFAULT }, //

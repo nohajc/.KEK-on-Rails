@@ -1,0 +1,55 @@
+class Parser {
+	var rd
+
+	Parser(rd) {
+		this.rd = rd
+	}
+
+	isWS(c) {
+		return (c == " " || c == "\t" || c == "\n")
+	}
+
+	skipWS() {
+		var c = rd.readChar()
+
+		while (c != nil && isWS(c)) {
+			c = rd.readChar()
+		}
+
+		return c
+	}
+
+	readAtom(firstC) {
+		var token = []
+		var i = 0
+		var c
+
+		if (firstC == nil) {
+			return nil
+		}
+		token[i] = firstC
+		i++
+
+		while (1) {
+			c = rd.readChar()
+			if (isWS(c) || c == ")" || c == nil) {
+				rd.unreadChar()
+				break
+			}
+			token[i] = c
+			i++
+		}
+
+		return token
+	}
+
+	readList() {
+	}
+
+	read() {
+		var firstC = skipWS()
+
+		if (firstC == "(") return readList()
+		return readAtom(firstC)
+	}
+}
