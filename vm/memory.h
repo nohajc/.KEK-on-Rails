@@ -22,4 +22,33 @@ union _kek_obj * alloc_string(struct _class * str_class, int length);
 union _kek_obj * alloc_udo(struct _class * arr_class);
 union _kek_obj * alloc_file(struct _class * file_class);
 
+
+
+/******************************************************************************/
+/* memory managment */
+
+/* from claus */
+#define SEGMENT_SIZE (64*1024)
+#define OBJ_ALIGN sizeof(double)
+#define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
+#define ALIGNED_SIZE_OF(obj) ALIGNED((obj)->h.size)
+
+typedef struct _segment {
+	size_t size;
+	struct _segment *next;
+} segment_t;
+
+extern segment_t *segments_g;
+
+/******************************************************************************/
+/* gc */
+
+#define GC_TICKS_DEFAULT 10
+extern int gc_ticks_g; /* how often will gc run */
+
+/* this function will be called from the main loop in vm */
+void gc(void);
+
+/******************************************************************************/
+
 #endif

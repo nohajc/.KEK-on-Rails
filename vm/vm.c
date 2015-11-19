@@ -57,7 +57,7 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 	}
 
 	/* vm_debug(DBG_STACK | DBG_STACK_FULL, "kek_obj = %p\n", kek_obj); */
-	switch (kek_obj->type) {
+	switch (kek_obj->h.t) {
 	case KEK_INT:
 		(void) snprintf(str, 1024, "int -%d-", ((kek_int_t *) kek_obj)->value);
 		break;
@@ -79,7 +79,7 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 		(void) snprintf(str, 1024, "udo");
 		break;
 	default:
-		(void) snprintf(str, 1024, "unknown type %d", kek_obj->type);
+		(void) snprintf(str, 1024, "unknown type %d", kek_obj->h.t);
 		/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
 		 assert(0 && "unhandled kek_obj->type"); */
 		break;
@@ -399,11 +399,12 @@ void vm_execute_bc(void) {
 	class_t * cls;
 	method_t * mth;
 	uint16_t arg1, arg2;
+	int tick;
 	enum {
 		E, I, S
 	} call_type;
 
-	while (true) {
+	for (tick = 0;; tick++) {
 		call_type = -1;
 		op_c = bc_arr_g[ip_g];
 		decode_instr: // For debugging (gdb can set a breakpoint at label)
@@ -925,6 +926,11 @@ void vm_execute_bc(void) {
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
 			break;
+		} /* switch */
+
+		if (tick >= gc_ticks_g) {
+			tick = 0;
+			gc();
 		}
-	}
-}
+	} /* for */
+} /* vm_execute_bc */

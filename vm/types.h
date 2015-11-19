@@ -23,6 +23,7 @@ typedef enum _type {
 typedef struct _header {
 	type_t t;
 	struct _class * cls; /* Each object needs a pointer to its class. */
+	size_t size; /* total size of the object */
 } header_t;
 
 /* nil - immutable, singleton */
@@ -69,9 +70,6 @@ typedef struct _kek_udo {
 	header_t h;
 	union _kek_obj * inst_var[1]; /* inst_var[syms_instance_cnt] */
 } kek_udo_t;
-
-/* shortcut to type of the kek_obj_t */
-#define type h.t
 
 typedef union _kek_obj {
 	header_t h;
