@@ -24,16 +24,28 @@ class Parser {
 	readAtom(firstC) {
 		var token = []
 		var i = 0
-		var c
+		var c, n
+		var isString = 0
+		var str
 
 		if (firstC == nil) {
 			return nil
 		}
-		token[i] = firstC
-		i++
+		if (firstC == "\"") {
+			isString = 1
+		}
+		else {
+			token[i] = firstC
+			i++
+		}
 
 		while (1) {
 			c = rd.readChar()
+			if (isString) {
+				if (c == "\"") break
+				// Todo: throw exception
+				if (c == nil) return nil
+			}
 			if (isWS(c) || c == ")" || c == nil) {
 				rd.unreadChar()
 				break
@@ -42,7 +54,14 @@ class Parser {
 			i++
 		}
 
-		return String.fromArray(token)
+		str = String.fromArray(token)
+		if (isString) return new scmString(str)
+		n = str.toInt()
+		if (n) return new scmInteger(n)
+		if (str == "#t") return G.scmTrue
+		if (str == "#f") return G.scmFalse
+		if (str == "#nil") return G.scmNil
+		return new scmSymbol(str)
 	}
 
 	readList() {

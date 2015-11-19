@@ -166,6 +166,9 @@ method_t * vm_find_method_in_class(class_t * cls, const char * name,
 		bool is_static) {
 	uint32_t i;
 
+	if (cls->constructor && !strcmp(cls->constructor->name, name)) {
+		return cls->constructor;
+	}
 	for (i = 0; i < cls->methods_cnt; ++i) {
 		if (!strcmp(cls->methods[i].name, name)
 				&& cls->methods[i].is_static == is_static) {
