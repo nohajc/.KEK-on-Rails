@@ -811,6 +811,7 @@ void vm_execute_bc(void) {
 			}
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
 					cls->syms_static[arg1].name);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls->syms_static[arg1].value));
 			PUSH(cls->syms_static[arg1].value);
 			break;
 		}
@@ -826,6 +827,7 @@ void vm_execute_bc(void) {
 			}
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
 					cls->syms_static[arg1].name);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls->syms_static[arg1].value));
 			PUSH(cls->syms_static[arg1].value);
 			break;
 		}

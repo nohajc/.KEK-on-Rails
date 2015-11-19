@@ -66,6 +66,7 @@ public:
 	Call(Expr *, ArgList *, bool);
 	virtual ~Call();
 	virtual uint32_t Translate();
+	virtual Node *Optimize();
 	virtual void Print(int);
 };
 
@@ -102,6 +103,7 @@ class ParentRef: public Var {
 public:
 	ParentRef(bool, Expr *);
 	virtual uint32_t Translate();
+	virtual Node *Optimize();
 	virtual void Print(int);
 };
 
@@ -121,6 +123,7 @@ public:
 	New(MethodRef *, ArgList *);
 	virtual ~New();
 	virtual uint32_t Translate();
+	virtual Node *Optimize();
 	virtual void Print(int);
 };
 
@@ -335,6 +338,7 @@ class Return: public Statm {
 public:
 	Return(Expr *);
 	virtual ~Return();
+	virtual Node *Optimize();
 	virtual uint32_t Translate();
 	virtual void Print(int);
 };
