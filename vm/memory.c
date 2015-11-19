@@ -24,6 +24,12 @@ void alloc_arr_elems(kek_array_t * arr) {
 	arr->alloc_size = ARR_INIT_SIZE;
 }
 
+kek_obj_t ** alloc_const_arr_elems(int length) {
+	kek_obj_t ** elems = malloc(length * sizeof(kek_obj_t*));
+	assert(elems);
+	return elems;
+}
+
 void realloc_arr_elems(struct _kek_array * arr, int length) {
 	while (arr->alloc_size < length) {
 		arr->alloc_size *= 2;

@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
 
 	vm_init_builtin_classes();
 	vm_init_parent_pointers();
+	vm_init_const_table_elems();
 
 	stack_init();
 	// Call static initializers of all classes

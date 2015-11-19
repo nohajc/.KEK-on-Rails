@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -137,6 +138,50 @@ void vm_init_parent_pointers(void) {
 		} else {
 			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
 			assert(classes_g[i].parent != NULL);
+		}
+	}
+}
+
+// Init class pointers and fix array layout
+void vm_init_const_table_elems(void) {
+	uint8_t * ptr = const_table_g;
+	class_t * str_cls = vm_find_class("String");
+	class_t * arr_cls = vm_find_class("Array");
+	constant_array_t * c_arr;
+	int i;
+	kek_obj_t ** elems;
+
+	while (ptr != const_table_g + const_table_cnt_g) {
+		kek_obj_t * obj = (kek_obj_t*) ptr;
+		switch (obj->h.t) {
+		case KEK_NIL:
+			ptr += sizeof(kek_nil_t);
+			break;
+		case KEK_INT:
+			ptr += sizeof(kek_int_t);
+			break;
+		case KEK_STR:
+			obj->h.cls = str_cls;
+			ptr += sizeof(kek_string_t) + obj->k_str.length;
+			break;
+		case KEK_SYM:
+			ptr += sizeof(kek_symbol_t) + obj->k_sym.length;
+			break;
+		case KEK_ARR:
+			obj->h.cls = arr_cls;
+
+			c_arr = (constant_array_t*) obj;
+			elems = alloc_const_arr_elems(obj->k_arr.length);
+			obj->k_arr.alloc_size = obj->k_arr.length;
+
+			for (i = 0; i < c_arr->length; ++i) {
+				elems[i] = CONST(c_arr->elems[i]);
+			}
+			obj->k_arr.elems = elems;
+
+			ptr += sizeof(constant_array_t) + (obj->k_arr.length - 1) * sizeof(uint32_t);
+			break;
+		default:;
 		}
 	}
 }

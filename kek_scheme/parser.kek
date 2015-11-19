@@ -46,7 +46,7 @@ class Parser {
 				// Todo: throw exception
 				if (c == nil) return nil
 			}
-			if (isWS(c) || c == ")" || c == nil) {
+			else if (isWS(c) || c == ")" || c == nil) {
 				rd.unreadChar()
 				break
 			}
