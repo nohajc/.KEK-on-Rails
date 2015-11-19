@@ -65,6 +65,14 @@ class Parser {
 	}
 
 	readList() {
+		var firstC = skipWS()
+
+		if (firstC == ")") return G.scmNil
+		rd.unreadChar()
+
+		var car = read()
+		var cdr = readList()
+		return new scmCons(car, cdr)
 	}
 
 	read() {

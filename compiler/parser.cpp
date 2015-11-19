@@ -626,7 +626,8 @@ Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 			external = !env.self;
 			return new MethodRef(id);
 		}
-		Chyba("Volana metoda neexistuje.");
+		//Chyba("Volana metoda neexistuje.");
+		return new MethodRef(id);
 		break;
 	default: // var/const
 		external = !env.self;
