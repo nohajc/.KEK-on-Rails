@@ -60,7 +60,12 @@ kek_obj_t * alloc_integer(void) {
 kek_obj_t * alloc_udo(class_t * udo_class) {
 	// Calloc is used to avoid valgrind warnings about
 	// invalid reads/writes to uninitialized memory
-	kek_obj_t * ret = calloc(sizeof(kek_udo_t) + (udo_class->syms_instance_cnt - 1) * sizeof(kek_obj_t), 1);
+	uint32_t syms_cnt = udo_class->syms_instance_cnt;
+	if (syms_cnt) {
+		// Add symbols from parents
+		syms_cnt += udo_class->syms_instance[0].addr;
+	}
+	kek_obj_t * ret = calloc(sizeof(kek_udo_t) + (syms_cnt - 1) * sizeof(kek_obj_t), 1);
 	assert(ret);
 
 	ret->h.t = KEK_UDO;
