@@ -9,7 +9,8 @@
 
 #include "types.h"
 
-void new_integer(void);
-void native_new_integer(kek_int_t * n, int value);
+void new_integer(void); // Constructor only
+void native_new_integer(kek_int_t * n, int value); // Constructor only
+kek_int_t * make_integer(int value); // Allocation and constructor in one
 
 #endif

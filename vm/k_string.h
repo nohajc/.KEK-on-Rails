@@ -13,5 +13,6 @@ void init_kek_string_class(void);
 union _kek_obj * new_string_from_cstring(const char *);
 void string_length(void);
 void string_split(void);
+void string_toInt(void);
 
 #endif
