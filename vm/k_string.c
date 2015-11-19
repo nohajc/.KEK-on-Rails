@@ -22,7 +22,7 @@ void init_kek_string_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 4;
+	classes_g[classes_cnt_g].methods_cnt = 5;
 
 	classes_g[classes_cnt_g].methods = malloc(
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
@@ -30,6 +30,7 @@ void init_kek_string_class(void) {
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "split", 1, false, string_split);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "toInt", 0, false, string_toInt);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[3], "fromArray", 1, true, string_fromArray);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[4], "fromInt", 1, true, string_fromInt);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -102,6 +103,22 @@ void string_toInt(void) {
 	}
 	kek_n = make_integer(n);
 	PUSH(kek_n);
+	BC_RET;
+}
+
+void string_fromInt(void) {
+	kek_obj_t * obj = ARG(0);
+	kek_obj_t * str;
+	char buf[16];
+
+	if (!IS_INT(obj)) {
+		vm_error("Expected integer as argument.\n");
+	}
+
+	sprintf(buf, "%d", obj->k_int.value);
+	str = new_string_from_cstring(buf);
+
+	PUSH(str);
 	BC_RET;
 }
 
