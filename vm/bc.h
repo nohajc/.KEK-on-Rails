@@ -87,7 +87,7 @@ typedef enum _bc {
 
 	NEW, /* arg: index to constant table.
 	 creates a new object and returns its address */
-	RETVOID
+	RET_SELF
 } bc_t;
 
 #endif /* BC_H_ */

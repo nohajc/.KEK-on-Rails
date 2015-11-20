@@ -17,7 +17,7 @@ void new_integer(void) {
 
 	native_new_integer(n, value);
 
-	BC_RETVOID;
+	BC_RET_SELF;
 }
 
 void native_new_integer(kek_int_t * n, int value) {

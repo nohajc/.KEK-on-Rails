@@ -898,7 +898,7 @@ uint32_t Method::Translate() {
 
 uint32_t Return::Translate() {
 	if (!expr) {
-		bco_w0(bcout_g, RETVOID);
+		bco_w0(bcout_g, RET_SELF);
 	}
 	else {
 		expr->Translate();

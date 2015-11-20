@@ -59,7 +59,7 @@ void new_file(void) {
 	vm_debug(DBG_BC, "Opened file with handle %p.\n", fil->f_handle);
 	// TODO: error handling - we need exceptions
 
-	BC_RETVOID;
+	BC_RET_SELF;
 }
 
 void file_close(void) {

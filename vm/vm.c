@@ -754,9 +754,9 @@ void vm_execute_bc(void) {
 			}
 			break;
 		}
-		case RETVOID: {
-			vm_debug(DBG_BC, "%s\n", "RETVOID");
-			BC_RETVOID;
+		case RET_SELF: {
+			vm_debug(DBG_BC, "%s\n", "RET_SELF");
+			BC_RET_SELF;
 			//vm_debug("ret_addr = %d\n", ip_g);
 			if (ip_g == NATIVE) {
 				return;

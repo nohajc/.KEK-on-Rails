@@ -51,7 +51,7 @@ void new_array(void) {
 	kek_array_t * arr = (kek_array_t*)THIS;
 	native_new_array(arr);
 
-	BC_RETVOID;
+	BC_RET_SELF;
 }
 
 void native_new_array(kek_array_t * arr) {
