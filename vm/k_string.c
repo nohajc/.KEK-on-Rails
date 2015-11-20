@@ -95,8 +95,8 @@ void string_split(void) {
 void string_toInt(void) {
 	kek_string_t * str = (kek_string_t*)THIS;
 	kek_int_t * kek_n;
-	int n;
-	if (sscanf(str->string, "%d", &n) != 1) {
+	int n, pos;
+	if (sscanf(str->string, "%d%n", &n, &pos) != 1 || pos != str->length) {
 		PUSH(NIL);
 		BC_RET;
 		return;
