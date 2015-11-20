@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include "types.h"
+#include "k_integer.h"
 
 /******************************************************************************/
 /* stack **********************************************************************/
@@ -42,10 +43,10 @@ kek_obj_t* stack_top();
 #define TOP(obj) (obj) = (void*)stack_top()
 
 #define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
-	PUSH(ret); \
-	PUSH(ap_g); \
+	PUSH(make_integer(ret)); \
+	PUSH(make_integer(ap_g)); \
 	ap_g = sp_g - (arg_cnt) - 3; \
-	PUSH(fp_g); \
+	PUSH(make_integer(fp_g)); \
 	fp_g = sp_g; \
 	sp_g = sp_g + (locals_cnt); \
 	ip_g = entry; \
@@ -54,9 +55,9 @@ kek_obj_t* stack_top();
 #define BC_RET do { \
 	kek_obj_t* ret_val = stack_pop(); \
 	sp_g = ap_g; \
-	uint32_t ret_addr = (size_t)stack_g[fp_g - 3]; \
-	ap_g = (size_t)stack_g[fp_g - 2]; \
-	fp_g = (size_t)stack_g[fp_g - 1]; \
+	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
+	ap_g = (size_t)INT_VAL(stack_g[fp_g - 2]); \
+	fp_g = (size_t)INT_VAL(stack_g[fp_g - 1]); \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 } while (0)
@@ -64,9 +65,9 @@ kek_obj_t* stack_top();
 #define BC_RET_SELF { \
 	kek_obj_t* ret_val = THIS; \
 	sp_g = ap_g; \
-	uint32_t ret_addr = (size_t)stack_g[fp_g - 3]; \
-	ap_g = (size_t)stack_g[fp_g - 2]; \
-	fp_g = (size_t)stack_g[fp_g - 1]; \
+	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
+	ap_g = (size_t)INT_VAL(stack_g[fp_g - 2]); \
+	fp_g = (size_t)INT_VAL(stack_g[fp_g - 1]); \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 }
