@@ -1,0 +1,84 @@
+#include "types.kek"
+
+class Parser {
+	var rd
+
+	Parser(rd) {
+		this.rd = rd
+	}
+
+	isWS(c) {
+		return (c == " " || c == "\t" || c == "\n")
+	}
+
+	skipWS() {
+		var c = rd.readChar()
+
+		while (c != nil && isWS(c)) {
+			c = rd.readChar()
+		}
+
+		return c
+	}
+
+	readAtom(firstC) {
+		var token = []
+		var i = 0
+		var c, n
+		var isString = 0
+		var str
+
+		if (firstC == nil) {
+			return nil
+		}
+		if (firstC == "\"") {
+			isString = 1
+		}
+		else {
+			token[i] = firstC
+			i++
+		}
+
+		while (1) {
+			c = rd.readChar()
+			if (isString) {
+				if (c == "\"") break
+				// Todo: throw exception
+				if (c == nil) return nil
+			}
+			else if (isWS(c) || c == "(" || c == ")" || c == nil) {
+				rd.unreadChar()
+				break
+			}
+			token[i] = c
+			i++
+		}
+
+		str = String.fromArray(token)
+		if (isString) return new scmString(str)
+		n = str.toInt()
+		if (n) return new scmInteger(n)
+		if (str == "#t") return G.scmTrue
+		if (str == "#f") return G.scmFalse
+		if (str == "#nil") return G.scmNil
+		return new scmSymbol(str)
+	}
+
+	readList() {
+		var firstC = skipWS()
+
+		if (firstC == ")") return G.scmNil
+		rd.unreadChar()
+
+		var car = read()
+		var cdr = readList()
+		return new scmCons(car, cdr)
+	}
+
+	read() {
+		var firstC = skipWS()
+
+		if (firstC == "(") return readList()
+		return readAtom(firstC)
+	}
+}

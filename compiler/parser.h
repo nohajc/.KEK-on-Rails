@@ -24,7 +24,7 @@ Statm *Prikaz(Env env, Context ctxt = C_NIL);
 ArgList * Args(Env env);
 ArgList * ZbArgs(Env env);
 Expr * Ident(Env, bool);
-Expr * ZbIdent(Env, bool, bool&);
+Expr * ZbIdent(Env, Env, bool, bool&);
 Statm *AssignmentOrCall(Env);
 Statm * Assignment(Env env, Var * lvalue = NULL);
 Statm *CastElse(Env env, Context ctxt = C_NIL);

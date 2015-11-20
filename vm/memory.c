@@ -135,6 +135,12 @@ void alloc_arr_elems(kek_array_t * arr) {
 	arr->alloc_size = ARR_INIT_SIZE;
 }
 
+kek_obj_t ** alloc_const_arr_elems(int length) {
+	kek_obj_t ** elems = malloc(length * sizeof(kek_obj_t*));
+	assert(elems);
+	return elems;
+}
+
 void realloc_arr_elems(struct _kek_array * arr, int length) {
 	while (arr->alloc_size < length) {
 		arr->alloc_size *= 2;
@@ -153,10 +159,16 @@ kek_obj_t * alloc_integer(void) {
 }
 
 kek_obj_t * alloc_udo(class_t * udo_class) {
-	/* Calloc is used to avoid valgrind warnings about invalid reads/writes
-	 * to uninitialized memory */
-	return (mem_obj_calloc(KEK_UDO, udo_class, udo_class->syms_instance_cnt - 1,
-			sizeof(kek_udo_t)));
+	/* Calloc is used to avoid valgrind warnings about
+	 * invalid reads/writes to uninitialized memory */
+	uint32_t syms_cnt = udo_class->syms_instance_cnt;
+	if (syms_cnt) {
+		// Add symbols from parents
+		syms_cnt += udo_class->syms_instance[0].addr;
+	}
+
+	return (mem_obj_calloc(KEK_UDO, udo_class,
+			sizeof(kek_udo_t) + (syms_cnt - 1) * sizeof(kek_obj_t), 1));
 }
 
 kek_obj_t * alloc_file(class_t * file_class) {

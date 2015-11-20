@@ -4,14 +4,14 @@ CXXFLAGS=-Wall -Wextra -pedantic -Wno-write-strings -Wno-unused-variable -Wno-un
 OBJS=\
 	bcout.o \
 	lexan.o \
-	main.o \
+	kekc.o \
 	parser.o \
 	strom.o \
 	tabsym.o \
 	vstup.o \
 
-scheme: $(OBJS)
-	$(CXX) -o main $(OBJS)
+kekc: $(OBJS)
+	$(CXX) -o $@ $(OBJS)
 
 $(OBJS): lexan.h parser.h strom.h tabsym.h vstup.h bcout.h
 

@@ -1,0 +1,103 @@
+enum Tag {
+	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL
+}
+
+class scmObject {
+	var tag
+
+	scmObject(tag) {
+		this.tag = tag
+	}
+
+	toString() {
+		return G.tagName[tag]
+	}
+
+	print(out) {
+		out.writeln(toString())
+	}
+}
+
+class scmInteger : scmObject {
+	var val
+
+	scmInteger(val) {
+		super(Tag.INTEGER)
+		this.val = val
+	}
+
+	print(out) {
+		out.writeln(String.fromInt(val))
+	}
+}
+
+class scmString : scmObject {
+	var str
+
+	scmString(str) {
+		super(Tag.STRING)
+		this.str = str
+	}
+
+	print(out) {
+		out.writeln("\"")
+		out.writeln(str)
+		out.writeln("\"")
+	}
+}
+
+class scmSymbol : scmObject {
+	var sym
+
+	scmSymbol(sym) {
+		super(Tag.SYMBOL)
+		this.sym = sym
+	}
+
+	print(out) {
+		out.writeln(sym)
+	}
+}
+
+class scmCons : scmObject {
+	var car, cdr
+
+	scmCons(car, cdr) {
+		super(Tag.CONS)
+		this.car = car
+		this.cdr = cdr
+	}
+
+	print(out) {
+		var obj = this
+		out.writeln("(")
+		while (1) {
+			if (obj.tag != Tag.CONS) {
+				out.writeln(". ")
+				obj.print(out)
+				out.writeln(")")
+				return
+			}
+
+			obj.car.print(out)
+			obj = obj.cdr
+			if (obj.tag != Tag.NIL) {
+				out.writeln(" ")
+			}
+			else break
+		}
+		out.writeln(")")
+	}
+}
+
+class G {
+	static var scmTrue, scmFalse, scmNil
+	static var tagName
+	
+	static G() {
+		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil"] 
+		scmTrue = new scmObject(Tag.TRUE)
+		scmFalse = new scmObject(Tag.FALSE)
+		scmNil = new scmObject(Tag.NIL)
+	}
+}

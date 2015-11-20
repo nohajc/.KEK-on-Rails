@@ -38,7 +38,6 @@ typedef enum {
 	kwWHILE,
 	kwDO,
 	kwWRITE,
-	kwREAD,
 	EOI,
 	ERR,
 	kwSWITCH,

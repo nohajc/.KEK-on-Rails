@@ -312,9 +312,9 @@ Return::~Return() {
 // definice metody Optimize
 
 Node *ArgList::Optimize() {
-	arg->Optimize();
+	arg = (Expr*)arg->Optimize();
 	if (next) {
-		next->Optimize();
+		next = (ArgList*)next->Optimize();
 	}
 	return this;
 }
@@ -322,6 +322,13 @@ Node *ArgList::Optimize() {
 Node *Var::Optimize() {
 	if(offset){
 		offset = (ArgList*)(offset->Optimize());
+	}
+	return this;
+}
+
+Node *Call::Optimize() {
+	if (args) {
+		args = (ArgList*)args->Optimize();
 	}
 	return this;
 }
@@ -341,8 +348,20 @@ Node * ClassRef::Optimize() {
 }
 
 Node * ObjRef::Optimize() {
-	target = (Var*)(target->Optimize());
+	target = (Expr*)(target->Optimize());
 	return Var::Optimize();
+}
+
+Node * ParentRef::Optimize() {
+	target = (Expr*)(target->Optimize());
+	return Var::Optimize();
+}
+
+Node * New::Optimize() {
+	if (args) {
+		args = (ArgList*)args->Optimize();
+	}
+	return this;
 }
 
 Node *Bop::Optimize() {
@@ -538,7 +557,12 @@ Node *ClassList::Optimize() {
 }
 
 Node *Method::Optimize() {
-	body->Optimize();
+	body = (StatmList*)body->Optimize();
+	return this;
+}
+
+Node *Return::Optimize() {
+	expr = (Expr*)(expr->Optimize());
 	return this;
 }
 
@@ -874,7 +898,7 @@ uint32_t Method::Translate() {
 
 uint32_t Return::Translate() {
 	if (!expr) {
-		bco_w0(bcout_g, RETVOID);
+		bco_w0(bcout_g, RET_SELF);
 	}
 	else {
 		expr->Translate();

@@ -514,7 +514,7 @@ Expr *VarOrConst(char *id, ArgList * offset, Env env)
 	}
 }
 
-Expr * ZbIdent(Env env, bool rvalue, bool & external) {
+Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 	char id[MAX_IDENT_LEN];
 	PrvekTab * p;
 	ClassEnv * c;
@@ -532,7 +532,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.mthEnv = NULL;
-			return ZbIdent(env, rvalue, external);
+			return ZbIdent(env, rootEnv, rvalue, external);
 		}
 		// self ref by itself
 		return new SelfRef(rvalue);
@@ -547,7 +547,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.clsEnv = env.clsEnv->parent;
-			return new ParentRef(true, ZbIdent(env, rvalue, external));
+			return new ParentRef(true, ZbIdent(env, rootEnv, rvalue, external));
 		}
 		if (Symb.type == LPAR) {
 			external = !env.self;
@@ -557,7 +557,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 	}
 
 	Srovnani_IDENT(id);
-	ArgList * offset = ArrayOffset(env);
+	ArgList * offset = ArrayOffset(rootEnv);
 
 	switch (Symb.type) {
 	case DOT: // ref
@@ -582,7 +582,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 			env.self = false;
 			env.clsEnv = CLASS_ANY;
 			env.mthEnv = NULL;
-			return new ObjRef(p, offset, true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rvalue, external));
+			return new ObjRef(p, offset, true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rootEnv, rvalue, external));
 		}
 
 		if (!env.mthEnv) {
@@ -593,7 +593,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 				env.self = false;
 				env.clsEnv = CLASS_ANY;
 				return new ObjRef(id, (curr_cls == CLASS_ANY ? SC_INSTANCE : SC_CLASS), offset,
-					true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rvalue, external));
+					true, !curr_self, curr_cls == CLASS_UNKNOWN, ZbIdent(env, rootEnv, rvalue, external));
 			}
 		}
 
@@ -605,7 +605,7 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 		env.self = false;
 		env.clsEnv = c ? c : CLASS_UNKNOWN;
 		env.mthEnv = NULL;
-		return new ClassRef(id, true, ZbIdent(env, rvalue, external));
+		return new ClassRef(id, true, ZbIdent(env, rootEnv, rvalue, external));
 		//Chyba("Ocekava se deklarovany objekt nebo trida.");
 		break;
 	case LPAR: // call
@@ -626,7 +626,8 @@ Expr * ZbIdent(Env env, bool rvalue, bool & external) {
 			external = !env.self;
 			return new MethodRef(id);
 		}
-		Chyba("Volana metoda neexistuje.");
+		//Chyba("Volana metoda neexistuje.");
+		return new MethodRef(id);
 		break;
 	default: // var/const
 		external = !env.self;
@@ -682,7 +683,7 @@ ArgList * Args(Env env) {
 
 Expr * Ident(Env env, bool rvalue) {
 	bool external;
-	Expr * e = ZbIdent(env, rvalue, external);
+	Expr * e = ZbIdent(env, env, rvalue, external);
 
 	if (Symb.type == LPAR) {
 		Symb = readLexem();
@@ -809,13 +810,13 @@ Statm * Prikaz(Env env, Context ctxt) {
 	case kwWRITE:
 		Symb = readLexem();
 		return new Write(Vyraz(env));
-	case kwREAD:
+	/*case kwREAD:
 		Symb = readLexem();
 		var = dynamic_cast<Var*>(Ident(env, false)); // var
 		if (!var) {
 			Chyba("Ocekava se promenna.");
 		}
-		return new Read(var);
+		return new Read(var);*/
 	case kwIF: {
 		Symb = readLexem();
 		Srovnani(LPAR);

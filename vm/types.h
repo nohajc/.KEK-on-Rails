@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 /******************************************************************************/
 /* objects ********************************************************************/
@@ -89,7 +90,7 @@ typedef union _kek_obj {
 #define MAKE_CHAR(c) (((uint64_t)(c) << 2) | 2)
 #define CHAR_VAL(c) (char)((uint64_t)(c) >> 2)
 
-#define IS_INT(obj) (((uint64_t)(obj) & 1) || ((obj)->h.t == KEK_INT))
+#define IS_INT(obj) (((uint64_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
 #define INT_VAL(obj) (((uint64_t)(obj) & 1) ? \
 		((int32_t)(int64_t)(obj) >> 1) : ((obj)->k_int.value))
 
@@ -101,17 +102,17 @@ typedef union _kek_obj {
 #define MAKE_CHAR(c) (((uint32_t)(c) << 2) | 2)
 #define CHAR_VAL(c) (char)((uint32_t)(c) >> 2)
 
-#define IS_INT(obj) (((uint32_t)(obj) & 1) || ((obj)->h.t == KEK_INT))
+#define IS_INT(obj) (((uint32_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
 #define INT_VAL(obj) (((uint32_t)(obj) & 1) ? \
 		((int32_t)(obj) >> 1) : ((obj)->k_int.value))
 
 #endif
 
-#define IS_NIL(obj) ((obj)->h.t == KEK_NIL)
-#define IS_STR(obj) ((obj)->h.t == KEK_STR)
+#define IS_NIL(obj) (IS_PTR(obj) && (obj)->h.t == KEK_NIL)
+#define IS_STR(obj) (IS_PTR(obj) && (obj)->h.t == KEK_STR)
 #define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
-#define IS_ARR(obj) ((obj)->h.t == KEK_ARR)
-#define IS_UDO(obj) ((obj)->h.t == KEK_UDO)
+#define IS_ARR(obj) (IS_PTR(obj) && (obj)->h.t == KEK_ARR)
+#define IS_UDO(obj) (IS_PTR(obj) && (obj)->h.t == KEK_UDO)
 #define IS_CLASS(obj) ((obj)->h.t == KEK_CLASS)
 
 #define NIL CONST(0)

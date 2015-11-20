@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -58,11 +59,11 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 
 	/* vm_debug(DBG_STACK | DBG_STACK_FULL, "kek_obj = %p\n", kek_obj); */
 	if (!IS_PTR(kek_obj)) {
-		if (IS_INT(kek_obj)) {
-			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
-		}
-		else if (IS_CHAR(kek_obj)) {
+		if (IS_CHAR(kek_obj)) {
 			(void) snprintf(str, 1024, "char -%c-", CHAR_VAL(kek_obj));
+		}
+		else if (IS_INT(kek_obj)) {
+			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
 		}
 	}
 	else {
@@ -141,6 +142,50 @@ void vm_init_parent_pointers(void) {
 	}
 }
 
+// Init class pointers and fix array layout
+void vm_init_const_table_elems(void) {
+	uint8_t * ptr = const_table_g;
+	class_t * str_cls = vm_find_class("String");
+	class_t * arr_cls = vm_find_class("Array");
+	constant_array_t * c_arr;
+	int i;
+	kek_obj_t ** elems;
+
+	while (ptr != const_table_g + const_table_cnt_g) {
+		kek_obj_t * obj = (kek_obj_t*) ptr;
+		switch (obj->h.t) {
+		case KEK_NIL:
+			ptr += sizeof(kek_nil_t);
+			break;
+		case KEK_INT:
+			ptr += sizeof(kek_int_t);
+			break;
+		case KEK_STR:
+			obj->h.cls = str_cls;
+			ptr += sizeof(kek_string_t) + obj->k_str.length;
+			break;
+		case KEK_SYM:
+			ptr += sizeof(kek_symbol_t) + obj->k_sym.length;
+			break;
+		case KEK_ARR:
+			obj->h.cls = arr_cls;
+
+			c_arr = (constant_array_t*) obj;
+			elems = alloc_const_arr_elems(obj->k_arr.length);
+			obj->k_arr.alloc_size = obj->k_arr.length;
+
+			for (i = 0; i < c_arr->length; ++i) {
+				elems[i] = CONST(c_arr->elems[i]);
+			}
+			obj->k_arr.elems = elems;
+
+			ptr += sizeof(constant_array_t) + (obj->k_arr.length - 1) * sizeof(uint32_t);
+			break;
+		default:;
+		}
+	}
+}
+
 void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 		uint8_t is_static, method_ptr func) {
 	mth->name = malloc(strlen(name) + 1);
@@ -166,6 +211,9 @@ method_t * vm_find_method_in_class(class_t * cls, const char * name,
 		bool is_static) {
 	uint32_t i;
 
+	if (cls->constructor && !strcmp(cls->constructor->name, name)) {
+		return cls->constructor;
+	}
 	for (i = 0; i < cls->methods_cnt; ++i) {
 		if (!strcmp(cls->methods[i].name, name)
 				&& cls->methods[i].is_static == is_static) {
@@ -292,7 +340,23 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if (IS_INT(a) && IS_INT(b)) {
+	if (IS_NIL(a) || IS_NIL(b)) {
+		kek_int_t *res;
+
+		switch (o) {
+		case Eq:
+			res = make_integer(a == b);
+			break;
+		case NotEq:
+			res = make_integer(a != b);
+			break;
+		default:
+		vm_error("bc_bop: unsupported bop %d\n", o);
+		break;
+		}
+		return (kek_obj_t*) res;
+	}
+	else if (IS_INT(a) && IS_INT(b)) {
 		kek_int_t *res;
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
@@ -397,8 +461,10 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		return (kek_obj_t*) res;
 	} else {
 		// TODO: implement operations for other types
-		vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
-				type_str[a->h.t], type_str[b->h.t]);
+		/*vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
+				type_str[a->h.t], type_str[b->h.t]);*/
+		// TODO: macro for object type
+		vm_error("Cannot apply operation %s.\n", bop_str[o]);
 	}
 	return NULL;
 }
@@ -665,6 +731,7 @@ void vm_execute_bc(void) {
 				vm_error("%s has no method %s.\n",
 						(static_call ? "Class" : "Object"), sym->k_sym.symbol);
 			}
+			vm_debug(DBG_BC, " - method name: %s\n", sym->k_sym.symbol);
 			if (mth->args_cnt != arg2) {
 				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}
@@ -688,9 +755,9 @@ void vm_execute_bc(void) {
 			}
 			break;
 		}
-		case RETVOID: {
-			vm_debug(DBG_BC, "%s\n", "RETVOID");
-			BC_RETVOID;
+		case RET_SELF: {
+			vm_debug(DBG_BC, "%s\n", "RET_SELF");
+			BC_RET_SELF;
 			//vm_debug("ret_addr = %d\n", ip_g);
 			if (ip_g == NATIVE) {
 				return;
@@ -745,6 +812,7 @@ void vm_execute_bc(void) {
 			}
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
 					cls->syms_static[arg1].name);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls->syms_static[arg1].value));
 			PUSH(cls->syms_static[arg1].value);
 			break;
 		}
@@ -760,6 +828,7 @@ void vm_execute_bc(void) {
 			}
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
 					cls->syms_static[arg1].name);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls->syms_static[arg1].value));
 			PUSH(cls->syms_static[arg1].value);
 			break;
 		}
