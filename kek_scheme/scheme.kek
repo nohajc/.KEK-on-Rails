@@ -19,7 +19,7 @@ class Scheme {
 				break
 			}
 			else {
-				out.writeln(expr.toString());
+				expr.print(out)
 				out.writeln("\n");
 			}
 		}

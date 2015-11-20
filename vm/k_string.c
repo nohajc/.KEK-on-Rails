@@ -115,7 +115,7 @@ void string_fromInt(void) {
 		vm_error("Expected integer as argument.\n");
 	}
 
-	sprintf(buf, "%d", obj->k_int.value);
+	sprintf(buf, "%d", INT_VAL(obj));
 	str = new_string_from_cstring(buf);
 
 	PUSH(str);
