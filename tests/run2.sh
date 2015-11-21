@@ -43,6 +43,7 @@ kek_parseopts() {
 			# 1 show just vm
 			# 2 show all
 			SHOW_OUT=$OPTARG
+			PRINT_ERR_FILES=1
 			;;
 		V)
 			VM_VALGRIND=$OPTARG
@@ -193,7 +194,7 @@ kek_make() {
 	local ok=0
 	local fail=0
 
-	make -C compiler 2>&1 >$out_compiler
+	make -C compiler >$out_compiler 2>&1
 	if (( $? != 0 )); then
 		kek_error "make compiler failed" $out_compiler
 		(( fail++ ))
@@ -207,7 +208,7 @@ kek_make() {
 		(( ok++ ))
 	fi
 
-	make -C vm 2>&1 >$out_vm
+	make -C vm >$out_vm 2>&1
 	if (( $? != 0 )); then
 		kek_error "make vm failed" $out_vm
 		(( fail++ ))
@@ -232,9 +233,8 @@ kek_clear_out() {
 }
 
 main() {
-	kek_make
-
 	kek_clear_out
+	kek_make
 
 	for k in $KEK_SRC_DIR/*.kek; do
 		ftmp=${k##*/}
