@@ -4,6 +4,7 @@ kek
 
 # test outs
 *.out
+*.diff
 
 # classfiles
 *.kexe
