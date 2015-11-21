@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 
 #define MAX_LINE_LENGTH 257
 
@@ -40,6 +41,34 @@ void closeInput() {
 	}
 }
 
+FILE *fopenVerySmart(char *fname, const char *mode) {
+	FILE *f;
+	DIR *dir;
+	struct dirent *ent;
+	char buf[256];
+
+	f = fopen(fname, "r");
+	if (f) {
+		return (f);
+	}
+
+	/* FIXME: this is not effective at all... */
+	if ((dir = opendir(".")) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			if (ent->d_type == DT_DIR) {
+				snprintf(buf, 256, "%s/%s", ent->d_name, fname);
+				printf("trying to open \"%s\"\n", buf);
+				f = fopen(buf, "r");
+				if (f) {
+					return (f);
+				}
+			}
+		}
+	}
+
+	return (NULL);
+}
+
 char * getLine(char * buf, int maxLen) {
 	FILE * f;
 	char * str = fgets(buf, MAX_LINE_LENGTH, inputFileStack[inputFileNum]);
@@ -48,13 +77,12 @@ char * getLine(char * buf, int maxLen) {
 			fclose(inputFileStack[inputFileNum]);
 			inputFileNum--;
 			str = fgets(buf, MAX_LINE_LENGTH, inputFileStack[inputFileNum]);
-		}
-		else {
+		} else {
 			return NULL;
 		}
 	}
 	if (!strncmp(str, "#include", 8)) {
-		char incl[16], expr[257], * fname;
+		char incl[16], expr[257], *fname;
 		sscanf(str, "%s %s", incl, expr);
 		if (expr[0] != '\"' || expr[strlen(expr) - 1] != '\"') {
 			printf("Chybna syntaxe ve vyrazu #include.\n");
@@ -63,7 +91,8 @@ char * getLine(char * buf, int maxLen) {
 		expr[strlen(expr) - 1] = '\0';
 		fname = expr + 1;
 
-		f = fopen(fname, "r");
+		//f = fopen(fname, "r");
+		f = fopenVerySmart(fname, "r");
 		if (!f) {
 			printf("Soubor %s nenalezen.\n", fname);
 			exit(1);

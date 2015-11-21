@@ -1,3 +1,6 @@
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 
+//KEK_TEST_ARGS_1 these are four args
 class Hello {
 	static main(args) {
 		var i, len

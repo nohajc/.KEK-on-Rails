@@ -707,7 +707,7 @@ void bcout_to_file(bcout_t *bcout, ClassEnv *top_class, const char *filename) {
 
 	f = fopen(filename, "wb");
 	if (!f) {
-		fprintf(stderr, "Vystupni soubor nelze vytvorit.\n");
+		fprintf(stderr, "Vystupni soubor \"%s\" nelze vytvorit.\n", filename);
 		exit(1);
 	}
 

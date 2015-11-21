@@ -100,10 +100,30 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 	return ((char *) (&str));
 }
 
+static char *vm_debug_flag(uint32_t flag) {
+	switch (flag) {
+	case DBG_LOADING:
+		return "loading";
+	case DBG_BC:
+		return "bc";
+	case DBG_STACK:
+		return "stack";
+	case DBG_STACK_FULL:
+		return "stack_full";
+	case DBG_VM:
+		return "vm";
+	case DBG_GC:
+		return "gc";
+	default:
+		return"unknown";
+	}
+}
+
 void vm_debug(uint32_t level_flag, const char *format, ...) {
 	va_list args;
 
 	if (debug_level_g & level_flag) {
+		fprintf(stderr, "@dbg %s: ", vm_debug_flag(level_flag));
 		va_start(args, format);
 		vfprintf(stderr, format, args);
 		va_end(args);

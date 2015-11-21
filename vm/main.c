@@ -14,6 +14,7 @@
 #include "vm.h"
 
 uint32_t debug_level_g = 0;
+uint32_t test_g = 0;
 
 void usage(const char *progname) {
 	printf("Usage:\n");
@@ -75,10 +76,13 @@ int main(int argc, char *argv[]) {
 	int c;
 	char *filename = NULL;
 
-	while ((c = getopt(argc, argv, "d:")) != -1) {
+	while ((c = getopt(argc, argv, "d:t:")) != -1) {
 		switch (c) {
 		case 'd':
 			debug_add(optarg);
+			break;
+		case 't':
+			sscanf(optarg, "%u", &test_g);
 			break;
 		case '?':
 			fprintf(stderr, "unknown opt: \"%c\"\n", c);

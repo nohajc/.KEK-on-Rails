@@ -142,6 +142,7 @@ extern size_t bc_arr_cnt_g;
 extern uint8_t *bc_arr_g;
 
 extern uint32_t debug_level_g;
+extern uint32_t test_g;
 
 /******************************************************************************/
 

@@ -2,6 +2,9 @@
 kekc
 kek
 
+# test outs
+*.out
+
 # classfiles
 *.kexe
 
