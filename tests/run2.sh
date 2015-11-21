@@ -227,6 +227,7 @@ kek_make() {
 }
 
 kek_clear_out() {
+	mkdir -p $KEK_OUT_DIR
 	rm $KEK_OUT_DIR/*.out
 }
 
