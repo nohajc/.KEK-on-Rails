@@ -41,8 +41,13 @@ uint8_t kexe_load_uint8(FILE *f) {
 				fread_result);
 		return (UINT8_MAX);
 	} else {
-		vm_debug(DBG_LOADING, "load uint8 " P8 " (as char = \"%c\")\n", ret,
-				ret);
+
+		if (ret == 0) {
+			vm_debug(DBG_LOADING, "load uint8 " P8 "\n", ret);
+		} else {
+			vm_debug(DBG_LOADING, "load uint8 " P8 " (as char = \"%c\")\n", ret,
+					ret);
+		}
 	}
 
 	return (ret);
