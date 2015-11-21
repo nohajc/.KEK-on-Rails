@@ -229,7 +229,8 @@ kek_make() {
 
 kek_clear_out() {
 	mkdir -p $KEK_OUT_DIR
-	rm $KEK_OUT_DIR/*.out
+	mkdir -p $KEK_KEXE_DIR
+	rm -f $KEK_OUT_DIR/*.out
 }
 
 main() {

@@ -1,4 +1,4 @@
-Hello world from "tests/../tests/kexes/hello_world.kexe"!
+Hello world from "./tests/../tests/kexes/hello_world.kexe"!
 Args:
 these
 are
