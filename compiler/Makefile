@@ -19,4 +19,4 @@ clean:
 	rm $(OBJS)
 
 clobber: clean
-	rm main
+	rm kekc
