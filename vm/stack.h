@@ -52,6 +52,35 @@ kek_obj_t* stack_top();
 	ip_g = entry; \
 }
 
+// Tail call - we reuse the current stack frame thus destroying it.
+/* How it works:
+	1. save return address, caller AP and caller FP from the current frame
+	2. set tmp AP to SP-arg_cnt-1
+	3. copy arguments and instance/class pointer from tmp AP to current AP
+	4. set current SP to current AP+arg_cnt+1 (after instance/class pointer)
+	5. push return address, caller AP and caller FP after that
+	6. set current FP to SP
+	7. increment SP by locals_cnt
+	8. set IP to function entry point
+*/
+#define BC_TCALL(entry, arg_cnt, locals_cnt) { \
+	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
+	int caller_ap = (size_t)INT_VAL(stack_g[fp_g - 2]); \
+	int caller_fp = (size_t)INT_VAL(stack_g[fp_g - 1]); \
+	int tmp_ap = sp_g - (arg_cnt) - 1; \
+	uint32_t i; \
+	for (i = 0; i <= (arg_cnt); ++i) { \
+		stack_g[ap_g + i] = stack_g[tmp_ap + i]; \
+	} \
+	sp_g = ap_g + (arg_cnt) + 1; \
+	PUSH(make_integer(ret_addr)); \
+	PUSH(make_integer(caller_ap)); \
+	PUSH(make_integer(caller_fp)); \
+	fp_g = sp_g; \
+	sp_g = sp_g + (locals_cnt); \
+	ip_g = entry; \
+}
+
 #define BC_RET do { \
 	kek_obj_t* ret_val = stack_pop(); \
 	sp_g = ap_g; \

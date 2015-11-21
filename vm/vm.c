@@ -691,12 +691,14 @@ void vm_execute_bc(void) {
 		}
 		case CALLE: {
 			bool static_call;
+			bool tail_call;
 			calle: call_type++;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u %u\n", call_str[call_type], arg1, arg2);
+			tail_call = bc_arr_g[ip_g] == RET;
+			vm_debug(DBG_BC, "%s %u %u, tail: %s\n", call_str[call_type], arg1, arg2, (tail_call ? "true" : "false"));
 			TOP(obj);
 
 			if (!IS_PTR(obj)) {
@@ -736,12 +738,21 @@ void vm_execute_bc(void) {
 				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}
 			if (mth->is_native) {
-				BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
+				if (tail_call) {
+					BC_TCALL(NATIVE, mth->args_cnt, mth->locals_cnt);
+				} else {
+					BC_CALL(NATIVE, ip_g, mth->args_cnt, mth->locals_cnt);
+				}
 				mth->entry.func();
 				vm_debug(DBG_BC, " - returned value is %s\n", kek_obj_print(stack_top()));
 			} else {
-				BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt,
-						mth->locals_cnt);
+				if (tail_call) {
+					vm_debug(DBG_BC, " - tail call executed\n");
+					BC_TCALL(mth->entry.bc_addr, mth->args_cnt, mth->locals_cnt);
+				} else {
+					BC_CALL(mth->entry.bc_addr, ip_g, mth->args_cnt,
+							mth->locals_cnt);
+				}
 			}
 
 			break;
