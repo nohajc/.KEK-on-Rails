@@ -270,6 +270,18 @@ public:
    virtual void Print(int);
 };
 
+class Try : public Statm {
+	Statm *try_block;
+	Statm *catch_block;
+	MethodEnv *mthEnv;
+public:
+	Try(Statm*, Statm*, MethodEnv*);
+	virtual ~Try();
+	virtual Node *Optimize();
+	virtual uint32_t Translate();
+	virtual void Print(int);
+};
+
 class StatmList: public Statm {
 public:
 	Statm *statm;
@@ -324,9 +336,9 @@ class Method: public Statm {
 	bool isConstructor;
 	int numArgs;
 	StatmList * body;
-	unsigned int * bc_entrypoint; // Points to symbol table MethodEnv object
+	MethodEnv * mthEnv;
 public:
-	Method(const char *, bool, bool, int, unsigned int *, StatmList *);
+	Method(const char *, bool, bool, int, MethodEnv *, StatmList *);
 	virtual ~Method();
 	virtual Node *Optimize();
 	virtual uint32_t Translate();

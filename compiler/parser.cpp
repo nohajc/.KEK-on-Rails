@@ -409,7 +409,7 @@ Statm * Metoda(Env env, bool isStatic) {
 	}
 	Srovnani(RPAR);
 
-	return new Method(mth_id, isStatic, isConstructor, numArgs, &mthEnv->bc_entrypoint, SlozPrikaz(env));
+	return new Method(mth_id, isStatic, isConstructor, numArgs, env.mthEnv, SlozPrikaz(env));
 }
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {
@@ -869,6 +869,18 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Srovnani(RPAR);
 		Srovnani(LCURLY);
 		return new Case(expr, ntCASE_BODY(env));
+	}
+	case kwTRY: {
+		char id[MAX_IDENT_LEN];
+		Srovnani(kwTRY);
+		Statm * try_block = Prikaz(env, ctxt);
+		skipNewlines();
+		Srovnani(kwCATCH);
+		Srovnani(LPAR);
+		Srovnani_IDENT(id);
+		deklExObj(id, env.clsEnv, env.mthEnv);
+		Statm * catch_block = Prikaz(env, ctxt);
+		return new Try(try_block, catch_block, env.mthEnv);
 	}
 	case LCURLY:
 		return SlozPrikaz(env, ctxt);

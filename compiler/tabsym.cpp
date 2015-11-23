@@ -94,6 +94,7 @@ MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
 	local_addr_next = 0;
 	args = NULL;
 	syms = NULL;
+	exobjs = NULL;
 	bc_entrypoint = 0; /* TODO FIXME */
 }
 
@@ -303,6 +304,10 @@ void deklKonst(char *id, char * val, bool isStatic, ClassEnv * cls, MethodEnv * 
 	else {
 		Chyba(id, "Konstantni clen tridy musi byt staticky.");
 	}
+}
+
+void deklExObj(char * id, ClassEnv * cls, MethodEnv * mth) {
+	mth->exobjs = new PrvekTab(id, IdProm, SC_EXOBJ, 0, mth->exobjs);
 }
 
 void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth) {

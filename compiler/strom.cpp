@@ -246,6 +246,17 @@ For::~For() {
 	delete body;
 }
 
+Try::Try(Statm *tb, Statm *cb, MethodEnv *me) {
+	try_block = tb;
+	catch_block = cb;
+	mthEnv = me;
+}
+
+Try::~Try() {
+	delete try_block;
+	delete catch_block;
+}
+
 StatmList::StatmList(Statm *s, StatmList *n) {
 	statm = s;
 	next = n;
@@ -286,13 +297,13 @@ ClassList::~ClassList() {
 	delete next;
 }
 
-Method::Method(const char * n, bool sttc, bool cons, int nArgs, unsigned int * bc_ep, StatmList * b) {
+Method::Method(const char * n, bool sttc, bool cons, int nArgs, MethodEnv * me, StatmList * b) {
 	name = new char[strlen(n) + 1];
 	isStatic = sttc;
 	isConstructor = cons;
 	numArgs = nArgs;
 	body = b;
-	bc_entrypoint = bc_ep;
+	mthEnv = me;
 	strcpy(name, n);
 }
 
@@ -521,6 +532,12 @@ Node *For::Optimize() {
 		delete this;
 		return new Empty;
 	}
+	return this;
+}
+
+Node *Try::Optimize() {
+	try_block = (Statm*)(try_block->Optimize());
+	catch_block = (Statm*)(catch_block->Optimize());
 	return this;
 }
 
@@ -838,6 +855,13 @@ uint32_t For::Translate() {
 	return 0;
 }
 
+uint32_t Try::Translate() {
+	try_block->Translate();
+	catch_block->Translate();
+	// TODO - save exception info to const. table
+	return 0;
+}
+
 uint32_t StatmList::Translate() {
 	StatmList *s = this;
 	do {
@@ -875,7 +899,7 @@ uint32_t ClassList::Translate() {
 }
 
 uint32_t Method::Translate() {
-	*bc_entrypoint = bco_get_ip(bcout_g);
+	mthEnv->bc_entrypoint = bco_get_ip(bcout_g);
 
 	StatmList *s = body;
 	while (s->next) {
