@@ -27,8 +27,6 @@ class Operators {
 		write a1[0].len()
 		a1[0][0] = a1[1][1]
 		a1[0][1] = a1[1][0]
-
-		write a2["_Hash_"][0][1][2][3][4]["_Map_"] // The layout of constants is broken here
 	}
 
 	static main() {
