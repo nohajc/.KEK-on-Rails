@@ -1,3 +1,5 @@
+//KEK_TEST_RUNS 1
+//KEK_TEST_ARGS_0 
 class Main {
 	static main(args) {
 		var tok = args[0].split("/")

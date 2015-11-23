@@ -36,7 +36,10 @@ class Operators {
 		var b = 5
 		var c = 10
 		var d, i
-		read d
+		var str
+		
+    str = Sys.in.readln()
+    d = str.toInt()
 
 		// 0 + -4 = -4
 		write !c + -a

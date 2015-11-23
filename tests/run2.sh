@@ -42,7 +42,7 @@ kek_parseopts() {
 		o)
 			# 1 show just vm
 			# 2 show all
-			SHOW_OUT=$OPTARG
+			# SHOW_OUT=$OPTARG
 			PRINT_ERR_FILES=1
 			;;
 		V)
@@ -167,8 +167,10 @@ kek_error() {
 	local error_file=${2:-"no_file"}
 	echo "kek_error: $1" >&2
 
-	if [[ $PRINT_ERR_FILES == 1 ]] && [[ $error_file != "no_file" ]]; then
-		cat $error_file >&2
+	if [[ $PRINT_ERR_FILES == 1 ]] && [[ "$error_file" != "no_file" ]]; then
+		echo "ERROR FILE BEGIN: $error_file"
+		cat $error_file
+		echo "ERROR FILE END: $error_file"
 	fi
 	
 	if [[ $EXIT_ON_ERROR == 1 ]]; then

@@ -14,8 +14,10 @@ class V {
 class Switch {
 	Switch() {
 		var a, b, c
-
-		read a
+    var str
+    
+		str = Sys.in.readln()
+    a = str.toInt()
 
 		switch (a) {
 		case C.ZERO..9, 99..127: {
