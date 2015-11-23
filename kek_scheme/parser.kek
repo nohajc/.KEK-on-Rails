@@ -21,6 +21,23 @@ class Parser {
 		return c
 	}
 
+	skipLine() {
+		var c = rd.readChar()
+
+		while (c != nil && c != "\n") {
+			c = rd.readChar()
+		}
+	}
+
+	skipComment(firstC) {
+		while (firstC == ";") {
+			skipLine()
+			firstC = skipWS()
+		}
+
+		return firstC
+	}
+
 	readAtom(firstC) {
 		var token = []
 		var i = 0
@@ -46,7 +63,7 @@ class Parser {
 				// Todo: throw exception
 				if (c == nil) return nil
 			}
-			else if (isWS(c) || c == "(" || c == ")" || c == nil) {
+			else if (isWS(c) || c == "(" || c == ")" || c == ";" || c == nil) {
 				rd.unreadChar()
 				break
 			}
@@ -66,6 +83,7 @@ class Parser {
 
 	readList() {
 		var firstC = skipWS()
+		firstC = skipComment(firstC)
 
 		if (firstC == ")") return G.scmNil
 		rd.unreadChar()
@@ -77,6 +95,7 @@ class Parser {
 
 	read() {
 		var firstC = skipWS()
+		firstC = skipComment(firstC)
 
 		if (firstC == "(") return readList()
 		return readAtom(firstC)

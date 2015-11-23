@@ -34,7 +34,7 @@ kek_int_t * make_integer(int value) {
 		#if defined(__LP64__)
 		ret = (kek_int_t*)(((int64_t)value << 1) | 1);
 		#else
-		ret = (kek_int_t*)(((value << 1) | 1);
+		ret = (kek_int_t*)((value << 1) | 1);
 		#endif
 	}
 	return ret;

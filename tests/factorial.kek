@@ -4,19 +4,42 @@ class Main {
 		return n * factorial(n - 1)
 	}
 
+	static t_factorial_r(n, acc) {
+		if (n == 1) return acc
+		else return t_factorial_r(n - 1, n * acc)
+	}
+
+	static t_factorial(n) {
+		if (n == 0) return 1
+		return t_factorial_r(n, 1)
+	}
+
 	static main(args) {
 		write factorial(0)
+		write t_factorial(0)
 		write factorial(1)
+		write t_factorial(1)
 		write factorial(2)
+		write t_factorial(2)
 		write factorial(3)
+		write t_factorial(3)
 		write factorial(4)
+		write t_factorial(4)
 		write factorial(5)
+		write t_factorial(5)
 		write factorial(6)
+		write t_factorial(6)
 		write factorial(7)
+		write t_factorial(7)
 		write factorial(8)
+		write t_factorial(8)
 		write factorial(9)
+		write t_factorial(9)
 		write factorial(10)
+		write t_factorial(10)
 		write factorial(11)
+		write t_factorial(11)
 		write factorial(12)
+		write t_factorial(12)
 	}
 }
