@@ -295,6 +295,7 @@ void vm_call_class_initializers(void) {
 				vm_error(
 						"Static class initializer should have no arguments.\n");
 			}
+			vm_debug(DBG_BC, "Entering static class initializer of %s.\n", classes_g[i].name);
 			PUSH(&classes_g[i]);
 			BC_CALL(init->entry.bc_addr, NATIVE, 0, init->locals_cnt);
 			vm_execute_bc();
@@ -487,6 +488,22 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		vm_error("Cannot apply operation %s.\n", bop_str[o]);
 	}
 	return NULL;
+}
+
+static inline symbol_t * SYM_STATIC(class_t * cls, int idx) {
+	int c_idx = idx - cls->syms_static[0].addr;
+	class_t * cls_ptr = cls;
+
+	while(cls_ptr->parent && c_idx < 0) {
+		cls_ptr = cls_ptr->parent;
+		c_idx = idx - cls_ptr->syms_static[0].addr;
+	}
+
+	if (c_idx < 0) {
+		vm_error("Class member not found.\n");
+	}
+
+	return &cls_ptr->syms_static[c_idx];
 }
 
 void vm_execute_bc(void) {
@@ -796,6 +813,7 @@ void vm_execute_bc(void) {
 			break;
 		}
 		case LABI_CV: {
+			symbol_t * cls_memb;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_CV", arg1);
@@ -805,15 +823,17 @@ void vm_execute_bc(void) {
 			} else {
 				cls = obj->h.cls;
 			}
+			cls_memb = SYM_STATIC(cls, arg1);
 			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n",
-					cls->syms_static[arg1].name);
-			if (cls->syms_static[arg1].const_flag) {
+					cls_memb->name);
+			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(&cls->syms_static[arg1].value);
+			PUSH(&cls_memb->value);
 			break;
 		}
 		case LABI_CVE: {
+			symbol_t * cls_memb;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_CVE", arg1);
@@ -823,15 +843,17 @@ void vm_execute_bc(void) {
 			} else {
 				vm_error("Expected class pointer on the stack.\n");
 			}
+			cls_memb = SYM_STATIC(cls, arg1);
 			vm_debug(DBG_BC, " - load address of static symbol \"%s\"\n",
-					cls->syms_static[arg1].name);
-			if (cls->syms_static[arg1].const_flag) {
+					cls_memb->name);
+			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(&cls->syms_static[arg1].value);
+			PUSH(&cls_memb->value);
 			break;
 		}
 		case LVBI_CV: {
+			symbol_t * cls_memb;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_CV", arg1);
@@ -841,13 +863,15 @@ void vm_execute_bc(void) {
 			} else {
 				cls = obj->h.cls;
 			}
+			cls_memb = SYM_STATIC(cls, arg1);
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
-					cls->syms_static[arg1].name);
-			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls->syms_static[arg1].value));
-			PUSH(cls->syms_static[arg1].value);
+					cls_memb->name);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls_memb->value));
+			PUSH(cls_memb->value);
 			break;
 		}
 		case LVBI_CVE: {
+			symbol_t * cls_memb;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_CVE", arg1);
@@ -857,10 +881,11 @@ void vm_execute_bc(void) {
 			} else {
 				vm_error("Expected class pointer on the stack.\n");
 			}
+			cls_memb = SYM_STATIC(cls, arg1);
 			vm_debug(DBG_BC, " - load value of static symbol \"%s\"\n",
-					cls->syms_static[arg1].name);
-			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls->syms_static[arg1].value));
-			PUSH(cls->syms_static[arg1].value);
+					cls_memb->name);
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(cls_memb->value));
+			PUSH(cls_memb->value);
 			break;
 		}
 		case LVBS_CVE: {
