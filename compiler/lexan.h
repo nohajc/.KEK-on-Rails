@@ -79,7 +79,8 @@ typedef enum {
 	kwNEW,
 	kwNIL,
 	kwTRY,
-	kwCATCH
+	kwCATCH,
+	kwTHROW
 } LexSymbolType;
 
 extern const char *symbTable[];

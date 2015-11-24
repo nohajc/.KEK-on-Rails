@@ -201,6 +201,9 @@ void vm_init_const_table_elems(void) {
 
 			ptr += sizeof(constant_array_t) + (obj->k_arr.length - 1) * sizeof(uint32_t);
 			break;
+		case KEK_EXINFO:
+			ptr += sizeof(kek_exinfo_t) + (obj->k_exi.length - 1) * sizeof(try_range_t);
+			break;
 		default:;
 		}
 	}
@@ -1056,7 +1059,30 @@ void vm_execute_bc(void) {
 			PUSH(&obj->k_udo.inst_var[obj_memb->addr]);
 			break;
 		}
-
+		case ST_EXINFO: {
+			kek_obj_t * exi;
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "ST_EXINFO", arg1);
+			exi = CONST(arg1);
+			assert(exi->h.t == KEK_EXINFO);
+			stack_g[fp_g] = exi;
+			break;
+		}
+		case THROW: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "THROW");
+			POP(obj);
+			vm_throw_obj(obj);
+			break;
+		}
+		case LD_EXOBJ: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "LD_EXOBJ");
+			assert(stack_g[fp_g]->h.t == KEK_EXINFO);
+			PUSH(stack_g[fp_g]->k_exi.obj_thrown);
+			break;
+		}
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
 			break;
@@ -1068,3 +1094,55 @@ void vm_execute_bc(void) {
 		}
 	} /* for */
 } /* vm_execute_bc */
+
+static int find_handler_for_exobj(kek_obj_t * obj,
+		int * unw_ap, int * unw_fp, int * unw_sp) {
+	int ap = ap_g;
+	int fp = fp_g;
+	int sp = sp_g;
+	int ret_addr = ip_g + 1; // Right after THROW
+	kek_exinfo_t * exi;
+	int i;
+
+	// Unwind stack
+	while (stack_g[fp] == NULL) {
+		sp = ap;
+		ret_addr = (size_t)INT_VAL(stack_g[fp - 3]);
+		ap = (size_t)INT_VAL(stack_g[fp - 2]);
+		fp = (size_t)INT_VAL(stack_g[fp - 1]);
+		if (ret_addr == NATIVE) return -1;
+	}
+
+	exi = &stack_g[fp]->k_exi;
+	for (i = 0; i < exi->length; ++i) {
+		if (exi->blocks[i].try_addr <= (ret_addr - 1)
+				&& (ret_addr - 1) < exi->blocks[i].catch_addr) {
+			exi->obj_thrown = obj;
+			*unw_ap = ap;
+			*unw_fp = fp;
+			*unw_sp = sp;
+			return exi->blocks[i].catch_addr;
+		}
+	}
+
+	return -1;
+}
+
+void vm_throw_obj(kek_obj_t * obj) {
+	int unw_ap;
+	int unw_fp;
+	int unw_sp;
+	int unw_ip;
+	unw_ip = find_handler_for_exobj(obj, &unw_ap, &unw_fp, &unw_sp);
+	if (unw_ip == -1) {
+		if (IS_PTR(obj) && obj->h.cls) {
+			vm_error("Unhandled exception %s.\n", obj->h.cls->name);
+		} else {
+			vm_error("Unhandled exception %s.\n", kek_obj_print(obj));
+		}
+	}
+	ap_g = unw_ap;
+	fp_g = unw_fp;
+	sp_g = unw_sp;
+	ip_g = unw_ip;
+}

@@ -1,11 +1,48 @@
+class TestException { // TODO: Inherit from builtin Exception
+	var msg
+
+	TestException(msg) {
+		this.msg = msg
+	}
+}
+
 class Main {
+	static nested() {
+		throw new TestException("Testing error message.")
+	}
+
+	static test() {
+		nested()
+	}
+
 	static main(args) {
 		if (args.length() != 2) {
 			write "Please, specify a file to read.\n"
 			return
 		}
 
-		var f = new File(args[1], "r")
+		var a = "Testing context."
+
+		//test() // Uncomment this to get unhandled exception
+
+		try {
+			test()
+			Sys.out.writeln("Unreached statement.")
+		}
+		catch (e) {
+			Sys.out.writeln(e.msg)
+			Sys.out.writeln("\n")
+			Sys.out.writeln(a)
+			Sys.out.writeln("\n")
+		}
+
+		try {
+			var f = new File(args[1], "r")
+		}
+		catch (e) {
+			Sys.out.writeln(e.msg)
+			return
+		}
 
 		while (1) {
 			var line = f.readln()

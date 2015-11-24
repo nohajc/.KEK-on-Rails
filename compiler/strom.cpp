@@ -250,11 +250,20 @@ Try::Try(Statm *tb, Statm *cb, MethodEnv *me) {
 	try_block = tb;
 	catch_block = cb;
 	mthEnv = me;
+	mthEnv->try_block_cnt++;
 }
 
 Try::~Try() {
 	delete try_block;
 	delete catch_block;
+}
+
+Throw::Throw(Expr *o) {
+	obj = o;
+}
+
+Throw::~Throw() {
+	delete obj;
 }
 
 StatmList::StatmList(Statm *s, StatmList *n) {
@@ -541,6 +550,11 @@ Node *Try::Optimize() {
 	return this;
 }
 
+Node *Throw::Optimize() {
+	obj = (Expr*)(obj->Optimize());
+	return this;
+}
+
 Node *StatmList::Optimize() {
 	StatmList *s = this;
 	do {
@@ -616,6 +630,8 @@ uint32_t Var::Translate() {
 			bco_ww1(bcout_g, (rvalue || offset ? LVBI_CV : LABI_CV), addr);
 		}
 		break;
+	case SC_EXOBJ:
+		bco_w0(bcout_g, LD_EXOBJ);
 	}
 
 	if (offset) {
@@ -856,9 +872,24 @@ uint32_t For::Translate() {
 }
 
 uint32_t Try::Translate() {
+	int try_addr = bco_get_ip(bcout_g);
 	try_block->Translate();
+	int a1 = bco_ww1(bcout_g, JU, 0);
+
+	int catch_addr = bco_get_ip(bcout_g);
 	catch_block->Translate();
-	// TODO - save exception info to const. table
+	bco_fix_forward_jmpw(bcout_g, a1);
+
+	bco_exinfo_add_block(bcout_g,
+			mthEnv->exception_info_idx, try_addr, catch_addr);
+
+	return 0;
+}
+
+uint32_t Throw::Translate() {
+	obj->Translate();
+	bco_w0(bcout_g, THROW);
+
 	return 0;
 }
 
@@ -914,6 +945,12 @@ uint32_t Method::Translate() {
 		else {
 			s->next = new StatmList(new Return(new Nil), NULL);
 		}
+	}
+
+	if (mthEnv->exobjs != NULL) {
+		uint32_t exinfo_idx = bco_exinfo(bcout_g, mthEnv->try_block_cnt);
+		bco_ww1(bcout_g, ST_EXINFO, exinfo_idx);
+		mthEnv->exception_info_idx = exinfo_idx;
 	}
 
 	body->Translate();
@@ -1450,6 +1487,26 @@ void For::Print(int ident) {
 	printfi(ident, "body:\n");
 	if (this->body) {
 		this->body->Print(ident + 1);
+	}
+}
+
+void Try::Print(int ident) {
+	if (this->try_block) {
+		printfi(ident, "Try\n");
+		this->try_block->Print(ident + 1);
+	}
+
+	if (this->catch_block) {
+		printfi(ident, "Catch\n");
+		this->catch_block->Print(ident + 1);
+	}
+}
+
+void Throw::Print(int ident) {
+	printfi(ident, "Throw\n");
+
+	if (this->obj) {
+		this->obj->Print(ident + 1);
 	}
 }
 

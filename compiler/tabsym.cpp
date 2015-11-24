@@ -95,7 +95,8 @@ MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
 	args = NULL;
 	syms = NULL;
 	exobjs = NULL;
-	bc_entrypoint = 0; /* TODO FIXME */
+	bc_entrypoint = 0;
+	try_block_cnt = 0;
 }
 
 MethodEnv::~MethodEnv() {
@@ -181,7 +182,8 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce, bool recursive) {
 PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me, bool recursive) {
 	PrvekTab * syms;
 	if (me) {
-		FIND_SYM(me->syms);	// Try to search through local vars first
+		FIND_SYM(me->exobjs); // Try exception objects
+		FIND_SYM(me->syms);	// Try to search through local vars
 		FIND_SYM(me->args); // Then try method args
 		if (!recursive) return NULL;
 	}

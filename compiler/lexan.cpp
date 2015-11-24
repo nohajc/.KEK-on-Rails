@@ -19,7 +19,7 @@ const char *symbTable[] = { "IDENT", "NUMB", "STR", "PLUS", "MINUS", "TIMES",
 		"ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", "DIV_ASSIGN", "MOD_ASSIGN", "INCREMENT", "DECREMENT",
 		"NOT", "OR", "AND", "BIT_OR", "BIT_AND", "XOR", "LSHIFT", "RSHIFT",
 		"kwCLASS", "kwENUM", "kwSTATIC", "kwRETURN", "kwTHIS", "kwSUPER", "kwNEW", "kwNIL",
-		"kwTRY", "kwCATCH" }; //symbol names in the same order as in LexSymbolType
+		"kwTRY", "kwCATCH", "kwTHROW" }; //symbol names in the same order as in LexSymbolType
 
 static int character; // vstupni znak
 static InputCharType input; // vstupni symbol
@@ -77,6 +77,7 @@ const struct {
 		{ "nil", kwNIL },
 		{ "try", kwTRY },
 		{ "catch", kwCATCH },
+		{ "throw", kwTHROW },
 		{ NULL, (LexSymbolType) 0 } //
 };
 

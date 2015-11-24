@@ -282,6 +282,16 @@ public:
 	virtual void Print(int);
 };
 
+class Throw: public Statm {
+	Expr *obj;
+public:
+	Throw(Expr *);
+	virtual ~Throw();
+	virtual Node *Optimize();
+	virtual uint32_t Translate();
+	virtual void Print(int);
+};
+
 class StatmList: public Statm {
 public:
 	Statm *statm;

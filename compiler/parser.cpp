@@ -878,9 +878,14 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Srovnani(kwCATCH);
 		Srovnani(LPAR);
 		Srovnani_IDENT(id);
+		Srovnani(RPAR);
 		deklExObj(id, env.clsEnv, env.mthEnv);
 		Statm * catch_block = Prikaz(env, ctxt);
 		return new Try(try_block, catch_block, env.mthEnv);
+	}
+	case kwTHROW: {
+		Srovnani(kwTHROW);
+		return new Throw(Vyraz(env));
 	}
 	case LCURLY:
 		return SlozPrikaz(env, ctxt);

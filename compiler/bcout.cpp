@@ -42,6 +42,17 @@ void bco_print_const(bcout_t *bco, uint32_t idx) {
 		}
 		bco_debug("]");
 		break;
+	case KEK_EXINFO:
+		bco_debug("exinfo [length: %d", item->cei.length);
+		if (item->cei.length) {
+			bco_debug(", blocks: [%d, %d]",	item->cei.blocks[0].try_addr,
+					item->cei.blocks[0].catch_addr);
+		}
+		for (int i = 1; i < item->cei.length; ++i) {
+			bco_debug(", [%d, %d]", item->cei.blocks[i].try_addr,
+					item->cei.blocks[i].catch_addr);
+		}
+		bco_debug("]");
 	}
 }
 
@@ -61,7 +72,7 @@ const char *op_str[] = { "NOP", "BOP", "UNM", "DR", "ST", "IFNJ", "JU", "WRT",
 		"LVBI_C", "LVBI_ARG", "LVBI_LOC", "LVBI_IV", "LVBI_CV", "LVBI_CVE",
 		"LVBS_IVE", "LVBS_CVE", "LD_SELF", "LD_CLASS", "LABI_ARG", "LABI_LOC",
 		"LABI_IV", "LABI_CV", "LABI_CVE", "LABS_IVE", "LABS_IVE", "IDX", "IDXA",
-		"NEW", "RET_SELF" };
+		"NEW", "RET_SELF", "LD_EXOBJ", "ST_EXINFO", "THROW" };
 
 bcout_t *bcout_init() {
 	bcout_t *bco;
@@ -367,6 +378,23 @@ uint32_t bco_arr(bcout_t *bco, size_t len) {
 void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem) {
 	constant_array_t *ca = (constant_array_t *) (bco->const_table + arr);
 	ca->elems[idx] = elem;
+}
+
+uint32_t bco_exinfo(bcout_t *bco, size_t try_block_cnt) {
+	constant_exinfo_t *cei;
+
+	cei = (constant_exinfo_t *) ct_malloc(bco, sizeof(constant_exinfo_t)
+			+ (try_block_cnt - 1) * sizeof(try_range_t));
+	cei->h.t = KEK_EXINFO;
+	cei->length = 0;
+
+	return ((uint8_t *) cei - bco->const_table);
+}
+
+void bco_exinfo_add_block(bcout_t *bco, uint32_t exinfo, int try_addr, int catch_addr) {
+	constant_exinfo_t *cei = (constant_exinfo_t *) (bco->const_table + exinfo);
+	cei->blocks[cei->length].try_addr = try_addr;
+	cei->blocks[cei->length++].catch_addr = catch_addr;
 }
 
 size_t bco_get_ip(bcout_t *bco) {

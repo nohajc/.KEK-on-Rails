@@ -57,7 +57,7 @@ void new_file(void) {
 
 	fil->f_handle = fopen(path->k_str.string, mode->k_str.string);
 	vm_debug(DBG_BC, "Opened file with handle %p.\n", fil->f_handle);
-	// TODO: error handling - we need exceptions
+	// TODO: throw exception if fopen failed
 
 	BC_RET_SELF;
 }

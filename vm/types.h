@@ -18,7 +18,7 @@ struct _class;
 union _kek_obj;
 
 typedef enum _type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_FILE, KEK_UDO, KEK_CLASS
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO, KEK_FILE, KEK_UDO, KEK_CLASS
 } type_t;
 
 typedef struct _header {
@@ -60,6 +60,21 @@ typedef struct _kek_array {
 	union _kek_obj ** elems;
 } kek_array_t;
 
+typedef struct _try_range {
+	int try_addr;
+	int catch_addr;
+} try_range_t;
+
+typedef struct _kek_exinfo {
+	header_t h;
+	union _kek_obj * obj_thrown;
+#if !defined(__LP64__)
+	uint32_t padding;
+#endif
+	int length;
+	try_range_t blocks[1];
+} kek_exinfo_t;
+
 typedef struct _kek_file {
 	header_t h;
 	FILE * f_handle;
@@ -78,6 +93,7 @@ typedef union _kek_obj {
 	kek_string_t k_str;
 	kek_symbol_t k_sym;
 	kek_array_t k_arr;
+	kek_exinfo_t k_exi;
 	kek_file_t k_fil;
 	kek_udo_t k_udo;
 } kek_obj_t;

@@ -72,6 +72,7 @@ struct MethodEnv {
 	int local_addr_next; // Local vars address counter
 	unsigned int bc_entrypoint; // Bytecode address
 	unsigned int exception_info_idx; // Index of ex. info object
+	int try_block_cnt;
 
 	MethodEnv(char * name, bool sttc, MethodEnv * n = NULL);
 	~MethodEnv();

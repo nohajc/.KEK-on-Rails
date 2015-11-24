@@ -28,7 +28,7 @@ kek_obj_t* stack_pop();
 kek_obj_t* stack_top();
 
 #define ARG(i) stack_g[ap_g + (i)]
-#define LOC(i) stack_g[fp_g + (i)]
+#define LOC(i) stack_g[fp_g + (i) + 1]
 #define THIS stack_g[fp_g - 4]
 
 #define NATIVE -1
@@ -48,7 +48,8 @@ kek_obj_t* stack_top();
 	ap_g = sp_g - (arg_cnt) - 3; \
 	PUSH(make_integer(fp_g)); \
 	fp_g = sp_g; \
-	sp_g = sp_g + (locals_cnt); \
+	stack_g[fp_g] = NULL; \
+	sp_g = sp_g + (locals_cnt) + 1; \
 	ip_g = entry; \
 }
 
@@ -77,7 +78,8 @@ kek_obj_t* stack_top();
 	PUSH(make_integer(caller_ap)); \
 	PUSH(make_integer(caller_fp)); \
 	fp_g = sp_g; \
-	sp_g = sp_g + (locals_cnt); \
+	stack_g[fp_g] = NULL; \
+	sp_g = sp_g + (locals_cnt) + 1; \
 	ip_g = entry; \
 }
 
