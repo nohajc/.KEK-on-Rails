@@ -56,6 +56,14 @@ void native_new_exception(kek_except_t * expt, kek_obj_t * msg) {
 	expt->msg = msg;
 }
 
+kek_except_t * make_exception(kek_obj_t * msg) {
+	class_t * expt_class = vm_find_class("Exception");
+	kek_except_t * expt = (kek_except_t*) alloc_exception(expt_class);
+	native_new_exception(expt, msg);
+
+	return expt;
+}
+
 void exception_msg(void) {
 	kek_except_t * expt = (kek_except_t*)THIS;
 	PUSH(expt->msg);

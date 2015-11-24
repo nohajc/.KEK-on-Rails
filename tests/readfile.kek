@@ -16,10 +16,10 @@ class Main {
 			nested()
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg() + "\n")
+			Sys.err.writeln(e.msg() + "\n")
 			switch (e.type()) {
 			case TestException:
-				Sys.out.writeln(e.extra + "\n")
+				Sys.err.writeln(e.extra + "\n")
 			default:
 				throw e
 			}
@@ -42,15 +42,15 @@ class Main {
 			Sys.out.writeln("Unreached statement.")
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg() + "\n")
-			Sys.out.writeln(a + "\n")
+			Sys.err.writeln(e.msg() + "\n")
+			Sys.err.writeln(a + "\n")
 		}
 
 		try {
 			var f = new File(args[1], "r")
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg())
+			Sys.err.writeln(e.msg() + "\n")
 			return
 		}
 

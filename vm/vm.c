@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <setjmp.h>
 
 #include "vm.h"
 #include "loader.h"
@@ -24,7 +25,18 @@
 #include "memory.h"
 
 /******************************************************************************/
-/* global variables */
+/* global variables. (their extern is in vm.h) */
+
+uint32_t classes_cnt_g = 0;
+class_t *classes_g = NULL;
+
+size_t const_table_cnt_g = 0;
+uint8_t *const_table_g = NULL;
+
+size_t bc_arr_cnt_g = 0;
+uint8_t *bc_arr_g = NULL;
+
+jmp_buf bc_loop_env_g;
 
 //class_t *classes_g;
 /******************************************************************************/
@@ -524,6 +536,8 @@ void vm_execute_bc(void) {
 	enum {
 		E, I, S
 	} call_type;
+
+	setjmp(bc_loop_env_g);
 
 	for (tick = 0;; tick++) {
 		call_type = -1;
@@ -1160,4 +1174,9 @@ void vm_throw_obj(kek_obj_t * obj) {
 	fp_g = unw_fp;
 	sp_g = unw_sp;
 	ip_g = unw_ip;
+}
+
+void vm_throw_obj_from_native_ctxt(kek_obj_t * obj) {
+	vm_throw_obj(obj);
+	longjmp(bc_loop_env_g, 1);
 }

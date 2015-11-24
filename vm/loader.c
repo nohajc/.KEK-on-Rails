@@ -17,16 +17,7 @@
 #include "loader.h"
 
 /******************************************************************************/
-/* global variables. (their extern is in vm.h) */
-
-uint32_t classes_cnt_g = 0;
-class_t *classes_g = NULL;
-
-size_t const_table_cnt_g = 0;
-uint8_t *const_table_g = NULL;
-
-size_t bc_arr_cnt_g = 0;
-uint8_t *bc_arr_g = NULL;
+/* global variables */
 
 /******************************************************************************/
 /* loading of primitives */
