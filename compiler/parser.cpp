@@ -531,9 +531,9 @@ Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 	if (env.mthEnv && Symb.type == kwTHIS) { // self ref
 		Symb = readLexem();
 
-		if (env.mthEnv->isStatic) {
+		/*if (env.mthEnv->isStatic) {
 			Chyba("Neplatna reference na instanci ve statickem kontextu.");
-		}
+		}*/
 
 		if (Symb.type == DOT) {
 			Symb = readLexem();
