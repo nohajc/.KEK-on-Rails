@@ -19,6 +19,7 @@
 #include "k_integer.h"
 #include "k_file.h"
 #include "k_sys.h"
+#include "k_exception.h"
 #include "stack.h"
 #include "memory.h"
 
@@ -147,6 +148,7 @@ void vm_init_builtin_classes(void) {
 	init_kek_string_class();
 	init_kek_file_class();
 	init_kek_sys_class();
+	init_kek_exception_class();
 }
 
 void vm_init_parent_pointers(void) {
@@ -1001,7 +1003,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(&obj->k_udo.inst_var[arg1]);
+			PUSH(&INST_VAR(obj, arg1));
 			break;
 		}
 		case LVBI_IV: {
@@ -1010,8 +1012,8 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(obj->k_udo.inst_var[arg1]);
-			vm_debug(DBG_BC, " - %s\n", kek_obj_print(obj->k_udo.inst_var[arg1]));
+			PUSH(INST_VAR(obj, arg1));
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(INST_VAR(obj, arg1)));
 			break;
 		}
 		case LVBS_IVE: {
@@ -1035,7 +1037,7 @@ void vm_execute_bc(void) {
 			if (!obj_memb) {
 				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(obj->k_udo.inst_var[obj_memb->addr]);
+			PUSH(INST_VAR(obj, obj_memb->addr));
 			break;
 		}
 		case LABS_IVE: {
@@ -1059,7 +1061,7 @@ void vm_execute_bc(void) {
 			if (!obj_memb) {
 				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(&obj->k_udo.inst_var[obj_memb->addr]);
+			PUSH(&INST_VAR(obj, obj_memb->addr));
 			break;
 		}
 		case ST_EXINFO: {

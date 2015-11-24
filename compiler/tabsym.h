@@ -88,10 +88,11 @@ struct ClassEnv {
 	MethodEnv * static_init;
 	ClassEnv * next;
 	ClassEnv * parent;
+	char * parentName;
 	int class_addr_next; // Static members address counter
 	int obj_addr_next; // Instance members address counter
 
-	ClassEnv(char * name, ClassEnv * par, ClassEnv * n);
+	ClassEnv(char * name, char * parName, ClassEnv * par, ClassEnv * n);
 	~ClassEnv();
 };
 

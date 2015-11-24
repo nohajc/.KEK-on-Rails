@@ -613,7 +613,7 @@ void classout_class(classout_wrapp_t *cow, ClassEnv *ce) {
 	classout_wstr(cow, ce->className);
 
 	if (ce->parent != NULL) {
-		classout_wstr(cow, ce->parent->className);
+		classout_wstr(cow, ce->parentName);
 	} else {
 		classout_wstr(cow, "");
 	}

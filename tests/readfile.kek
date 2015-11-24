@@ -1,8 +1,8 @@
-class TestException { // TODO: Inherit from builtin Exception
-	var msg
-
+class TestException : Exception {
+	var extra
 	TestException(msg) {
-		this.msg = msg
+		super(msg)
+		extra = "Extra TestException info"
 	}
 }
 
@@ -16,7 +16,8 @@ class Main {
 			nested()
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg + "\n")
+			Sys.out.writeln(e.msg() + "\n")
+			Sys.out.writeln(e.extra + "\n")
 		}
 		throw new TestException("Catch error message.")
 	}
@@ -36,7 +37,7 @@ class Main {
 			Sys.out.writeln("Unreached statement.")
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg + "\n")
+			Sys.out.writeln(e.msg() + "\n")
 			Sys.out.writeln(a + "\n")
 		}
 
@@ -44,7 +45,7 @@ class Main {
 			var f = new File(args[1], "r")
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg)
+			Sys.out.writeln(e.msg())
 			return
 		}
 

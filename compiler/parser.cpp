@@ -551,7 +551,7 @@ Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 		}
 		if (Symb.type == LPAR) {
 			external = !env.self;
-			return new MethodRef(env.clsEnv->parent->className);
+			return new MethodRef(env.clsEnv->parentName);
 		}
 		Chyba("Ocekavano volani rodicovske metody nebo konstruktoru.");
 	}

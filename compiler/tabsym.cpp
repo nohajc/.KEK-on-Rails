@@ -62,12 +62,19 @@ PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, const char * v, PrvekTab *
    pole = true;
 }*/
 
-ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
+ClassEnv::ClassEnv(char * name, char * parName, ClassEnv * par, ClassEnv * n) {
 	className = new char[strlen(name) + 1];
 	strcpy(className, name);
+	if (parName) {
+		parentName = new char[strlen(parName) + 1];
+		strcpy(parentName, parName);
+	}
+	else {
+		parentName = NULL;
+	}
 	parent = par;
 	next = n;
-	if (parent) {
+	if (parent && parent != CLASS_UNKNOWN) {
 		class_addr_next = parent->class_addr_next;
 		obj_addr_next = parent->obj_addr_next;
 	}
@@ -83,6 +90,7 @@ ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 
 ClassEnv::~ClassEnv() {
 	delete [] className;
+	delete [] parentName;
 }
 
 MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
@@ -218,14 +226,14 @@ ClassEnv * deklClass(char * cls, char * par) {
 	if (par) {
 		pe = hledejClass(par);
 		if (!pe) {
-			Chyba(par, "neni deklarovan");
+			pe = CLASS_UNKNOWN;
 		}
 	}
 	
 	if (ce) {
 		Chyba(cls, "druha deklarace");
 	}
-	TabClass = new ClassEnv(cls, pe, TabClass);
+	TabClass = new ClassEnv(cls, par, pe, TabClass);
 	return TabClass;
 }
 
