@@ -1098,6 +1098,14 @@ void vm_execute_bc(void) {
 	} /* for */
 } /* vm_execute_bc */
 
+#define UNWIND() { \
+	sp = ap; \
+	ret_addr = (size_t)INT_VAL(stack_g[fp - 3]); \
+	ap = (size_t)INT_VAL(stack_g[fp - 2]); \
+	fp = (size_t)INT_VAL(stack_g[fp - 1]); \
+	if (ret_addr == NATIVE) return -1; \
+}
+
 static int find_handler_for_exobj(kek_obj_t * obj,
 		int * unw_ap, int * unw_fp, int * unw_sp) {
 	int ap = ap_g;
@@ -1107,25 +1115,27 @@ static int find_handler_for_exobj(kek_obj_t * obj,
 	kek_exinfo_t * exi;
 	int i;
 
-	// Unwind stack
-	while (stack_g[fp] == NULL) {
-		sp = ap;
-		ret_addr = (size_t)INT_VAL(stack_g[fp - 3]);
-		ap = (size_t)INT_VAL(stack_g[fp - 2]);
-		fp = (size_t)INT_VAL(stack_g[fp - 1]);
-		if (ret_addr == NATIVE) return -1;
-	}
-
-	exi = &stack_g[fp]->k_exi;
-	for (i = 0; i < exi->length; ++i) {
-		if (exi->blocks[i].try_addr <= (ret_addr - 1)
-				&& (ret_addr - 1) < exi->blocks[i].catch_addr) {
-			exi->obj_thrown = obj;
-			*unw_ap = ap;
-			*unw_fp = fp;
-			*unw_sp = sp;
-			return exi->blocks[i].catch_addr;
+	while (true) {
+		// Unwind stack
+		while (stack_g[fp] == NULL) {
+			UNWIND();
 		}
+
+		// Check if we are inside a try block
+		exi = &stack_g[fp]->k_exi;
+		for (i = 0; i < exi->length; ++i) {
+			if (exi->blocks[i].try_addr <= (ret_addr - 1)
+					&& (ret_addr - 1) < exi->blocks[i].catch_addr) {
+				exi->obj_thrown = obj;
+				*unw_ap = ap;
+				*unw_fp = fp;
+				*unw_sp = sp;
+				return exi->blocks[i].catch_addr;
+			}
+		}
+
+		// If not, continue unwinding
+		UNWIND();
 	}
 
 	return -1;

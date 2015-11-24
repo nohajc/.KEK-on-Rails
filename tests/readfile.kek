@@ -8,11 +8,17 @@ class TestException { // TODO: Inherit from builtin Exception
 
 class Main {
 	static nested() {
-		throw new TestException("Testing error message.")
+		throw new TestException("Nested catch error message.")
 	}
 
 	static test() {
-		nested()
+		try {
+			nested()
+		}
+		catch (e) {
+			Sys.out.writeln(e.msg + "\n")
+		}
+		throw new TestException("Catch error message.")
 	}
 
 	static main(args) {
