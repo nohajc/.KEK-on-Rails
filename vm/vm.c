@@ -366,7 +366,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if (IS_NIL(a) || IS_NIL(b)) {
+	if ((IS_NIL(a) || IS_NIL(b)) || (IS_CLASS(a) && IS_CLASS(b))) {
 		kek_int_t *res;
 
 		switch (o) {

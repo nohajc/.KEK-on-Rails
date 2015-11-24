@@ -355,13 +355,16 @@ Node *Call::Optimize() {
 
 Node * ClassRef::Optimize() {
 	Const * cnst_target;
-	target = (Expr*)(target->Optimize());
-	cnst_target = dynamic_cast<Const*>(target);
+	if (target) {
+		target = (Expr*)(target->Optimize());
+		cnst_target = dynamic_cast<Const*>(target);
 
-	if (cnst_target) {
-		target = NULL;
-		delete this;
-		return cnst_target;
+
+		if (cnst_target) {
+			target = NULL;
+			delete this;
+			return cnst_target;
+		}
 	}
 
 	return this;
@@ -691,7 +694,10 @@ uint32_t ClassRef::Translate() {
 	uint32_t sym_idx = bco_sym(bcout_g, name);
 	bco_ww1(bcout_g, LD_CLASS, (uint16_t)sym_idx);
 
-	return target->Translate();
+	if (target) {
+		return target->Translate();
+	}
+	return 0;
 }
 
 uint32_t ObjRef::Translate() {

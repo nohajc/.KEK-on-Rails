@@ -485,7 +485,13 @@ ArgList * ArrayOffset(Env env) {
 Expr *VarOrConst(char *id, ArgList * offset, Env env)
 {
 	int v;
-	PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
+	PrvekTab * p = hledejMember(id, env.clsEnv, env.mthEnv);
+	if (!p) {
+		if (env.mthEnv) { // ClassRef alone
+			return new ClassRef(id, true, NULL);
+		}
+		Chyba("Neplatna reference na tridu.");
+	}
 	//DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
 	DruhId druh = p->druh;
 

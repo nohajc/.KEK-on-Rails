@@ -2,7 +2,7 @@ class TestException : Exception {
 	var extra
 	TestException(msg) {
 		super(msg)
-		extra = "Extra TestException info"
+		extra = "Extra TestException info."
 	}
 }
 
@@ -17,7 +17,9 @@ class Main {
 		}
 		catch (e) {
 			Sys.out.writeln(e.msg() + "\n")
-			Sys.out.writeln(e.extra + "\n")
+			if (e.type() == TestException) {
+				Sys.out.writeln(e.extra + "\n")
+			}
 		}
 		throw new TestException("Catch error message.")
 	}
