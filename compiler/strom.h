@@ -382,12 +382,12 @@ public:
 class CaseBlockScope {
 public:
 	Numb * lo;
-	Numb * eq;
+	Expr * eq;
 	Numb * hi;
 	int type; /* 0: number, 1: range, 2: else */
 	CaseBlockScope *next;
 	CaseBlockScope(CaseBlockScope *);
-	CaseBlockScope(CaseBlockScope *, Numb *);
+	CaseBlockScope(CaseBlockScope *, Expr *);
 	CaseBlockScope(CaseBlockScope *, Numb *, Numb *);
 	virtual ~CaseBlockScope();
 	virtual void Print(int);

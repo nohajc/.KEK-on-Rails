@@ -1243,9 +1243,10 @@ CaseBlockScope * ntCASE_SCOPE(Env env) {
 	//int loeq_int;
 	//Srovnani_NUMB(&loeq_int);
 	//Numb *loeq = new Numb(loeq_int);
-	Numb *loeq = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
+	Expr * e = (Expr*)(Vyraz(env)->Optimize());
+	Numb *loeq = dynamic_cast<Numb*>(e);
 	if (!loeq) {
-		Chyba("Vyraz specifikujici case musi byt konstantni.");
+		return new CaseBlockScope(ntCASE_SCOPE_NEXT(env), e);
 	}
 	Numb *hi = ntCASE_RANGE(env);
 

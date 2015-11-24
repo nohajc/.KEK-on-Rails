@@ -982,7 +982,7 @@ CaseBlockScope::CaseBlockScope(CaseBlockScope *next_) {
 	this->next = next_;
 }
 
-CaseBlockScope::CaseBlockScope(CaseBlockScope *next_, Numb *eq_) {
+CaseBlockScope::CaseBlockScope(CaseBlockScope *next_, Expr *eq_) {
 	this->lo = NULL;
 	this->eq = eq_;
 	this->hi = NULL;
@@ -1077,8 +1077,9 @@ Node * Case::Optimize() {
 							(Statm *) (caseBlock_p->statmList->Optimize());
 
 					return caseBlock_p;
-				case 1: /* number */
-					if (numbTest->Value() == caseBlockScope_p->eq->Value()) {
+				case 1: /* number */ {
+					Numb *nEq = dynamic_cast<Numb*>(caseBlockScope_p->eq);
+					if (nEq && numbTest->Value() == nEq->Value()) {
 						caseBlock_p->statmList =
 								(Statm *) (caseBlock_p->statmList->Optimize());
 
@@ -1086,6 +1087,7 @@ Node * Case::Optimize() {
 					}
 
 					break;
+				}
 				case 2: /* range */
 					if (numbTest->Value() >= caseBlockScope_p->lo->Value()
 							&& numbTest->Value()

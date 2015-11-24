@@ -17,8 +17,11 @@ class Main {
 		}
 		catch (e) {
 			Sys.out.writeln(e.msg() + "\n")
-			if (e.type() == TestException) {
+			switch (e.type()) {
+			case TestException:
 				Sys.out.writeln(e.extra + "\n")
+			default:
+				throw e
 			}
 		}
 		throw new TestException("Catch error message.")
