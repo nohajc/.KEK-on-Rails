@@ -56,6 +56,21 @@ kek_obj_t * new_string_from_cstring(const char * cstr) {
 	return ((kek_obj_t *) kstr);
 }
 
+kek_obj_t * new_string_from_concat(const char * a, const char * b) {
+	kek_string_t * kstr;
+	class_t * str_class = vm_find_class("String");
+	size_t a_len = strlen(a);
+	size_t b_len = strlen(b);
+	size_t c_len = a_len + b_len;
+
+	kstr = (kek_string_t *) alloc_string(str_class, c_len);
+	kstr->length = c_len;
+	strcpy(kstr->string, a);
+	strcpy(kstr->string + a_len, b);
+
+	return ((kek_obj_t *) kstr);
+}
+
 void string_length(void) {
 	kek_string_t * str = (kek_string_t*)THIS;
 	kek_int_t * kek_len = make_integer(str->length);

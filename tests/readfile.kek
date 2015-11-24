@@ -30,10 +30,8 @@ class Main {
 			Sys.out.writeln("Unreached statement.")
 		}
 		catch (e) {
-			Sys.out.writeln(e.msg)
-			Sys.out.writeln("\n")
-			Sys.out.writeln(a)
-			Sys.out.writeln("\n")
+			Sys.out.writeln(e.msg + "\n")
+			Sys.out.writeln(a + "\n")
 		}
 
 		try {

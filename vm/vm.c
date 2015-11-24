@@ -456,33 +456,36 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		/* After the condition is evaluated, we know this is a str/str
 		 * char/str or str/char comparison. Furthermore, we have set up
 		 * str_a and str_b to point to the string/char values. */
-		kek_int_t *res;
+		kek_obj_t *res;
 
 		switch (o) {
+		case Plus:
+			res = new_string_from_concat(str_a, str_b);
+			break;
 		case Eq:
-			res = make_integer(!strcmp(str_a, str_b));
+			res = (kek_obj_t*)make_integer(!strcmp(str_a, str_b));
 			break;
 		case NotEq:
-			res = make_integer(strcmp(str_a, str_b));
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b));
 			break;
 		case Less:
-			res = make_integer(strcmp(str_a, str_b) < 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) < 0);
 			break;
 		case Greater:
-			res = make_integer(strcmp(str_a, str_b) > 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) > 0);
 			break;
 		case LessOrEq:
-			res = make_integer(strcmp(str_a, str_b) <= 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) <= 0);
 			break;
 		case GreaterOrEq:
-			res = make_integer(strcmp(str_a, str_b) >= 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) >= 0);
 			break;
 		// TODO: implement more operators
 		default:
 			vm_error("bc_bop: unsupported bop %d on chars/strings\n", o);
 			break;
 		}
-		return (kek_obj_t*) res;
+		return res;
 	} else {
 		// TODO: implement operations for other types
 		/*vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
