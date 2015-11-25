@@ -719,11 +719,12 @@ uint32_t MethodRef::Translate() {
 }
 
 uint32_t New::Translate() {
+	int arg_count = args ? args->Count() : 0;
 	if (args) {
 		args->Translate();
 	}
 	uint32_t cons_idx = constructor->Translate();
-	bco_ww1(bcout_g, NEW, cons_idx);
+	bco_ww2(bcout_g, NEW, cons_idx, arg_count);
 	return 0;
 }
 

@@ -964,7 +964,9 @@ void vm_execute_bc(void) {
 		case NEW: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u\n", "NEW", arg1); // NEW should have a second argument like CALL
+			arg2 = BC_OP16(ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u %u\n", "NEW", arg1, arg2); // NEW should have a second argument like CALL
 			sym = CONST(arg1);
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of NEW.\n");
@@ -979,6 +981,9 @@ void vm_execute_bc(void) {
 			PUSH(obj); // Push instance pointer (THIS)
 			if (!mth) { // no constructor	
 				break;
+			}
+			if (mth->args_cnt != arg2) {
+				vm_error("Constructor expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}
 			// Call constructor
 			if (mth->is_native) {

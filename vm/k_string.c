@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <assert.h>
 #include "k_string.h"
 #include "k_integer.h"
@@ -111,7 +112,10 @@ void string_toInt(void) {
 	kek_string_t * str = (kek_string_t*)THIS;
 	kek_int_t * kek_n;
 	int n, pos;
-	if (sscanf(str->string, "%d%n", &n, &pos) != 1 || pos != str->length) {
+	int matched = sscanf(str->string, "%d%n", &n, &pos);
+	while (pos < str->length && isspace(str->string[pos])) pos++;
+
+	if (matched != 1 || pos != str->length) {
 		PUSH(NIL);
 		BC_RET;
 		return;
