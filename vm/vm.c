@@ -1011,7 +1011,7 @@ void vm_execute_bc(void) {
 			}
 			cls = vm_find_class(sym->k_sym.symbol);
 			if (!cls) {
-				vm_error("Cannot find class %d.\n", sym->k_sym.symbol);
+				vm_error("Cannot find class %s.\n", sym->k_sym.symbol);
 			}
 			PUSH(cls);
 			break;

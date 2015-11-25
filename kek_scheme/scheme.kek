@@ -13,14 +13,22 @@ class Scheme {
 		var expr
 		while(1) {
 			out.writeln("> ")
-			expr = input.read()
-			if (!expr) {
-				out.writeln("\n")
-				break
-			}
-			else {
+			try {
+				expr = input.read()
+				if (!expr) {
+					out.writeln("\n")
+					break
+				}
 				expr.print(out)
 				out.writeln("\n");
+			}
+			catch (e) {
+				switch (e.type()) {
+				case ParserError:
+					out.writeln(e.msg() + "\n")
+				default:
+					throw e
+				}
 			}
 		}
 	}

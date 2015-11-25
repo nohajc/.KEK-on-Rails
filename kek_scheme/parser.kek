@@ -1,5 +1,11 @@
 #include "types.kek"
 
+class ParserError : Exception {
+	ParserError(msg) {
+		super(msg)
+	}
+}
+
 class Parser {
 	var rd
 
@@ -61,7 +67,9 @@ class Parser {
 			if (isString) {
 				if (c == "\"") break
 				// Todo: throw exception
-				if (c == nil) return nil
+				if (c == nil) {
+					throw new ParserError("EOF while reading a string")
+				}
 			}
 			else if (isWS(c) || c == "(" || c == ")" || c == ";" || c == nil) {
 				rd.unreadChar()
@@ -85,6 +93,9 @@ class Parser {
 		var firstC = skipWS()
 		firstC = skipComment(firstC)
 
+		if (firstC == nil) {
+			throw new ParserError("EOF while reading a list")
+		}
 		if (firstC == ")") return G.scmNil
 		rd.unreadChar()
 
