@@ -45,15 +45,44 @@ class scmString : scmObject {
 }
 
 class scmSymbol : scmObject {
-	var sym
+	var symName
+	static var symTable
+	static var symCount
 
-	scmSymbol(sym) {
+	static scmSymbol() {
+		symTable = []
+		symCount = 0
+	}
+
+	scmSymbol(symName) {
 		super(Tag.SYMBOL)
-		this.sym = sym
+		this.symName = symName
+	}
+
+	static findSym(symName) {
+		var i
+		for (i = 0; i < symCount; i++) {
+			if (symTable[i].symName == symName) {
+				return symTable[i]
+			}
+		}
+		return nil
+	}
+
+	static addSym(sym) {
+		symTable[symCount] = sym
+		symCount++
+		return sym
+	}
+
+	static getSym(symName) {
+		var sym = findSym(symName)
+		if (sym != nil) return sym
+		return addSym(new scmSymbol(symName))
 	}
 
 	print(out) {
-		out.writeln(sym)
+		out.writeln(symName)
 	}
 }
 

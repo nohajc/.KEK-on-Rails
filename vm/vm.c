@@ -966,7 +966,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u %u\n", "NEW", arg1, arg2); // NEW should have a second argument like CALL
+			vm_debug(DBG_BC, "%s %u %u\n", "NEW", arg1, arg2);
 			sym = CONST(arg1);
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of NEW.\n");
