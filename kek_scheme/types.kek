@@ -40,9 +40,7 @@ class scmString : scmObject {
 	}
 
 	print(out) {
-		out.writeln("\"")
-		out.writeln(str)
-		out.writeln("\"")
+		out.writeln("\"" + str + "\"")
 	}
 }
 

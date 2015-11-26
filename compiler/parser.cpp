@@ -409,7 +409,7 @@ Statm * Metoda(Env env, bool isStatic) {
 	}
 	Srovnani(RPAR);
 
-	return new Method(mth_id, isStatic, isConstructor, numArgs, &mthEnv->bc_entrypoint, SlozPrikaz(env));
+	return new Method(mth_id, isStatic, isConstructor, numArgs, env.mthEnv, SlozPrikaz(env));
 }
 
 StatmList * SlozPrikaz(Env env, Context ctxt) {
@@ -485,7 +485,13 @@ ArgList * ArrayOffset(Env env) {
 Expr *VarOrConst(char *id, ArgList * offset, Env env)
 {
 	int v;
-	PrvekTab * p = adrSym(id, env.clsEnv, env.mthEnv);
+	PrvekTab * p = hledejMember(id, env.clsEnv, env.mthEnv);
+	if (!p) {
+		if (env.mthEnv) { // ClassRef alone
+			return new ClassRef(id, true, NULL);
+		}
+		Chyba("Neplatna reference na tridu.");
+	}
 	//DruhId druh = idPromKonst(id, &v, env.clsEnv, env.mthEnv);
 	DruhId druh = p->druh;
 
@@ -525,9 +531,9 @@ Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 	if (env.mthEnv && Symb.type == kwTHIS) { // self ref
 		Symb = readLexem();
 
-		if (env.mthEnv->isStatic) {
+		/*if (env.mthEnv->isStatic) {
 			Chyba("Neplatna reference na instanci ve statickem kontextu.");
-		}
+		}*/
 
 		if (Symb.type == DOT) {
 			Symb = readLexem();
@@ -551,7 +557,7 @@ Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 		}
 		if (Symb.type == LPAR) {
 			external = !env.self;
-			return new MethodRef(env.clsEnv->parent->className);
+			return new MethodRef(env.clsEnv->parentName);
 		}
 		Chyba("Ocekavano volani rodicovske metody nebo konstruktoru.");
 	}
@@ -869,6 +875,23 @@ Statm * Prikaz(Env env, Context ctxt) {
 		Srovnani(RPAR);
 		Srovnani(LCURLY);
 		return new Case(expr, ntCASE_BODY(env));
+	}
+	case kwTRY: {
+		char id[MAX_IDENT_LEN];
+		Srovnani(kwTRY);
+		Statm * try_block = Prikaz(env, ctxt);
+		skipNewlines();
+		Srovnani(kwCATCH);
+		Srovnani(LPAR);
+		Srovnani_IDENT(id);
+		Srovnani(RPAR);
+		deklExObj(id, env.clsEnv, env.mthEnv);
+		Statm * catch_block = Prikaz(env, ctxt);
+		return new Try(try_block, catch_block, env.mthEnv);
+	}
+	case kwTHROW: {
+		Srovnani(kwTHROW);
+		return new Throw(Vyraz(env));
 	}
 	case LCURLY:
 		return SlozPrikaz(env, ctxt);
@@ -1220,9 +1243,10 @@ CaseBlockScope * ntCASE_SCOPE(Env env) {
 	//int loeq_int;
 	//Srovnani_NUMB(&loeq_int);
 	//Numb *loeq = new Numb(loeq_int);
-	Numb *loeq = dynamic_cast<Numb*>(Vyraz(env)->Optimize());
+	Expr * e = (Expr*)(Vyraz(env)->Optimize());
+	Numb *loeq = dynamic_cast<Numb*>(e);
 	if (!loeq) {
-		Chyba("Vyraz specifikujici case musi byt konstantni.");
+		return new CaseBlockScope(ntCASE_SCOPE_NEXT(env), e);
 	}
 	Numb *hi = ntCASE_RANGE(env);
 

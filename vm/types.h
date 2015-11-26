@@ -18,7 +18,7 @@ struct _class;
 union _kek_obj;
 
 typedef enum _type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_FILE, KEK_UDO, KEK_CLASS
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO, KEK_EXPT, KEK_FILE, KEK_UDO, KEK_CLASS
 } type_t;
 
 typedef struct _header {
@@ -40,6 +40,7 @@ typedef struct _kek_int {
 /* string - immutable */
 typedef struct _kek_string {
 	header_t h;
+	// FIXME: We should mark final classes that cannot be parents.
 	int length;
 	char string[1];
 } kek_string_t;
@@ -54,20 +55,49 @@ typedef struct _kek_symbol {
 /* array - mutable */
 typedef struct _kek_array {
 	header_t h;
+	// FIXME: We should mark final objects that cannot be parents.
 	int length;
 	int alloc_size;
 	/* Loader will need to transform each constant_array_t to this format */
 	union _kek_obj ** elems;
 } kek_array_t;
 
+typedef struct _try_range {
+	int try_addr;
+	int catch_addr;
+} try_range_t;
+
+typedef struct _kek_exinfo {
+	header_t h;
+	union _kek_obj * obj_thrown;
+#if !defined(__LP64__)
+	uint32_t padding;
+#endif
+	int length;
+	try_range_t blocks[1];
+} kek_exinfo_t;
+
+typedef struct _kek_except {
+	header_t h;
+	// We imitate the kek_udo_t layout so that derived objects can exist.
+	int var_offset;
+	union _kek_obj * msg;
+} kek_except_t;
+
 typedef struct _kek_file {
 	header_t h;
+	// We imitate the kek_udo_t layout so that derived objects can exist.
+	int var_offset;
 	FILE * f_handle;
 } kek_file_t;
 
 /* user-defined object */
 typedef struct _kek_udo {
 	header_t h;
+	// When the parent object is builtin we need to reserve space for its vars.
+	// Compile-time offsets to inst_var will be incremented by var_offset
+	// using INST_VAR macro.
+	int var_offset;
 	union _kek_obj * inst_var[1]; /* inst_var[syms_instance_cnt] */
 } kek_udo_t;
 
@@ -78,6 +108,8 @@ typedef union _kek_obj {
 	kek_string_t k_str;
 	kek_symbol_t k_sym;
 	kek_array_t k_arr;
+	kek_exinfo_t k_exi;
+	kek_except_t k_expt;
 	kek_file_t k_fil;
 	kek_udo_t k_udo;
 } kek_obj_t;
@@ -113,10 +145,10 @@ typedef union _kek_obj {
 #define IS_SYM(obj) ((obj)->h.t == KEK_SYM)
 #define IS_ARR(obj) (IS_PTR(obj) && (obj)->h.t == KEK_ARR)
 #define IS_UDO(obj) (IS_PTR(obj) && (obj)->h.t == KEK_UDO)
-#define IS_CLASS(obj) ((obj)->h.t == KEK_CLASS)
+#define IS_CLASS(obj) (IS_PTR(obj) && (obj)->h.t == KEK_CLASS)
 
 #define NIL CONST(0)
 
-
+#define INST_VAR(obj, idx) ((obj)->k_udo.inst_var[(idx) + (obj)->k_udo.var_offset])
 
 #endif /* TYPES_H_ */

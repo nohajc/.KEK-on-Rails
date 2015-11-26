@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <setjmp.h>
 
 #include "vm.h"
 #include "loader.h"
@@ -19,11 +20,23 @@
 #include "k_integer.h"
 #include "k_file.h"
 #include "k_sys.h"
+#include "k_exception.h"
 #include "stack.h"
 #include "memory.h"
 
 /******************************************************************************/
-/* global variables */
+/* global variables. (their extern is in vm.h) */
+
+uint32_t classes_cnt_g = 0;
+class_t *classes_g = NULL;
+
+size_t const_table_cnt_g = 0;
+uint8_t *const_table_g = NULL;
+
+size_t bc_arr_cnt_g = 0;
+uint8_t *bc_arr_g = NULL;
+
+jmp_buf bc_loop_env_g;
 
 //class_t *classes_g;
 /******************************************************************************/
@@ -149,6 +162,7 @@ void vm_init_builtin_classes(void) {
 	init_kek_string_class();
 	init_kek_file_class();
 	init_kek_sys_class();
+	init_kek_exception_class();
 }
 
 void vm_init_parent_pointers(void) {
@@ -202,6 +216,9 @@ void vm_init_const_table_elems(void) {
 			obj->k_arr.elems = elems;
 
 			ptr += sizeof(constant_array_t) + (obj->k_arr.length - 1) * sizeof(uint32_t);
+			break;
+		case KEK_EXINFO:
+			ptr += sizeof(kek_exinfo_t) + (obj->k_exi.length - 1) * sizeof(try_range_t);
 			break;
 		default:;
 		}
@@ -363,7 +380,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if (IS_NIL(a) || IS_NIL(b)) {
+	if ((IS_NIL(a) || IS_NIL(b)) || (IS_CLASS(a) && IS_CLASS(b))) {
 		kek_int_t *res;
 
 		switch (o) {
@@ -455,33 +472,36 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		/* After the condition is evaluated, we know this is a str/str
 		 * char/str or str/char comparison. Furthermore, we have set up
 		 * str_a and str_b to point to the string/char values. */
-		kek_int_t *res;
+		kek_obj_t *res;
 
 		switch (o) {
+		case Plus:
+			res = new_string_from_concat(str_a, str_b);
+			break;
 		case Eq:
-			res = make_integer(!strcmp(str_a, str_b));
+			res = (kek_obj_t*)make_integer(!strcmp(str_a, str_b));
 			break;
 		case NotEq:
-			res = make_integer(strcmp(str_a, str_b));
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b));
 			break;
 		case Less:
-			res = make_integer(strcmp(str_a, str_b) < 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) < 0);
 			break;
 		case Greater:
-			res = make_integer(strcmp(str_a, str_b) > 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) > 0);
 			break;
 		case LessOrEq:
-			res = make_integer(strcmp(str_a, str_b) <= 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) <= 0);
 			break;
 		case GreaterOrEq:
-			res = make_integer(strcmp(str_a, str_b) >= 0);
+			res = (kek_obj_t*)make_integer(strcmp(str_a, str_b) >= 0);
 			break;
 		// TODO: implement more operators
 		default:
 			vm_error("bc_bop: unsupported bop %d on chars/strings\n", o);
 			break;
 		}
-		return (kek_obj_t*) res;
+		return res;
 	} else {
 		// TODO: implement operations for other types
 		/*vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
@@ -518,6 +538,8 @@ void vm_execute_bc(void) {
 	enum {
 		E, I, S
 	} call_type;
+
+	setjmp(bc_loop_env_g);
 
 	for (tick = 0;; tick++) {
 		call_type = -1;
@@ -944,7 +966,9 @@ void vm_execute_bc(void) {
 		case NEW: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u\n", "NEW", arg1); // NEW should have a second argument like CALL
+			arg2 = BC_OP16(ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u %u\n", "NEW", arg1, arg2); // NEW should have a second argument like CALL
 			sym = CONST(arg1);
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of NEW.\n");
@@ -959,6 +983,9 @@ void vm_execute_bc(void) {
 			PUSH(obj); // Push instance pointer (THIS)
 			if (!mth) { // no constructor	
 				break;
+			}
+			if (mth->args_cnt != arg2) {
+				vm_error("Constructor expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}
 			// Call constructor
 			if (mth->is_native) {
@@ -986,7 +1013,7 @@ void vm_execute_bc(void) {
 			}
 			cls = vm_find_class(sym->k_sym.symbol);
 			if (!cls) {
-				vm_error("Cannot find class %d.\n", sym->k_sym.symbol);
+				vm_error("Cannot find class %s.\n", sym->k_sym.symbol);
 			}
 			PUSH(cls);
 			break;
@@ -997,7 +1024,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(&obj->k_udo.inst_var[arg1]);
+			PUSH(&INST_VAR(obj, arg1));
 			break;
 		}
 		case LVBI_IV: {
@@ -1006,8 +1033,8 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LVBI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(obj->k_udo.inst_var[arg1]);
-			vm_debug(DBG_BC, " - %s\n", kek_obj_print(obj->k_udo.inst_var[arg1]));
+			PUSH(INST_VAR(obj, arg1));
+			vm_debug(DBG_BC, " - %s\n", kek_obj_print(INST_VAR(obj, arg1)));
 			break;
 		}
 		case LVBS_IVE: {
@@ -1031,7 +1058,7 @@ void vm_execute_bc(void) {
 			if (!obj_memb) {
 				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(obj->k_udo.inst_var[obj_memb->addr]);
+			PUSH(INST_VAR(obj, obj_memb->addr));
 			break;
 		}
 		case LABS_IVE: {
@@ -1055,10 +1082,33 @@ void vm_execute_bc(void) {
 			if (!obj_memb) {
 				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(&obj->k_udo.inst_var[obj_memb->addr]);
+			PUSH(&INST_VAR(obj, obj_memb->addr));
 			break;
 		}
-
+		case ST_EXINFO: {
+			kek_obj_t * exi;
+			arg1 = BC_OP16(++ip_g);
+			ip_g += 2;
+			vm_debug(DBG_BC, "%s %u\n", "ST_EXINFO", arg1);
+			exi = CONST(arg1);
+			assert(exi->h.t == KEK_EXINFO);
+			stack_g[fp_g] = exi;
+			break;
+		}
+		case THROW: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "THROW");
+			POP(obj);
+			vm_throw_obj(obj);
+			break;
+		}
+		case LD_EXOBJ: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "LD_EXOBJ");
+			assert(stack_g[fp_g]->h.t == KEK_EXINFO);
+			PUSH(stack_g[fp_g]->k_exi.obj_thrown);
+			break;
+		}
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
 			break;
@@ -1070,3 +1120,70 @@ void vm_execute_bc(void) {
 		}
 	} /* for */
 } /* vm_execute_bc */
+
+#define UNWIND() { \
+	sp = ap; \
+	ret_addr = (size_t)INT_VAL(stack_g[fp - 3]); \
+	ap = (size_t)INT_VAL(stack_g[fp - 2]); \
+	fp = (size_t)INT_VAL(stack_g[fp - 1]); \
+	if (ret_addr == NATIVE) return -1; \
+}
+
+static int find_handler_for_exobj(kek_obj_t * obj,
+		int * unw_ap, int * unw_fp, int * unw_sp) {
+	int ap = ap_g;
+	int fp = fp_g;
+	int sp = sp_g;
+	int ret_addr = ip_g + 1; // Right after THROW
+	kek_exinfo_t * exi;
+	int i;
+
+	while (true) {
+		// Unwind stack
+		while (stack_g[fp] == NULL) {
+			UNWIND();
+		}
+
+		// Check if we are inside a try block
+		exi = &stack_g[fp]->k_exi;
+		for (i = 0; i < exi->length; ++i) {
+			if (exi->blocks[i].try_addr <= (ret_addr - 1)
+					&& (ret_addr - 1) < exi->blocks[i].catch_addr) {
+				exi->obj_thrown = obj;
+				*unw_ap = ap;
+				*unw_fp = fp;
+				*unw_sp = sp;
+				return exi->blocks[i].catch_addr;
+			}
+		}
+
+		// If not, continue unwinding
+		UNWIND();
+	}
+
+	return -1;
+}
+
+void vm_throw_obj(kek_obj_t * obj) {
+	int unw_ap;
+	int unw_fp;
+	int unw_sp;
+	int unw_ip;
+	unw_ip = find_handler_for_exobj(obj, &unw_ap, &unw_fp, &unw_sp);
+	if (unw_ip == -1) {
+		if (IS_PTR(obj) && obj->h.cls) {
+			vm_error("Unhandled exception %s.\n", obj->h.cls->name);
+		} else {
+			vm_error("Unhandled exception %s.\n", kek_obj_print(obj));
+		}
+	}
+	ap_g = unw_ap;
+	fp_g = unw_fp;
+	sp_g = unw_sp;
+	ip_g = unw_ip;
+}
+
+void vm_throw_obj_from_native_ctxt(kek_obj_t * obj) {
+	vm_throw_obj(obj);
+	longjmp(bc_loop_env_g, 1);
+}

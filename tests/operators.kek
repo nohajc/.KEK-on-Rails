@@ -1,7 +1,3 @@
-class Arr {
-	static var sVar
-}
-
 class Operators {
 	static var a1, a2, a3
 
@@ -13,18 +9,16 @@ class Operators {
 		// The method's existence will be checked at runtime.
 		a3.append([3, 4])
 		// We can access instance variable whose existence will also be checked at runtime.
-		write a3.length
-		write Arr.sVar // Known class variable reference
-		write Array.sVar // Unknown class variable reference
+		write a3.length()
 
 		var i, j, str = "something"
-		for(i = 0; i < str.len(); i++){
+		for(i = 0; i < str.length(); i++){
 			write str[i]
 		}
 
 		a1[0] = ["ab", "cd"]
 		a1[1] = ["ef", "gh"]
-		write a1[0].len()
+		write a1[0].length()
 		a1[0][0] = a1[1][1]
 		a1[0][1] = a1[1][0]
 	}

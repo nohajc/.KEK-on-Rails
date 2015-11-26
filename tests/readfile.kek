@@ -1,11 +1,58 @@
+class TestException : Exception {
+	var extra
+	TestException(msg) {
+		super(msg)
+		extra = "Extra TestException info."
+	}
+}
+
 class Main {
+	static nested() {
+		throw new TestException("Nested catch error message.")
+	}
+
+	static test() {
+		try {
+			nested()
+		}
+		catch (e) {
+			Sys.err.writeln(e.msg() + "\n")
+			switch (e.type()) {
+			case TestException:
+				Sys.err.writeln(e.extra + "\n")
+			default:
+				throw e
+			}
+		}
+		throw new TestException("Catch error message.")
+	}
+
 	static main(args) {
 		if (args.length() != 2) {
 			write "Please, specify a file to read.\n"
 			return
 		}
 
-		var f = new File(args[1], "r")
+		var a = "Testing context."
+
+		//test() // Uncomment this to get unhandled exception
+
+		try {
+			test()
+			Sys.out.writeln("Unreached statement.")
+		}
+		catch (e) {
+			Sys.err.writeln(e.msg() + "\n")
+			Sys.err.writeln(a + "\n")
+		}
+
+		try {
+			var f = new File(args[1], "r")
+		}
+		catch (e) {
+			Sys.err.writeln(e.msg() + "\n")
+			return
+		}
 
 		while (1) {
 			var line = f.readln()

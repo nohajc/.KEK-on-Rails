@@ -8,6 +8,9 @@ class Object {
 	static const a = 5
 	var v, b
 
+	Object() {
+	}
+
 	method1() {
 		b = 101
 		//v = [1, 2, 3, "ahoj", "b", "c", a, b] // does not compile

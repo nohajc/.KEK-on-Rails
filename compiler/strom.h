@@ -270,6 +270,28 @@ public:
    virtual void Print(int);
 };
 
+class Try : public Statm {
+	Statm *try_block;
+	Statm *catch_block;
+	MethodEnv *mthEnv;
+public:
+	Try(Statm*, Statm*, MethodEnv*);
+	virtual ~Try();
+	virtual Node *Optimize();
+	virtual uint32_t Translate();
+	virtual void Print(int);
+};
+
+class Throw: public Statm {
+	Expr *obj;
+public:
+	Throw(Expr *);
+	virtual ~Throw();
+	virtual Node *Optimize();
+	virtual uint32_t Translate();
+	virtual void Print(int);
+};
+
 class StatmList: public Statm {
 public:
 	Statm *statm;
@@ -324,9 +346,9 @@ class Method: public Statm {
 	bool isConstructor;
 	int numArgs;
 	StatmList * body;
-	unsigned int * bc_entrypoint; // Points to symbol table MethodEnv object
+	MethodEnv * mthEnv;
 public:
-	Method(const char *, bool, bool, int, unsigned int *, StatmList *);
+	Method(const char *, bool, bool, int, MethodEnv *, StatmList *);
 	virtual ~Method();
 	virtual Node *Optimize();
 	virtual uint32_t Translate();
@@ -360,12 +382,12 @@ public:
 class CaseBlockScope {
 public:
 	Numb * lo;
-	Numb * eq;
+	Expr * eq;
 	Numb * hi;
 	int type; /* 0: number, 1: range, 2: else */
 	CaseBlockScope *next;
 	CaseBlockScope(CaseBlockScope *);
-	CaseBlockScope(CaseBlockScope *, Numb *);
+	CaseBlockScope(CaseBlockScope *, Expr *);
 	CaseBlockScope(CaseBlockScope *, Numb *, Numb *);
 	virtual ~CaseBlockScope();
 	virtual void Print(int);

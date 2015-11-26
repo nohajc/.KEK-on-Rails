@@ -62,12 +62,19 @@ PrvekTab::PrvekTab(char *i, DruhId d, Scope s, int a, const char * v, PrvekTab *
    pole = true;
 }*/
 
-ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
+ClassEnv::ClassEnv(char * name, char * parName, ClassEnv * par, ClassEnv * n) {
 	className = new char[strlen(name) + 1];
 	strcpy(className, name);
+	if (parName) {
+		parentName = new char[strlen(parName) + 1];
+		strcpy(parentName, parName);
+	}
+	else {
+		parentName = NULL;
+	}
 	parent = par;
 	next = n;
-	if (parent) {
+	if (parent && parent != CLASS_UNKNOWN) {
 		class_addr_next = parent->class_addr_next;
 		obj_addr_next = parent->obj_addr_next;
 	}
@@ -83,6 +90,7 @@ ClassEnv::ClassEnv(char * name, ClassEnv * par, ClassEnv * n) {
 
 ClassEnv::~ClassEnv() {
 	delete [] className;
+	delete [] parentName;
 }
 
 MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
@@ -94,7 +102,9 @@ MethodEnv::MethodEnv(char * name, bool sttc, MethodEnv * n) {
 	local_addr_next = 0;
 	args = NULL;
 	syms = NULL;
-	bc_entrypoint = 0; /* TODO FIXME */
+	exobjs = NULL;
+	bc_entrypoint = 0;
+	try_block_cnt = 0;
 }
 
 MethodEnv::~MethodEnv() {
@@ -180,7 +190,8 @@ MethodEnv * hledejMethod(char * id, ClassEnv * ce, bool recursive) {
 PrvekTab * hledejMember(char * id, ClassEnv * ce, MethodEnv * me, bool recursive) {
 	PrvekTab * syms;
 	if (me) {
-		FIND_SYM(me->syms);	// Try to search through local vars first
+		FIND_SYM(me->exobjs); // Try exception objects
+		FIND_SYM(me->syms);	// Try to search through local vars
 		FIND_SYM(me->args); // Then try method args
 		if (!recursive) return NULL;
 	}
@@ -215,14 +226,14 @@ ClassEnv * deklClass(char * cls, char * par) {
 	if (par) {
 		pe = hledejClass(par);
 		if (!pe) {
-			Chyba(par, "neni deklarovan");
+			pe = CLASS_UNKNOWN;
 		}
 	}
 	
 	if (ce) {
 		Chyba(cls, "druha deklarace");
 	}
-	TabClass = new ClassEnv(cls, pe, TabClass);
+	TabClass = new ClassEnv(cls, par, pe, TabClass);
 	return TabClass;
 }
 
@@ -303,6 +314,10 @@ void deklKonst(char *id, char * val, bool isStatic, ClassEnv * cls, MethodEnv * 
 	else {
 		Chyba(id, "Konstantni clen tridy musi byt staticky.");
 	}
+}
+
+void deklExObj(char * id, ClassEnv * cls, MethodEnv * mth) {
+	mth->exobjs = new PrvekTab(id, IdProm, SC_EXOBJ, 0, mth->exobjs);
 }
 
 void deklProm(char *id, bool arg, bool isStatic, ClassEnv * cls, MethodEnv * mth) {

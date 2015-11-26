@@ -246,6 +246,26 @@ For::~For() {
 	delete body;
 }
 
+Try::Try(Statm *tb, Statm *cb, MethodEnv *me) {
+	try_block = tb;
+	catch_block = cb;
+	mthEnv = me;
+	mthEnv->try_block_cnt++;
+}
+
+Try::~Try() {
+	delete try_block;
+	delete catch_block;
+}
+
+Throw::Throw(Expr *o) {
+	obj = o;
+}
+
+Throw::~Throw() {
+	delete obj;
+}
+
 StatmList::StatmList(Statm *s, StatmList *n) {
 	statm = s;
 	next = n;
@@ -286,13 +306,13 @@ ClassList::~ClassList() {
 	delete next;
 }
 
-Method::Method(const char * n, bool sttc, bool cons, int nArgs, unsigned int * bc_ep, StatmList * b) {
+Method::Method(const char * n, bool sttc, bool cons, int nArgs, MethodEnv * me, StatmList * b) {
 	name = new char[strlen(n) + 1];
 	isStatic = sttc;
 	isConstructor = cons;
 	numArgs = nArgs;
 	body = b;
-	bc_entrypoint = bc_ep;
+	mthEnv = me;
 	strcpy(name, n);
 }
 
@@ -335,13 +355,16 @@ Node *Call::Optimize() {
 
 Node * ClassRef::Optimize() {
 	Const * cnst_target;
-	target = (Expr*)(target->Optimize());
-	cnst_target = dynamic_cast<Const*>(target);
+	if (target) {
+		target = (Expr*)(target->Optimize());
+		cnst_target = dynamic_cast<Const*>(target);
 
-	if (cnst_target) {
-		target = NULL;
-		delete this;
-		return cnst_target;
+
+		if (cnst_target) {
+			target = NULL;
+			delete this;
+			return cnst_target;
+		}
 	}
 
 	return this;
@@ -524,6 +547,17 @@ Node *For::Optimize() {
 	return this;
 }
 
+Node *Try::Optimize() {
+	try_block = (Statm*)(try_block->Optimize());
+	catch_block = (Statm*)(catch_block->Optimize());
+	return this;
+}
+
+Node *Throw::Optimize() {
+	obj = (Expr*)(obj->Optimize());
+	return this;
+}
+
 Node *StatmList::Optimize() {
 	StatmList *s = this;
 	do {
@@ -599,6 +633,8 @@ uint32_t Var::Translate() {
 			bco_ww1(bcout_g, (rvalue || offset ? LVBI_CV : LABI_CV), addr);
 		}
 		break;
+	case SC_EXOBJ:
+		bco_w0(bcout_g, LD_EXOBJ);
 	}
 
 	if (offset) {
@@ -658,7 +694,10 @@ uint32_t ClassRef::Translate() {
 	uint32_t sym_idx = bco_sym(bcout_g, name);
 	bco_ww1(bcout_g, LD_CLASS, (uint16_t)sym_idx);
 
-	return target->Translate();
+	if (target) {
+		return target->Translate();
+	}
+	return 0;
 }
 
 uint32_t ObjRef::Translate() {
@@ -680,11 +719,12 @@ uint32_t MethodRef::Translate() {
 }
 
 uint32_t New::Translate() {
+	int arg_count = args ? args->Count() : 0;
 	if (args) {
 		args->Translate();
 	}
 	uint32_t cons_idx = constructor->Translate();
-	bco_ww1(bcout_g, NEW, cons_idx);
+	bco_ww2(bcout_g, NEW, cons_idx, arg_count);
 	return 0;
 }
 
@@ -838,6 +878,28 @@ uint32_t For::Translate() {
 	return 0;
 }
 
+uint32_t Try::Translate() {
+	int try_addr = bco_get_ip(bcout_g);
+	try_block->Translate();
+	int a1 = bco_ww1(bcout_g, JU, 0);
+
+	int catch_addr = bco_get_ip(bcout_g);
+	catch_block->Translate();
+	bco_fix_forward_jmpw(bcout_g, a1);
+
+	bco_exinfo_add_block(bcout_g,
+			mthEnv->exception_info_idx, try_addr, catch_addr);
+
+	return 0;
+}
+
+uint32_t Throw::Translate() {
+	obj->Translate();
+	bco_w0(bcout_g, THROW);
+
+	return 0;
+}
+
 uint32_t StatmList::Translate() {
 	StatmList *s = this;
 	do {
@@ -875,7 +937,7 @@ uint32_t ClassList::Translate() {
 }
 
 uint32_t Method::Translate() {
-	*bc_entrypoint = bco_get_ip(bcout_g);
+	mthEnv->bc_entrypoint = bco_get_ip(bcout_g);
 
 	StatmList *s = body;
 	while (s->next) {
@@ -890,6 +952,12 @@ uint32_t Method::Translate() {
 		else {
 			s->next = new StatmList(new Return(new Nil), NULL);
 		}
+	}
+
+	if (mthEnv->exobjs != NULL) {
+		uint32_t exinfo_idx = bco_exinfo(bcout_g, mthEnv->try_block_cnt);
+		bco_ww1(bcout_g, ST_EXINFO, exinfo_idx);
+		mthEnv->exception_info_idx = exinfo_idx;
 	}
 
 	body->Translate();
@@ -915,7 +983,7 @@ CaseBlockScope::CaseBlockScope(CaseBlockScope *next_) {
 	this->next = next_;
 }
 
-CaseBlockScope::CaseBlockScope(CaseBlockScope *next_, Numb *eq_) {
+CaseBlockScope::CaseBlockScope(CaseBlockScope *next_, Expr *eq_) {
 	this->lo = NULL;
 	this->eq = eq_;
 	this->hi = NULL;
@@ -1010,8 +1078,9 @@ Node * Case::Optimize() {
 							(Statm *) (caseBlock_p->statmList->Optimize());
 
 					return caseBlock_p;
-				case 1: /* number */
-					if (numbTest->Value() == caseBlockScope_p->eq->Value()) {
+				case 1: /* number */ {
+					Numb *nEq = dynamic_cast<Numb*>(caseBlockScope_p->eq);
+					if (nEq && numbTest->Value() == nEq->Value()) {
 						caseBlock_p->statmList =
 								(Statm *) (caseBlock_p->statmList->Optimize());
 
@@ -1019,6 +1088,7 @@ Node * Case::Optimize() {
 					}
 
 					break;
+				}
 				case 2: /* range */
 					if (numbTest->Value() >= caseBlockScope_p->lo->Value()
 							&& numbTest->Value()
@@ -1426,6 +1496,26 @@ void For::Print(int ident) {
 	printfi(ident, "body:\n");
 	if (this->body) {
 		this->body->Print(ident + 1);
+	}
+}
+
+void Try::Print(int ident) {
+	if (this->try_block) {
+		printfi(ident, "Try\n");
+		this->try_block->Print(ident + 1);
+	}
+
+	if (this->catch_block) {
+		printfi(ident, "Catch\n");
+		this->catch_block->Print(ident + 1);
+	}
+}
+
+void Throw::Print(int ident) {
+	printfi(ident, "Throw\n");
+
+	if (this->obj) {
+		this->obj->Print(ident + 1);
 	}
 }
 

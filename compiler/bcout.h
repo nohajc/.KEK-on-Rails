@@ -99,7 +99,10 @@ typedef enum _bc {
 
 	NEW, /* arg: index to constant table.
 	 creates a new object and returns its address */
-	RET_SELF
+	RET_SELF,
+	LD_EXOBJ,
+	ST_EXINFO,
+	THROW
 } bc_t;
 
 extern const char *op_str[];
@@ -108,7 +111,7 @@ extern const char *op_str[];
 // This is dangerous. We should use appropriate __attribute__ to ensure compatibility
 
 typedef enum _constant_type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO
 } constant_type_t;
 
 typedef struct _header {
@@ -152,11 +155,25 @@ typedef struct _constant_array {
 	//     in memory (after it's loaded).
 } constant_array_t;
 
+typedef struct _try_range {
+	int try_addr;
+	int catch_addr;
+} try_range_t;
+
+typedef struct _constant_exinfo {
+	header_t h;
+	uint32_t obj_thrown;
+	uint32_t padding;
+	int length;
+	try_range_t blocks[1];
+} constant_exinfo_t;
+
 typedef union _constant_item {
 	constant_type_t type;
 	constant_int_t ci;
 	constant_string_t cs;
 	constant_array_t ca;
+	constant_exinfo_t cei;
 } constant_item_t;
 
 /******************************************************************************/
@@ -294,6 +311,8 @@ uint32_t bco_str(bcout_t *bco, const char *str);
 uint32_t bco_sym(bcout_t *bco, const char *str);
 uint32_t bco_arr(bcout_t *bco, size_t len);
 void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem);
+uint32_t bco_exinfo(bcout_t *bco, size_t try_block_cnt);
+void bco_exinfo_add_block(bcout_t *bco, uint32_t exinfo, int try_addr, int catch_addr);
 
 /* helper functions */
 size_t bco_get_ip(bcout_t *bco);

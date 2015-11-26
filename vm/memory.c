@@ -315,15 +315,37 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 	/* Calloc is used to avoid valgrind warnings about
 	 * invalid reads/writes to uninitialized memory */
 	uint32_t syms_cnt = udo_class->syms_instance_cnt;
+	int var_offset = 0;
+	kek_obj_t * ret;
+
 	if (syms_cnt) {
 		// Add symbols from parents
 		syms_cnt += udo_class->syms_instance[0].addr;
 	}
 
-	return (mem_obj_calloc(KEK_UDO, udo_class,
-			sizeof(kek_udo_t) + (syms_cnt - 1) * sizeof(kek_obj_t), 1));
+	// When parant is not udo, we need to set var_offset
+	if (udo_class->parent && udo_class->parent->allocator != alloc_udo) {
+		var_offset = (int64_t)udo_class->parent->allocator(NULL);
+		syms_cnt += var_offset;
+	}
+
+	ret = mem_obj_calloc(KEK_UDO, udo_class, sizeof(kek_udo_t) +
+			(syms_cnt ? syms_cnt - 1 : 0) * sizeof(kek_obj_t), 1);
+	ret->k_udo.var_offset = var_offset;
+
+	return (ret);
 }
 
 kek_obj_t * alloc_file(class_t * file_class) {
+	if (file_class == NULL) { // Helper for alloc_udo
+		return (kek_obj_t*) 1; // Returns desired var_offset for derived object
+	}
 	return (mem_obj_malloc(KEK_FILE, file_class, sizeof(kek_file_t)));
+}
+
+kek_obj_t * alloc_exception(class_t * expt_class) {
+	if (expt_class == NULL) { // Helper for alloc_udo
+		return (kek_obj_t*) 1; // Returns desired var_offset for derived object
+	}
+	return (mem_obj_malloc(KEK_EXPT, expt_class, sizeof(kek_except_t)));
 }

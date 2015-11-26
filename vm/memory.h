@@ -22,6 +22,7 @@ void alloc_arr_elems(struct _kek_array * arr);
 union _kek_obj ** alloc_const_arr_elems(int length);
 void realloc_arr_elems(struct _kek_array * arr, int length);
 union _kek_obj * alloc_string(struct _class * str_class, int length);
+union _kek_obj * alloc_exception(struct _class * expt_class);
 union _kek_obj * alloc_udo(struct _class * arr_class);
 union _kek_obj * alloc_file(struct _class * file_class);
 

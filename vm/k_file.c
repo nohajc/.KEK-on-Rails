@@ -7,12 +7,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <assert.h>
 #include "vm.h"
 #include "memory.h"
 #include "k_file.h"
 #include "k_string.h"
+#include "k_exception.h"
 #include "stack.h"
 
 void init_kek_file_class(void) {
@@ -56,8 +58,14 @@ void new_file(void) {
 	}
 
 	fil->f_handle = fopen(path->k_str.string, mode->k_str.string);
+	if (fil->f_handle == NULL) {
+		// Throw exception
+		// TODO: change Exception to IOException
+		kek_obj_t * msg = new_string_from_cstring(strerror(errno));
+		kek_except_t * expt = make_exception(msg);
+		vm_throw_obj_from_native_ctxt((kek_obj_t*)expt);
+	}
 	vm_debug(DBG_BC, "Opened file with handle %p.\n", fil->f_handle);
-	// TODO: error handling - we need exceptions
 
 	BC_RET_SELF;
 }

@@ -22,11 +22,12 @@ void init_kek_array_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 1;
+	classes_g[classes_cnt_g].methods_cnt = 2;
 	// TODO: add native methods such as length(), get_idx(), get_idxa()
 	classes_g[classes_cnt_g].methods = malloc(
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0, false, array_length);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "append", 1, false, array_append);
 
 	classes_g[classes_cnt_g].allocator = alloc_array;
 
@@ -73,6 +74,31 @@ void array_length(void) {
 	kek_obj_t * kek_len = native_array_length(arr);
 
 	PUSH(kek_len);
+	BC_RET;
+}
+
+void array_append(void) {
+	kek_array_t * arr = (kek_array_t*)THIS;
+	kek_obj_t * obj = ARG(0);
+	int new_len, old_len;
+	int i, j;
+
+	if (!IS_ARR(obj)) {
+		vm_error("Expected array as argument.\n");
+	}
+
+	new_len = arr->length + obj->k_arr.length;
+	old_len = arr->length;
+	if (new_len > arr->alloc_size) {
+		native_grow_array(arr, new_len);
+	}
+	else {
+		arr->length = new_len;
+	}
+	for (i = old_len, j = 0; j < obj->k_arr.length; ++i, ++j) {
+		arr->elems[i] = obj->k_arr.elems[j];
+	}
+	PUSH(NIL);
 	BC_RET;
 }
 

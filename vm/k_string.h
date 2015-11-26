@@ -11,6 +11,7 @@
 
 void init_kek_string_class(void);
 union _kek_obj * new_string_from_cstring(const char *);
+union _kek_obj * new_string_from_concat(const char *, const char *);
 
 // Instance methods
 void string_length(void);

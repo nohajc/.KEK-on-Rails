@@ -170,5 +170,7 @@ method_t * vm_find_method(const char * name, bool is_static, class_t ** cls); //
 void vm_call_class_initializers(void);
 void vm_call_main(int argc, char *argv[]);
 void vm_execute_bc(void);
+void vm_throw_obj(kek_obj_t * obj);
+void vm_throw_obj_from_native_ctxt(kek_obj_t * obj);
 
 #endif /* VM_H_ */

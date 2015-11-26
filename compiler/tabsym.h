@@ -15,7 +15,8 @@ enum Scope {
 	SC_LOCAL,
 	SC_ARG,
 	SC_INSTANCE, // instance variable
-	SC_CLASS // class static variable
+	SC_CLASS, // class static variable
+	SC_EXOBJ // exception object (in catch statement)
 };
 
 class CRecord {
@@ -65,10 +66,13 @@ struct MethodEnv {
 	bool isStatic;
 	PrvekTab * args; // method arguments
 	PrvekTab * syms; // method vars and consts
+	PrvekTab * exobjs; // exception objects
 	MethodEnv * next;
 	int arg_addr_next; // Arguments address counter
 	int local_addr_next; // Local vars address counter
 	unsigned int bc_entrypoint; // Bytecode address
+	unsigned int exception_info_idx; // Index of ex. info object
+	int try_block_cnt;
 
 	MethodEnv(char * name, bool sttc, MethodEnv * n = NULL);
 	~MethodEnv();
@@ -84,10 +88,11 @@ struct ClassEnv {
 	MethodEnv * static_init;
 	ClassEnv * next;
 	ClassEnv * parent;
+	char * parentName;
 	int class_addr_next; // Static members address counter
 	int obj_addr_next; // Instance members address counter
 
-	ClassEnv(char * name, ClassEnv * par, ClassEnv * n);
+	ClassEnv(char * name, char * parName, ClassEnv * par, ClassEnv * n);
 	~ClassEnv();
 };
 
@@ -116,6 +121,7 @@ void deklKonst(char *, int, bool isStatic = false, ClassEnv * cls = NULL, Method
 // const string
 void deklKonst(char *, char *, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
 void deklProm(char *, bool arg = false, bool isStatic = false, ClassEnv * cls = NULL, MethodEnv * mth = NULL);
+void deklExObj(char * id, ClassEnv * cls, MethodEnv * mth);
 
 ClassEnv * hledejClass(char *);
 MethodEnv * hledejMethod(char *, ClassEnv *, bool = true);
