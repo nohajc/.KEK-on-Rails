@@ -147,7 +147,7 @@ segment_t *mem_segment_init(size_t size) {
 
 	if (segments_g == NULL) {
 		segments_g = s;
-	}// else {
+	} // else {
 //		assert(0 && "haha, no realloc yet");
 //		segments_g->next = s;
 //		segments_g = s;
@@ -203,14 +203,14 @@ void *mem_segment_malloc(size_t size) {
 	if (segments_g->used + size > segments_g->size) {
 		vm_debug(DBG_MEM, "We need to allocate a new segment.\n");
 		/*
-			old:
-			[current]->[old1]->[old2]
-			segments_g points to current
+		 old:
+		 [current]->[old1]->[old2]
+		 segments_g points to current
 
-		 	new:
-		 	[new]->[current]->[old1]->[old2]
-		 	new->next points to current
-		 	segments_g points to new
+		 new:
+		 [new]->[current]->[old1]->[old2]
+		 new->next points to current
+		 segments_g points to new
 		 */
 		new = mem_segment_init(SEGMENT_SIZE);
 		new->next = segments_g;
@@ -267,12 +267,83 @@ inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) 
 }
 
 /******************************************************************************/
+/* obj_table */
+
+kek_obj_t **obj_table_g;
+uint32_t obj_table_size_g;
+
+void obj_table_init(void) {
+	obj_table_size_g = OBJ_TABLE_DEFAULT_SIZE;
+	obj_table_g = calloc(obj_table_size_g, sizeof(kek_obj_t *));
+	assert(obj_table_g);
+}
+
+void obj_table_free(void) {
+	free(obj_table_g);
+}
+
+kek_obj_t * obj_table_add(kek_obj_t *obj) {
+	uint32_t i;
+
+	for (i = 0; i < obj_table_size_g; i++) {
+		if (obj_table_g[i] == NULL) {
+			obj_table_g[i] = obj;
+			return (obj_table_g[i]);
+		}
+	}
+
+	obj_table_size_g *= 2;
+	obj_table_g = realloc(obj_table_g, obj_table_size_g * sizeof(kek_obj_t *));
+	assert(obj_table_g);
+	memset(obj_table_g + (obj_table_size_g / 2), 0, (obj_table_size_g / 2));
+
+	return (obj_table_g[obj_table_size_g / 2]);
+}
+
+/******************************************************************************/
 /* gc */
 
 int gc_ticks_g = GC_TICKS_DEFAULT;
 
+void gc_rootset_print(kek_obj_t *obj) {
+	switch (obj->h.t) {
+	case KEK_INT:
+		vm_debug(DBG_GC, "rootset: int %d\n", obj->k_int.value);
+		break;
+	case KEK_STR:
+		vm_debug(DBG_GC, "rootset: str %s\n", &(obj->k_str.string));
+		break;
+	case KEK_SYM:
+		vm_debug(DBG_GC, "rootset: sym %s\n", &(obj->k_sym.symbol));
+		break;
+	default:
+		vm_debug(DBG_GC, "rootset: IDK");
+		break;
+	}
+}
+
+void gc_rootset(void (*fn)(kek_obj_t *)) {
+	int i;
+	kek_obj_t *obj_ptr;
+
+	// the globals /* TODO */
+	//(*fn)( topLevelEnv );
+
+	// and the stack
+	for (i = sp_g - 1; i >= 0; i--) {
+		obj_ptr = stack_g[i];
+
+		if ((obj_ptr != NULL) && IS_PTR(obj_ptr)) {
+			(*fn)(obj_ptr);
+		}
+	}
+}
+
 void gc() {
 	vm_debug(DBG_GC, "gc %d\n", sysconf(_SC_PAGESIZE));
+
+
+//	gc_rootset(gc_rootset_print);
 }
 
 /******************************************************************************/
@@ -325,12 +396,13 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 
 	// When parant is not udo, we need to set var_offset
 	if (udo_class->parent && udo_class->parent->allocator != alloc_udo) {
-		var_offset = (int64_t)udo_class->parent->allocator(NULL);
+		var_offset = (int64_t) udo_class->parent->allocator(NULL);
 		syms_cnt += var_offset;
 	}
 
-	ret = mem_obj_calloc(KEK_UDO, udo_class, sizeof(kek_udo_t) +
-			(syms_cnt ? syms_cnt - 1 : 0) * sizeof(kek_obj_t), 1);
+	ret = mem_obj_calloc(KEK_UDO, udo_class,
+			sizeof(kek_udo_t)
+					+ (syms_cnt ? syms_cnt - 1 : 0) * sizeof(kek_obj_t), 1);
 	ret->k_udo.var_offset = var_offset;
 
 	return (ret);

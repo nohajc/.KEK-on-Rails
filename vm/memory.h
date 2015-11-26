@@ -82,6 +82,18 @@ extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern segment_t *segments_old_space_g;
 
+
+/******************************************************************************/
+/* obj_table */
+
+extern kek_obj_t **obj_table_g;
+extern uint32_t obj_table_size_g;
+#define REF(obj) (*(obj))
+#define OBJ_TABLE_DEFAULT_SIZE 2048
+void obj_table_init(void);
+void obj_table_free(void);
+kek_obj_t * obj_table_add(kek_obj_t *);
+
 /******************************************************************************/
 /* gc */
 
