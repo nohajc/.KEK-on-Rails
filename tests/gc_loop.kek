@@ -1,0 +1,26 @@
+//KEK_TEST_RUNS 1
+//KEK_TEST_ARGS_0 
+
+class Printer {
+  var v
+  
+  Printer() {
+    v = "0123456789\n"
+  }
+  
+  hello() {
+    write v
+  }
+}
+
+class Main {
+  static main(args) {
+    var printer
+    var i
+    
+    for (i = 0; i < 1; i++) {
+      printer = new Printer()
+      printer.hello()
+    }
+  }
+}

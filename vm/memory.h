@@ -7,6 +7,8 @@
 #ifndef MEMORY_H_
 #define MEMORY_H_
 
+#include <stdbool.h>
+
 #include "vm.h"
 
 #define ARR_INIT_SIZE 512
@@ -23,23 +25,53 @@ union _kek_obj * alloc_string(struct _class * str_class, int length);
 union _kek_obj * alloc_udo(struct _class * arr_class);
 union _kek_obj * alloc_file(struct _class * file_class);
 
-
-
 /******************************************************************************/
 /* memory managment */
 
+/* http://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
+/* http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
+
 /* from claus */
 #define SEGMENT_SIZE (64*1024)
+typedef double d_t; /* data type */
 #define OBJ_ALIGN sizeof(double)
 #define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
 #define ALIGNED_SIZE_OF(obj) ALIGNED((obj)->h.size)
 
+/* this will main call to initialiaze everything and then free */
+bool mem_init(void);
+bool mem_free(void);
+
+/* Remember set */
+typedef struct _segment_slots_buffer {
+	/* TODO */
+	kek_obj_t *obj;
+	struct _segment_slots_buffer *next;
+} segment_slots_buffer_t;
+
+/* pointers from old to new space */
+typedef struct _segment_write_barrier {
+	/* TODO */
+	kek_obj_t *obj;
+	struct _segment_slots_buffer *next;
+} segment_write_barrier_t;
+
 typedef struct _segment {
 	size_t size;
+	//segment_slots_buffer_t *slots_buffer;
+
+	void *beginning; /* pointer to the start of the data */
+	void *end; /* pointer to the end of the data of this segment */
+
 	struct _segment *next;
+
+	double data;
+	/* data[size-1] */
 } segment_t;
 
-extern segment_t *segments_g;
+extern segment_t *segments_from_space_g;
+extern segment_t *segments_to_space_g;
+extern segment_t *segments_old_space_g;
 
 /******************************************************************************/
 /* gc */
@@ -58,6 +90,11 @@ extern gc_obj_t *gc_obj_root_g;
 /* this function will be called from the main loop in vm */
 void gc(void);
 void gc_delete_all(void);
+
+/* gc for young objects. objs who will survive 2 young gc r old */
+/* https://en.wikipedia.org/wiki/Cheney's_algorithm */
+void gc_scavenge(void);
+
 
 
 /******************************************************************************/

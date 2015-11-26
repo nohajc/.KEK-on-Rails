@@ -114,6 +114,8 @@ static char *vm_debug_flag(uint32_t flag) {
 		return "vm";
 	case DBG_GC:
 		return "gc";
+	case DBG_MEM:
+		return "mem";
 	default:
 		return"unknown";
 	}

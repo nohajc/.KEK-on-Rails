@@ -46,6 +46,7 @@ enum Scope {
 #define DBG_STACK_FULL	0x00000008 /* print all stack after every stack manip */
 #define DBG_VM			0x00000010 /* virtual machine */
 #define DBG_GC			0x00000020 /* garbage collector */
+#define DBG_MEM			0x00000080 /* memory */
 
 #define DBG_ALL (DBG_LOADING|DBG_BC|DBG_STACK|DBG_STACK_FULL|DBG_VM|DBG_BC)
 

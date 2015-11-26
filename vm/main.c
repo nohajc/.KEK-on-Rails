@@ -43,15 +43,18 @@ void free_globals() {
 		}
 	}
 
+	gc_delete_all();
+
 	free(bc_arr_g);
 	free(const_table_g);
+	free(classes_g);
+	free(stack_g);
 
 #ifdef DEBUG
 	/* free the buffer inside */
 	(void) kek_obj_print(NULL);
 #endif
 
-	gc_delete_all();
 }
 
 void debug_add(char *level) {
@@ -69,6 +72,8 @@ void debug_add(char *level) {
 		debug_level_g |= DBG_ALL;
 	} else if (strcmp(level, "g") == 0 || strcmp(level, "gc") == 0) {
 		debug_level_g |= DBG_GC;
+	} else if (strcmp(level, "m") == 0 || strcmp(level, "mem") == 0) {
+		debug_level_g |= DBG_MEM;
 	}
 }
 
@@ -100,6 +105,11 @@ int main(int argc, char *argv[]) {
 
 	filename = argv[optind];
 
+	if (!mem_init()) {
+		fprintf(stderr, "Memory initialization has failed.\n");
+		return (EXIT_FAILURE);
+	}
+
 	if (!kexe_load(filename)) {
 		return (EXIT_FAILURE);
 	}
@@ -115,6 +125,11 @@ int main(int argc, char *argv[]) {
 	vm_call_main(argc - optind, argv + optind);
 
 	free_globals();
+
+	if (!mem_free()) {
+		fprintf(stderr, "Memory free has failed.\n");
+		return (EXIT_FAILURE);
+	}
 
 	return (EXIT_SUCCESS);
 }

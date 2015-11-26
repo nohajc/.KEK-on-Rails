@@ -5,7 +5,11 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include "memory.h"
 
 gc_obj_t *gc_obj_g = NULL;
@@ -42,7 +46,8 @@ void gc_obj_free(gc_obj_t *obj) {
 		break;
 	}
 
-	free(obj->obj);
+	/* this object is on our heap */
+	/* free(obj->obj); */
 	free(obj);
 }
 
@@ -60,6 +65,50 @@ void gc_delete_all() {
 	}
 }
 
+//void gc_scavenge() {
+//	segment_t *swap_ptr;
+//
+//	/* swap from-space to to-space */
+//	swap_ptr = segments_from_space_g;
+//	segments_from_space_g = segments_to_space_g;
+//	segments_to_space_g = swap_ptr;
+
+/* TODO */
+
+/*
+ def scavenge():
+ swap(fromSpace, toSpace)
+ allocationPtr = toSpace.bottom
+ scanPtr = toSpace.bottom
+
+ for i = 0..len(roots):
+ root = roots[i]
+ if inFromSpace(root):
+ rootCopy = copyObject(&allocationPtr, root)
+ setForwardingAddress(root, rootCopy)
+ roots[i] = rootCopy
+
+ while scanPtr < allocationPtr:
+ obj = object at scanPtr
+ scanPtr += size(obj)
+ n = sizeInWords(obj)
+ for i = 0..n:
+ if isPointer(obj[i]) and not inOldSpace(obj[i]):
+ fromNeighbor = obj[i]
+ if hasForwardingAddress(fromNeighbor):
+ toNeighbor = getForwardingAddress(fromNeighbor)
+ else:
+ toNeighbor = copyObject(&allocationPtr, fromNeighbor)
+ setForwardingAddress(fromNeighbor, toNeighbor)
+ obj[i] = toNeighbor
+
+ def copyObject(*allocationPtr, object):
+ copy = *allocationPtr
+ *allocationPtr += size(object)
+ memcpy(copy, object, size(object))
+ return copy
+ */
+//}
 /******************************************************************************/
 /* memory managment */
 
@@ -73,10 +122,17 @@ segment_t *mem_segment_init(size_t size) {
 
 	s->size = size;
 	s->next = NULL;
+	s->beginning = &(s->data);
+	s->end = s->beginning;
+
+	vm_debug(DBG_MEM,
+			"new mem_segment ptr=%p size=%u begin=%p end=%p diff=%u\n", s, size,
+			s->beginning, s->end, (d_t *) s->end - (d_t *) s->beginning);
 
 	if (segments_g == NULL) {
 		segments_g = s;
 	} else {
+		assert(0 && "haha, no realloc yet");
 		segments_g->next = s;
 		segments_g = s;
 	}
@@ -84,11 +140,70 @@ segment_t *mem_segment_init(size_t size) {
 	return (s);
 }
 
+bool mem_init() {
+	segments_g = mem_segment_init(SEGMENT_SIZE);
+	return (true);
+}
+
+bool mem_free() {
+	segment_t *ptr;
+	segment_t *next;
+
+	next = segments_g;
+	while (next != NULL) {
+		ptr = next;
+		next = next->next;
+		free(ptr);
+	}
+
+	return (true);
+}
+
+void *mem_segment_malloc(size_t size) {
+	void *ptr;
+
+	size = ALIGNED(size);
+
+	assert(segments_g != NULL);
+
+	vm_debug(DBG_MEM, "sizeof double = %u\n", sizeof(double));
+
+	vm_debug(DBG_MEM, "mem_segment_malloc(size=%u, %#08x)\n", size, size);
+	vm_debug(DBG_MEM, "segment=\t%p (%lu)\n", segments_g, segments_g);
+	vm_debug(DBG_MEM, "beginnning=\t%p (%lu)\n", segments_g->beginning,
+			segments_g->beginning);
+	vm_debug(DBG_MEM, "before: end=\t%p (%lu)\n", segments_g->end,
+			segments_g->end);
+
+	if (((d_t *) (segments_g->end) - (d_t *) (segments_g->beginning)) + size
+			>= segments_g->size) {
+		assert(0 && "no realloc yet");
+	}
+
+	ptr = segments_g->end;
+	segments_g->end = (d_t *) segments_g->end + size;
+//	segments_g->end += (int)size;
+
+	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
+			segments_g->end);
+
+	return (ptr);
+}
+
+void *mem_segment_calloc(size_t size) {
+	void *ptr;
+
+	ptr = mem_segment_malloc(size);
+	memset(ptr, 0, size);
+
+	return (ptr);
+}
+
 /* (c)allocate memory for an object, set its header and return a pointer */
 inline void *mem_obj_malloc(type_t type, class_t *cls, size_t size) {
 	kek_obj_t *obj;
 
-	obj = malloc(size);
+	obj = mem_segment_malloc(size);
 	assert(obj);
 
 	obj->h.t = type;
@@ -102,7 +217,7 @@ inline void *mem_obj_malloc(type_t type, class_t *cls, size_t size) {
 inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) {
 	kek_obj_t *obj;
 
-	obj = calloc(num, size);
+	obj = mem_segment_calloc(num * size);
 	assert(obj);
 
 	obj->h.t = type;
@@ -119,7 +234,7 @@ inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) 
 int gc_ticks_g = GC_TICKS_DEFAULT;
 
 void gc() {
-	vm_debug(DBG_GC, "gc\n");
+	vm_debug(DBG_GC, "gc %d\n", sysconf(_SC_PAGESIZE));
 }
 
 /******************************************************************************/
