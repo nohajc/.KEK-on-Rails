@@ -86,7 +86,7 @@ class Parser {
 		if (str == "#t") return G.scmTrue
 		if (str == "#f") return G.scmFalse
 		if (str == "#nil") return G.scmNil
-		return new scmSymbol(str)
+		return scmSymbol.getSym(str)
 	}
 
 	readList() {

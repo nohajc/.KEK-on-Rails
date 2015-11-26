@@ -20,7 +20,9 @@ void init_kek_sys_class(void) {
 	char m_out[] = "out";
 	char m_in[] = "in";
 	char m_err[] = "err";
+	char m_term[] = "term";
 	class_t * file_cls = vm_find_class("File");
+	class_t * term_cls = vm_find_class("Term");
 
 	assert(classes_g);
 	classes_g[classes_cnt_g].t = KEK_CLASS;
@@ -36,7 +38,7 @@ void init_kek_sys_class(void) {
 	classes_g[classes_cnt_g].constructor = NULL;
 	classes_g[classes_cnt_g].static_init = NULL;
 
-	classes_g[classes_cnt_g].syms_static_cnt = 3;
+	classes_g[classes_cnt_g].syms_static_cnt = 4;
 	classes_g[classes_cnt_g].syms_static = malloc(
 		classes_g[classes_cnt_g].syms_static_cnt * sizeof(symbol_t));
 
@@ -66,6 +68,14 @@ void init_kek_sys_class(void) {
 	classes_g[classes_cnt_g].syms_static[2].const_ptr = 0;
 	classes_g[classes_cnt_g].syms_static[2].const_flag = CONST;
 	classes_g[classes_cnt_g].syms_static[2].addr = 2;
+
+	// Save pointer to term
+	classes_g[classes_cnt_g].syms_static[3].name = malloc((strlen(m_term) + 1) * sizeof(char));
+	strcpy(classes_g[classes_cnt_g].syms_static[3].name, m_term);
+	classes_g[classes_cnt_g].syms_static[3].value = alloc_term(term_cls);
+	classes_g[classes_cnt_g].syms_static[3].const_ptr = 0;
+	classes_g[classes_cnt_g].syms_static[3].const_flag = CONST;
+	classes_g[classes_cnt_g].syms_static[3].addr = 3;
 
 	classes_g[classes_cnt_g].syms_instance_cnt = 0;
 	classes_g[classes_cnt_g].syms_instance = NULL;

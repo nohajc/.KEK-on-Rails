@@ -415,6 +415,10 @@ kek_obj_t * alloc_file(class_t * file_class) {
 	return (mem_obj_malloc(KEK_FILE, file_class, sizeof(kek_file_t)));
 }
 
+kek_obj_t * alloc_term(class_t * term_class) {
+	return (mem_obj_malloc(KEK_TERM, term_class, sizeof(kek_term_t)));
+}
+
 kek_obj_t * alloc_exception(class_t * expt_class) {
 	if (expt_class == NULL) { // Helper for alloc_udo
 		return (kek_obj_t*) 1; // Returns desired var_offset for derived object

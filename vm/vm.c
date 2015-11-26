@@ -19,6 +19,7 @@
 #include "k_string.h"
 #include "k_integer.h"
 #include "k_file.h"
+#include "k_term.h"
 #include "k_sys.h"
 #include "k_exception.h"
 #include "stack.h"
@@ -161,6 +162,7 @@ void vm_init_builtin_classes(void) {
 	init_kek_array_class();
 	init_kek_string_class();
 	init_kek_file_class();
+	init_kek_term_class();
 	init_kek_sys_class();
 	init_kek_exception_class();
 }
@@ -380,23 +382,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if ((IS_NIL(a) || IS_NIL(b)) || (IS_CLASS(a) && IS_CLASS(b))) {
-		kek_int_t *res;
-
-		switch (o) {
-		case Eq:
-			res = make_integer(a == b);
-			break;
-		case NotEq:
-			res = make_integer(a != b);
-			break;
-		default:
-		vm_error("bc_bop: unsupported bop %d\n", o);
-		break;
-		}
-		return (kek_obj_t*) res;
-	}
-	else if (IS_INT(a) && IS_INT(b)) {
+	if (IS_INT(a) && IS_INT(b)) {
 		kek_int_t *res;
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
@@ -503,11 +489,20 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		}
 		return res;
 	} else {
-		// TODO: implement operations for other types
-		/*vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
-				type_str[a->h.t], type_str[b->h.t]);*/
-		// TODO: macro for object type
-		vm_error("Cannot apply operation %s.\n", bop_str[o]);
+		kek_int_t *res;
+
+		switch (o) {
+		case Eq:
+			res = make_integer(a == b);
+			break;
+		case NotEq:
+			res = make_integer(a != b);
+			break;
+		default:
+		vm_error("bc_bop: unsupported bop %d\n", o);
+		break;
+		}
+		return (kek_obj_t*) res;
 	}
 	return NULL;
 }
@@ -765,7 +760,11 @@ void vm_execute_bc(void) {
 			if (!IS_PTR(obj)) {
 				vm_error("Invalid class/object pointer.\n");
 			}
-
+			sym = CONST(arg1); // name of the method
+			if (!IS_SYM(sym)) {
+				vm_error("Expected symbol as the first argument of CALL.\n");
+			}
+			vm_debug(DBG_BC, " - method name: %s\n", sym->k_sym.symbol);
 			if (IS_CLASS(obj)) { // Call of static method
 				vm_debug(DBG_BC, " - Static method call\n");
 				cls = (class_t*) obj;
@@ -784,17 +783,12 @@ void vm_execute_bc(void) {
 				cls = cls->parent;
 			}
 
-			sym = CONST(arg1); // name of the method
-			if (!IS_SYM(sym)) {
-				vm_error("Expected symbol as the first argument of CALL.\n");
-			}
 			assert(cls);
 			mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
 			if (mth == NULL) {
 				vm_error("%s has no method %s.\n",
 						(static_call ? "Class" : "Object"), sym->k_sym.symbol);
 			}
-			vm_debug(DBG_BC, " - method name: %s\n", sym->k_sym.symbol);
 			if (mth->args_cnt != arg2) {
 				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}
@@ -968,7 +962,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
 			ip_g += 2;
-			vm_debug(DBG_BC, "%s %u %u\n", "NEW", arg1, arg2); // NEW should have a second argument like CALL
+			vm_debug(DBG_BC, "%s %u %u\n", "NEW", arg1, arg2);
 			sym = CONST(arg1);
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of NEW.\n");

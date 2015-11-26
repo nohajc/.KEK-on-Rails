@@ -25,6 +25,7 @@ union _kek_obj * alloc_string(struct _class * str_class, int length);
 union _kek_obj * alloc_exception(struct _class * expt_class);
 union _kek_obj * alloc_udo(struct _class * arr_class);
 union _kek_obj * alloc_file(struct _class * file_class);
+union _kek_obj * alloc_term(struct _class * term_class);
 
 /******************************************************************************/
 /* memory managment */

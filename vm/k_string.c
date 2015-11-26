@@ -111,7 +111,7 @@ void string_split(void) {
 void string_toInt(void) {
 	kek_string_t * str = (kek_string_t*)THIS;
 	kek_int_t * kek_n;
-	int n, pos;
+	int n, pos = 0;
 	int matched = sscanf(str->string, "%d%n", &n, &pos);
 	while (pos < str->length && isspace(str->string[pos])) pos++;
 

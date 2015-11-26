@@ -4,6 +4,7 @@
 class Scheme {
 	static var input
 	static var out
+	static var rd
 
 	static Scheme() {
 		out = Sys.out
@@ -11,21 +12,33 @@ class Scheme {
 
 	static REPL() {
 		var expr
+		var env = new Environment()
+		Environment.initBuiltinFunctions(env)
 		while(1) {
-			out.writeln("> ")
 			try {
+				rd.prompt = "> "
 				expr = input.read()
 				if (!expr) {
 					out.writeln("\n")
 					break
 				}
+				expr = expr.eval(env)
 				expr.print(out)
-				out.writeln("\n");
+				if (expr.toString().length() != 0) {
+					out.writeln("\n");
+				}
 			}
 			catch (e) {
 				switch (e.type()) {
 				case ParserError:
 					out.writeln(e.msg() + "\n")
+				case EnvironmentError:
+					out.writeln(e.msg() + e.sym.toString() + "\n")
+				case EvalError: {
+					out.writeln(e.msg() + ",\"")
+					e.obj.print(out)
+					out.writeln("\" given.\n")
+				}
 				default:
 					throw e
 				}
@@ -34,7 +47,7 @@ class Scheme {
 	}
 
 	static main(args) {
-		var rd = new Reader(Sys.in)
+		rd = new Reader(Sys.term)
 		input = new Parser(rd)
 
 		REPL()

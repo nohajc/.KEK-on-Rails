@@ -687,16 +687,25 @@ ArgList * Args(Env env) {
 	return new ArgList(arg, ZbArgs(env));
 }
 
-Expr * Ident(Env env, bool rvalue) {
+Expr * Ident(Env env, Env rootEnv, bool rvalue) {
 	bool external;
-	Expr * e = ZbIdent(env, env, rvalue, external);
+	Expr * e = ZbIdent(env, rootEnv, rvalue, external);
+	Expr * c;
+	Expr * t = NULL;
 
 	if (Symb.type == LPAR) {
 		Symb = readLexem();
 		ArgList * a = Args(env);
 		Srovnani(RPAR);
 
-		return new Call(e, a, external);
+		if (Symb.type == DOT) {
+			Srovnani(DOT);
+			env.self = !external;
+			env.clsEnv = external ? CLASS_ANY : env.clsEnv;
+			env.mthEnv = NULL;
+			t = Ident(env, rootEnv, rvalue);
+		}
+		return new Call(e, a, external, t);
 	}
 
 	return e;
@@ -706,7 +715,7 @@ Statm * Assignment(Env env, Var * lvalue) {
 	Var * var;
 	Expr * e;
 	if (!lvalue) {
-		e = Ident(env, false);
+		e = Ident(env, env, false);
 		var = dynamic_cast<Var*>(e); // var
 		if (!var) {
 			Chyba("Ocekava se prirazeni.");
@@ -780,7 +789,7 @@ Expr * ConstructorCall(Env env) {
 Statm * AssignmentOrCall(Env env) {
 	//char id[MAX_IDENT_LEN];
 
-	Expr * e = Ident(env, false);
+	Expr * e = Ident(env, env, false);
 	Var * var = dynamic_cast<Var*>(e); // var
 	if (!var) {
 		return dynamic_cast<Statm*>(e); // call
@@ -846,7 +855,7 @@ Statm * Prikaz(Env env, Context ctxt) {
 		/*Srovnani_IDENT(id);
 		Expr * offset = ArrayOffset(env, id);
 		Var *var = new Var(adrProm(id, env.clsEnv, env.mthEnv), offset, false);*/
-		Var * var = dynamic_cast<Var*>(Ident(env, false));
+		Var * var = dynamic_cast<Var*>(Ident(env, env, false));
 		if (!var) {
 			Chyba("Ocekava se promenna.");
 		}
@@ -1101,7 +1110,7 @@ Expr * Faktor(Env env) {
 		/*Srovnani_IDENT(id);
 		offset = ArrayOffset(env, id);
 		return VarOrConst(id, offset, env);*/
-		return Ident(env, true);
+		return Ident(env, env, true);
 	case NUMB:
 		int hodn;
 		Srovnani_NUMB(&hodn);

@@ -1,5 +1,15 @@
+#include "environment.kek"
+
 enum Tag {
-	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL
+	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL, VOID, B_SYNTAX, B_FUNCTION
+}
+
+class EvalError : Exception {
+	var obj
+	EvalError(msg, obj) {
+		super(msg)
+		this.obj = obj
+	}
 }
 
 class scmObject {
@@ -15,6 +25,10 @@ class scmObject {
 
 	print(out) {
 		out.writeln(toString())
+	}
+
+	eval(env) {
+		return this
 	}
 }
 
@@ -45,15 +59,52 @@ class scmString : scmObject {
 }
 
 class scmSymbol : scmObject {
-	var sym
+	var symName
+	static var symTable
+	static var symCount
 
-	scmSymbol(sym) {
+	static scmSymbol() {
+		symTable = []
+		symCount = 0
+	}
+
+	scmSymbol(symName) {
 		super(Tag.SYMBOL)
-		this.sym = sym
+		this.symName = symName
+	}
+
+	static findSym(symName) {
+		var i
+		for (i = 0; i < symCount; i++) {
+			if (symTable[i].symName == symName) {
+				return symTable[i]
+			}
+		}
+		return nil
+	}
+
+	static addSym(sym) {
+		symTable[symCount] = sym
+		symCount++
+		return sym
+	}
+
+	static getSym(symName) {
+		var sym = findSym(symName)
+		if (sym != nil) return sym
+		return addSym(new scmSymbol(symName))
+	}
+
+	toString() {
+		return symName
 	}
 
 	print(out) {
-		out.writeln(sym)
+		out.writeln(symName)
+	}
+
+	eval(env) {
+		return env.get(this)
 	}
 }
 
@@ -86,16 +137,64 @@ class scmCons : scmObject {
 		}
 		out.writeln(")")
 	}
+
+	eval(env) {
+		var fnVal = car.eval(env)
+		switch (fnVal.tag) {
+		case Tag.B_SYNTAX: {
+			return fnVal.eval(env, cdr)
+		}
+		// TODO: B_FUNCTION
+		default:
+			throw new EvalError("Expected function or syntax ", fnVal)
+		}
+	}
+}
+
+/********************************
+ * Builtin syntax and functions *
+ ********************************/
+
+class scmBSyntax : scmObject {
+	scmBSyntax() {
+		super(Tag.B_SYNTAX)
+	}
+}
+
+class scmDefine : scmBSyntax {
+	scmDefine() {
+		super()
+	}
+
+	eval(env, args) {
+		var name, rest, restrest, value
+		if (args.tag != Tag.CONS) {
+			throw new EvalError("define expects 2 arguments ", args)
+		}
+		name = args.car
+		rest = args.cdr
+		if (rest.tag != Tag.CONS) {
+			throw new EvalError("define expects 2 arguments ", args)
+		}
+		restrest = rest.cdr
+		if (restrest.tag != Tag.NIL) {
+			throw new EvalError("define expects 2 arguments ", args)
+		}
+		value = rest.car.eval(env)
+		env.set(name, value)
+		return G.scmVoid
+	}
 }
 
 class G {
-	static var scmTrue, scmFalse, scmNil
+	static var scmTrue, scmFalse, scmNil, scmVoid
 	static var tagName
 	
 	static G() {
-		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil"] 
+		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil", "", "#<syntax>", "#<function>"]
 		scmTrue = new scmObject(Tag.TRUE)
 		scmFalse = new scmObject(Tag.FALSE)
 		scmNil = new scmObject(Tag.NIL)
+		scmVoid = new scmObject(Tag.VOID)
 	}
 }
