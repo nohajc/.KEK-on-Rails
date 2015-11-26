@@ -117,17 +117,25 @@ segment_t *segments_g = NULL;
 segment_t *mem_segment_init(size_t size) {
 	segment_t *s;
 
-	s = malloc(sizeof(segment_t) + size);
+	vm_debug(DBG_MEM, "mem_segment_init(size=%u)\n", size);
+
+	assert(size > 0);
+
+	s = malloc(sizeof(segment_t) + (size - 1) * sizeof(double));
 	assert(s);
+
+	vm_debug(DBG_MEM, "segment ptr=%p\n", s);
 
 	s->size = size;
 	s->next = NULL;
 	s->beginning = &(s->data);
 	s->end = s->beginning;
 
+	/* FIXME */
 	vm_debug(DBG_MEM,
-			"new mem_segment ptr=%p size=%u begin=%p end=%p diff=%u\n", s, size,
-			s->beginning, s->end, (d_t *) s->end - (d_t *) s->beginning);
+			"begin=%p\nsegment+header+data*size=\t%p\ndataptr+size=\t%p\n",
+			s->beginning, s + sizeof(segment_t) + (size - 1) * sizeof(double),
+			(d_t*) s->beginning + (size - 1) * sizeof(double));
 
 	if (segments_g == NULL) {
 		segments_g = s;
@@ -170,19 +178,21 @@ void *mem_segment_malloc(size_t size) {
 
 	vm_debug(DBG_MEM, "mem_segment_malloc(size=%u, %#08x)\n", size, size);
 	vm_debug(DBG_MEM, "segment=\t%p (%lu)\n", segments_g, segments_g);
+	vm_debug(DBG_MEM, "totalend=\t%p (%lu)\n",
+			(d_t *) segments_g->beginning + segments_g->size,
+			(d_t *) segments_g->beginning + segments_g->size);
 	vm_debug(DBG_MEM, "beginnning=\t%p (%lu)\n", segments_g->beginning,
 			segments_g->beginning);
 	vm_debug(DBG_MEM, "before: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);
 
-	if (((d_t *) (segments_g->end) - (d_t *) (segments_g->beginning)) + size
-			>= segments_g->size) {
+	if (((d_t *) (segments_g->end) - (d_t *) (segments_g->beginning))
+			+ (d_t) size > segments_g->size) {
 		assert(0 && "no realloc yet");
 	}
 
 	ptr = segments_g->end;
 	segments_g->end = (d_t *) segments_g->end + size;
-//	segments_g->end += (int)size;
 
 	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);

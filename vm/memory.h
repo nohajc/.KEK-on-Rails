@@ -32,7 +32,7 @@ union _kek_obj * alloc_file(struct _class * file_class);
 /* http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
 
 /* from claus */
-#define SEGMENT_SIZE (64*1024)
+#define SEGMENT_SIZE (2*1024) /* FIXME TODO 2KB for now */
 typedef double d_t; /* data type */
 #define OBJ_ALIGN sizeof(double)
 #define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
@@ -56,6 +56,13 @@ typedef struct _segment_write_barrier {
 	struct _segment_slots_buffer *next;
 } segment_write_barrier_t;
 
+
+
+/*
+
+|header|data|
+
+ */
 typedef struct _segment {
 	size_t size;
 	//segment_slots_buffer_t *slots_buffer;

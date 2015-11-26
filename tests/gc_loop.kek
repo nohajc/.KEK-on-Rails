@@ -1,6 +1,11 @@
 //KEK_TEST_RUNS 1
 //KEK_TEST_ARGS_0 
 
+// ./compiler/kekc ./tests/gc_loop.kek ./tests/kexes/gc_loop.kexe 
+// make -C vm
+// valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d mem ./tests/kexes/gc_loop.kexe
+
+
 class Printer {
   var v
   
@@ -18,7 +23,8 @@ class Main {
     var printer
     var i
     
-    for (i = 0; i < 1; i++) {
+    for (i = 0; i < 4; i++) {
+      write i
       printer = new Printer()
       printer.hello()
     }

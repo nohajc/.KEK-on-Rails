@@ -41,7 +41,6 @@ void init_kek_array_class(void) {
 	classes_g[classes_cnt_g].syms_instance = NULL;
 
 	classes_g[classes_cnt_g].parent_name = NULL;
-fprintf(stderr, "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTADY %d\n", classes_cnt_g);
 	classes_cnt_g++;
 }
 
