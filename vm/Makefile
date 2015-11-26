@@ -16,7 +16,7 @@ OBJS=\
 	main.o
 
 kek: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS): stack.h vm.h types.h bc.h loader.h k_integer.h k_array.h k_string.h k_file.h k_term.h k_sys.h k_exception.h memory.h
 
