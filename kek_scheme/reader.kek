@@ -1,8 +1,10 @@
 class Reader {
 	var f, line, idx, len, last
+	var prompt
 
 	Reader(f) {
 		this.f = f
+		prompt = ""
 		idx = 1
 		len = 1
 		last = nil
@@ -19,7 +21,8 @@ class Reader {
 			idx++
 			return last
 		}
-		line = f.readln()
+		line = f.readln(prompt)
+		prompt = ""
 		if (!line) len = 0
 		else len = line.length()
 		idx = 0

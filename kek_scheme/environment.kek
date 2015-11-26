@@ -1,0 +1,53 @@
+class EnvironmentError : Exception {
+	var sym
+	EnvironmentError(msg, sym) {
+		super(msg)
+		this.sym = sym
+	}
+}
+
+class Environment {
+	var keys, values
+	var numEntries
+	var parentEnv
+
+	Environment() {
+		numEntries = 0
+		parentEnv = nil
+		keys = []
+		values = []
+	}
+
+	idx(key) {
+		var i
+		for (i = 0; i < numEntries; i++) {
+			if (keys[i] == key) {
+				return i
+			}
+		}
+		return -1
+	}
+
+	get(key) {
+		var i = idx(key)
+		if (i >= 0) {
+			return values[i]
+		}
+		else if (parentEnv != nil) {
+			return parentEnv.get(key)
+		}
+		else {
+			throw new EnvironmentError("No binding for key ", key)
+		}
+	}
+
+	set(key, value) {
+		var i = idx(key)
+		if (i < 0) {
+			i = numEntries
+			keys[i] = key
+			numEntries++
+		}
+		values[i] = value
+	}
+}

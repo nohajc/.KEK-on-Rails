@@ -19,6 +19,7 @@
 #include "k_string.h"
 #include "k_integer.h"
 #include "k_file.h"
+#include "k_term.h"
 #include "k_sys.h"
 #include "k_exception.h"
 #include "stack.h"
@@ -159,6 +160,7 @@ void vm_init_builtin_classes(void) {
 	init_kek_array_class();
 	init_kek_string_class();
 	init_kek_file_class();
+	init_kek_term_class();
 	init_kek_sys_class();
 	init_kek_exception_class();
 }
@@ -378,23 +380,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	char chr_a[2], chr_b[2];
 	chr_a[1] = chr_b[1] = '\0';
 
-	if ((IS_NIL(a) || IS_NIL(b)) || (IS_CLASS(a) && IS_CLASS(b))) {
-		kek_int_t *res;
-
-		switch (o) {
-		case Eq:
-			res = make_integer(a == b);
-			break;
-		case NotEq:
-			res = make_integer(a != b);
-			break;
-		default:
-		vm_error("bc_bop: unsupported bop %d\n", o);
-		break;
-		}
-		return (kek_obj_t*) res;
-	}
-	else if (IS_INT(a) && IS_INT(b)) {
+	if (IS_INT(a) && IS_INT(b)) {
 		kek_int_t *res;
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
@@ -501,11 +487,20 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		}
 		return res;
 	} else {
-		// TODO: implement operations for other types
-		/*vm_error("Cannot apply operation %s to %s and %s.\n", bop_str[o],
-				type_str[a->h.t], type_str[b->h.t]);*/
-		// TODO: macro for object type
-		vm_error("Cannot apply operation %s.\n", bop_str[o]);
+		kek_int_t *res;
+
+		switch (o) {
+		case Eq:
+			res = make_integer(a == b);
+			break;
+		case NotEq:
+			res = make_integer(a != b);
+			break;
+		default:
+		vm_error("bc_bop: unsupported bop %d\n", o);
+		break;
+		}
+		return (kek_obj_t*) res;
 	}
 	return NULL;
 }

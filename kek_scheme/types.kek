@@ -1,3 +1,5 @@
+#include "environment.kek"
+
 enum Tag {
 	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL
 }
@@ -15,6 +17,10 @@ class scmObject {
 
 	print(out) {
 		out.writeln(toString())
+	}
+
+	eval(env) {
+		return this
 	}
 }
 
@@ -81,8 +87,16 @@ class scmSymbol : scmObject {
 		return addSym(new scmSymbol(symName))
 	}
 
+	toString() {
+		return symName
+	}
+
 	print(out) {
 		out.writeln(symName)
+	}
+
+	eval(env) {
+		return env.get(this)
 	}
 }
 

@@ -18,7 +18,7 @@ struct _class;
 union _kek_obj;
 
 typedef enum _type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO, KEK_EXPT, KEK_FILE, KEK_UDO, KEK_CLASS
+	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO, KEK_EXPT, KEK_FILE, KEK_TERM, KEK_UDO, KEK_CLASS
 } type_t;
 
 typedef struct _header {
@@ -91,6 +91,10 @@ typedef struct _kek_file {
 	FILE * f_handle;
 } kek_file_t;
 
+typedef struct _kek_term {
+	header_t h;
+} kek_term_t;
+
 /* user-defined object */
 typedef struct _kek_udo {
 	header_t h;
@@ -111,6 +115,7 @@ typedef union _kek_obj {
 	kek_exinfo_t k_exi;
 	kek_except_t k_expt;
 	kek_file_t k_fil;
+	kek_term_t k_term;
 	kek_udo_t k_udo;
 } kek_obj_t;
 
