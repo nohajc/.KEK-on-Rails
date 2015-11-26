@@ -11,6 +11,10 @@ class Environment {
 	var numEntries
 	var parentEnv
 
+	static initBuiltinFunctions(env) {
+		env.set(scmSymbol.getSym("define"), new scmDefine())
+	}
+
 	Environment() {
 		numEntries = 0
 		parentEnv = nil

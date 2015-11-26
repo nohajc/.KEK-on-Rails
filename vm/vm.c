@@ -758,7 +758,11 @@ void vm_execute_bc(void) {
 			if (!IS_PTR(obj)) {
 				vm_error("Invalid class/object pointer.\n");
 			}
-
+			sym = CONST(arg1); // name of the method
+			if (!IS_SYM(sym)) {
+				vm_error("Expected symbol as the first argument of CALL.\n");
+			}
+			vm_debug(DBG_BC, " - method name: %s\n", sym->k_sym.symbol);
 			if (IS_CLASS(obj)) { // Call of static method
 				vm_debug(DBG_BC, " - Static method call\n");
 				cls = (class_t*) obj;
@@ -777,17 +781,12 @@ void vm_execute_bc(void) {
 				cls = cls->parent;
 			}
 
-			sym = CONST(arg1); // name of the method
-			if (!IS_SYM(sym)) {
-				vm_error("Expected symbol as the first argument of CALL.\n");
-			}
 			assert(cls);
 			mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
 			if (mth == NULL) {
 				vm_error("%s has no method %s.\n",
 						(static_call ? "Class" : "Object"), sym->k_sym.symbol);
 			}
-			vm_debug(DBG_BC, " - method name: %s\n", sym->k_sym.symbol);
 			if (mth->args_cnt != arg2) {
 				vm_error("Method expects %d arguments, %d given.\n", mth->args_cnt, arg2);
 			}

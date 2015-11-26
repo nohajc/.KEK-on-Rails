@@ -13,6 +13,7 @@ class Scheme {
 	static REPL() {
 		var expr
 		var env = new Environment()
+		Environment.initBuiltinFunctions(env)
 		while(1) {
 			try {
 				rd.prompt = "> "
@@ -23,7 +24,9 @@ class Scheme {
 				}
 				expr = expr.eval(env)
 				expr.print(out)
-				out.writeln("\n");
+				if (expr.toString().length() != 0) {
+					out.writeln("\n");
+				}
 			}
 			catch (e) {
 				switch (e.type()) {
@@ -31,6 +34,11 @@ class Scheme {
 					out.writeln(e.msg() + "\n")
 				case EnvironmentError:
 					out.writeln(e.msg() + e.sym.toString() + "\n")
+				case EvalError: {
+					out.writeln(e.msg() + ",\"")
+					e.obj.print(out)
+					out.writeln("\" given.\n")
+				}
 				default:
 					throw e
 				}
