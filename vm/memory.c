@@ -121,29 +121,37 @@ segment_t *mem_segment_init(size_t size) {
 
 	assert(size > 0);
 
-	s = malloc(sizeof(segment_t) + (size - 1) * sizeof(double));
+	s = malloc(sizeof(segment_t) + (size - 1) * OBJ_ALIGN);
 	assert(s);
 
 	vm_debug(DBG_MEM, "segment ptr=%p\n", s);
 
 	s->size = size;
+	s->used = 0;
 	s->next = NULL;
-	s->beginning = &(s->data);
+	s->beginning = s->data;
 	s->end = s->beginning;
+
+	/* in the segment_t, there is 1 data. but the s->beginning points to the
+	 * 0th data.
+	 */
+	assert((uint8_t *) s + sizeof(segment_t) + (size - 1) * OBJ_ALIGN == //
+			(uint8_t *) s->beginning + size * OBJ_ALIGN);
 
 	/* FIXME */
 	vm_debug(DBG_MEM,
 			"begin=%p\nsegment+header+data*size=\t%p\ndataptr+size=\t%p\n",
-			s->beginning, s + sizeof(segment_t) + (size - 1) * sizeof(double),
-			(d_t*) s->beginning + (size - 1) * sizeof(double));
+			s->beginning, //
+			(uint8_t *) s + sizeof(segment_t) + (size - 1) * OBJ_ALIGN, //
+			(uint8_t *) s->beginning + size * OBJ_ALIGN);
 
 	if (segments_g == NULL) {
 		segments_g = s;
-	} else {
-		assert(0 && "haha, no realloc yet");
-		segments_g->next = s;
-		segments_g = s;
-	}
+	}// else {
+//		assert(0 && "haha, no realloc yet");
+//		segments_g->next = s;
+//		segments_g = s;
+//		}
 
 	return (s);
 }
@@ -169,30 +177,50 @@ bool mem_free() {
 
 void *mem_segment_malloc(size_t size) {
 	void *ptr;
+	segment_t *new;
 
 	size = ALIGNED(size);
 
 	assert(segments_g != NULL);
 
 	vm_debug(DBG_MEM, "sizeof double = %u\n", sizeof(double));
+	vm_debug(DBG_MEM, "sizeof size_t = %u\n", sizeof(size_t));
+	vm_debug(DBG_MEM, "sizeof uint8_t = %u\n", sizeof(uint8_t));
+	vm_debug(DBG_MEM, "sizeof segment_t = %u\n", sizeof(segment_t));
+	vm_debug(DBG_MEM, "sizeof segment_t* = %u\n", sizeof(segment_t *));
+	vm_debug(DBG_MEM, "sizeof void* = %u\n", sizeof(void *));
 
 	vm_debug(DBG_MEM, "mem_segment_malloc(size=%u, %#08x)\n", size, size);
 	vm_debug(DBG_MEM, "segment=\t%p (%lu)\n", segments_g, segments_g);
 	vm_debug(DBG_MEM, "totalend=\t%p (%lu)\n",
-			(d_t *) segments_g->beginning + segments_g->size,
-			(d_t *) segments_g->beginning + segments_g->size);
+			(data_t *) segments_g->beginning + segments_g->size,
+			(data_t *) segments_g->beginning + segments_g->size);
 	vm_debug(DBG_MEM, "beginnning=\t%p (%lu)\n", segments_g->beginning,
 			segments_g->beginning);
 	vm_debug(DBG_MEM, "before: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);
 
-	if (((d_t *) (segments_g->end) - (d_t *) (segments_g->beginning))
-			+ (d_t) size > segments_g->size) {
-		assert(0 && "no realloc yet");
+	if (segments_g->used + size > segments_g->size) {
+		vm_debug(DBG_MEM, "We need to allocate a new segment.\n");
+		/*
+			old:
+			[current]->[old1]->[old2]
+			segments_g points to current
+
+		 	new:
+		 	[new]->[current]->[old1]->[old2]
+		 	new->next points to current
+		 	segments_g points to new
+		 */
+		new = mem_segment_init(SEGMENT_SIZE);
+		new->next = segments_g;
+		segments_g = new;
 	}
 
 	ptr = segments_g->end;
-	segments_g->end = (d_t *) segments_g->end + size;
+	segments_g->used += size;
+	segments_g->end =
+			(data_t *) ((uint8_t *) segments_g->end + size * OBJ_ALIGN);
 
 	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);

@@ -23,7 +23,7 @@ class Main {
     var printer
     var i
     
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 1000; i++) {
       write i
       printer = new Printer()
       printer.hello()
