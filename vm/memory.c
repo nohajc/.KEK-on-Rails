@@ -295,7 +295,7 @@ kek_obj_t * obj_table_add(kek_obj_t *obj) {
 	obj_table_size_g *= 2;
 	obj_table_g = realloc(obj_table_g, obj_table_size_g * sizeof(kek_obj_t *));
 	assert(obj_table_g);
-	memset(obj_table_g + (obj_table_size_g / 2), 0, (obj_table_size_g / 2));
+	memset(&obj_table_g[obj_table_size_g / 2], 0, obj_table_size_g / 2);
 
 	return (obj_table_g[obj_table_size_g / 2]);
 }
