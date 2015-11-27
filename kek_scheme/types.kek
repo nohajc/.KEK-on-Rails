@@ -220,13 +220,8 @@ class scmDefine : scmBSyntax {
 		super()
 	}
 
-	eval(env, args) {
-		var name, rest, restrest, value
-		if (args.tag != Tag.CONS) {
-			throw new EvalError("define expects 2 arguments ", args)
-		}
-		name = args.car
-		rest = args.cdr
+	defSym(env, name, rest) {
+		var restrest, value
 		if (rest.tag != Tag.CONS) {
 			throw new EvalError("define expects 2 arguments ", args)
 		}
@@ -234,8 +229,28 @@ class scmDefine : scmBSyntax {
 		if (restrest != G.scmNil) {
 			throw new EvalError("define expects 2 arguments ", args)
 		}
+
 		value = rest.car.eval(env)
 		env.set(name, value)
+	}
+
+	defFun(env, nameArgs, rest) {
+		env.set(nameArgs.car, new scmUserFunction(nameArgs.cdr, rest, env))
+	}
+
+	eval(env, args) {
+		var name, rest
+		if (args.tag != Tag.CONS) {
+			throw new EvalError("define expects at least 2 arguments ", args)
+		}
+		name = args.car
+		rest = args.cdr
+		if (name.tag != Tag.CONS) {
+			defSym(env, name, rest)
+		}
+		else {
+			defFun(env, name, rest)
+		}
 		return G.scmVoid
 	}
 }
@@ -247,6 +262,24 @@ class scmLambda : scmBSyntax {
 
 	eval(env, args) {
 		return new scmUserFunction(args.car, args.cdr, env)
+	}
+}
+
+class scmIf : scmBSyntax {
+	scmIf() {
+		super()
+	}
+
+	eval(env, args) {
+		// TODO: check number of arguments
+		var eTest = args.car.eval(env)
+		var eThen = args.cdr.car
+		var eElse = args.cdr.cdr.car
+
+		if (eTest != G.scmFalse) {
+			return eThen.eval(env)
+		}
+		return eElse.eval(env)
 	}
 }
 
