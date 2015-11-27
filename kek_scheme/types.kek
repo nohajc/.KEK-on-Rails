@@ -1,7 +1,7 @@
 #include "environment.kek"
 
 enum Tag {
-	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL, VOID, B_SYNTAX, B_FUNCTION
+	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL, VOID, B_SYNTAX, B_FUNCTION, U_FUNCTION
 }
 
 class EvalError : Exception {
@@ -9,6 +9,15 @@ class EvalError : Exception {
 	EvalError(msg, obj) {
 		super(msg)
 		this.obj = obj
+	}
+}
+
+class ArgumentNumError : Exception {
+	var expected, given
+	ArgumentNumError(ex, gi) {
+		super("Wrong number of arguments: ")
+		expected = ex
+		given = gi
 	}
 }
 
@@ -130,7 +139,7 @@ class scmCons : scmObject {
 
 			obj.car.print(out)
 			obj = obj.cdr
-			if (obj.tag != Tag.NIL) {
+			if (obj != G.scmNil) {
 				out.writeln(" ")
 			}
 			else break
@@ -140,14 +149,59 @@ class scmCons : scmObject {
 
 	eval(env) {
 		var fnVal = car.eval(env)
+		var args, fargs, al, i
+		var ret, bl
+
 		switch (fnVal.tag) {
-		case Tag.B_SYNTAX: {
+		case Tag.B_SYNTAX:
 			return fnVal.eval(env, cdr)
+		case Tag.B_FUNCTION: {
+			args = []
+			i = 0
+			al = cdr
+			while (al != G.scmNil) {
+				args[i] = al.car.eval(env)
+				al = al.cdr
+				i++
+			}
+			return fnVal.eval(args)
 		}
-		// TODO: B_FUNCTION
+		case Tag.U_FUNCTION: {
+			var fnEnv = new Environment()
+			fnEnv.parentEnv = fnVal.defEnv
+			fargs = fnVal.argList
+			args = cdr
+
+			while (fargs != G.scmNil) {
+				if (args == G.scmNil) {
+					throw new EvalError("Not enough parameters ", cdr)
+				}
+				fnEnv.set(fargs.car, args.car.eval(env))
+				fargs = fargs.cdr
+				args = args.cdr
+			}
+			if (args != G.scmNil) {
+				throw new EvalError("Too many parameters ", cdr)
+			}
+			for (bl = fnVal.bodyList; bl != G.scmNil; bl = bl.cdr) {
+				ret = bl.car.eval(fnEnv)
+			}
+			return ret
+		}
 		default:
 			throw new EvalError("Expected function or syntax ", fnVal)
 		}
+	}
+}
+
+class scmUserFunction : scmObject {
+	var argList, bodyList, defEnv
+
+	scmUserFunction(al, bl, de) {
+		super(Tag.U_FUNCTION)
+		argList = al
+		bodyList = bl
+		defEnv = de
 	}
 }
 
@@ -177,7 +231,7 @@ class scmDefine : scmBSyntax {
 			throw new EvalError("define expects 2 arguments ", args)
 		}
 		restrest = rest.cdr
-		if (restrest.tag != Tag.NIL) {
+		if (restrest != G.scmNil) {
 			throw new EvalError("define expects 2 arguments ", args)
 		}
 		value = rest.car.eval(env)
@@ -186,12 +240,142 @@ class scmDefine : scmBSyntax {
 	}
 }
 
+class scmLambda : scmBSyntax {
+	scmLambda() {
+		super()
+	}
+
+	eval(env, args) {
+		return new scmUserFunction(args.car, args.cdr, env)
+	}
+}
+
+class scmQuote : scmBSyntax {
+	scmQuote() {
+		super()
+	}
+
+	eval(env, args) {
+		if (args.cdr != G.scmNil) {
+			throw new EvalError("quote expects 1 argument ", args)
+		}
+		return args.car
+	}
+}
+
+class scmBFunction : scmObject {
+	var numArgs
+	scmBFunction(numArgs) {
+		super(Tag.B_FUNCTION)
+		this.numArgs = numArgs
+	}
+
+	eval(args) {
+		var len = args.length()
+		if (len != numArgs) {
+			throw new ArgumentNumError(numArgs, len)
+		}
+	}
+}
+
+class scmConsF : scmBFunction {
+	scmConsF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		return new scmCons(args[0], args[1])
+	}
+}
+
+class scmCarF : scmBFunction {
+	scmCarF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		if (args[0].tag != Tag.CONS) {
+			throw new EvalError("car expects cons cell ", args[0])
+		}
+		return args[0].car
+	}
+}
+
+class scmCdrF : scmBFunction {
+	scmCdrF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		if (args[0].tag != Tag.CONS) {
+			throw new EvalError("cdr expects cons cell ", args[0])
+		}
+		return args[0].cdr
+	}
+}
+
+class scmEvalF : scmBFunction {
+	scmEvalF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		return args[0].eval(Scheme.env)
+	}
+}
+
+class scmPlusF : scmBFunction {
+	scmPlusF() {
+		super(-1)
+	}
+
+	eval(args) {
+		var sum = 0
+		var i
+		for (i = 0; i < args.length(); i++) {
+			if (args[i].tag != Tag.INTEGER) {
+				throw new EvalError("Argument expected to be an integer ", args[i])
+			}
+			sum += args[i].val
+		}
+		return new scmInteger(sum)
+	}
+}
+
+class scmMinusF : scmBFunction {
+	scmMinusF() {
+		super(-1)
+	}
+
+	eval(args) {
+		var len = args.length()
+		if (!len) return new scmInteger(0)
+		if (args[0].tag != Tag.INTEGER) {
+			throw new EvalError("Argument expected to be an integer ", args[0])
+		}
+		var diff = args[0].val
+		if (len == 1) return new scmInteger(-diff)
+		var i
+		for (i = 1; i < len; i++) {
+			if (args[i].tag != Tag.INTEGER) {
+				throw new EvalError("Argument expected to be an integer ", args[i])
+			}
+			diff -= args[i].val
+		}
+		return new scmInteger(diff)
+	}
+}
+
 class G {
 	static var scmTrue, scmFalse, scmNil, scmVoid
 	static var tagName
 	
 	static G() {
-		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil", "", "#<syntax>", "#<function>"]
+		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil",	"", "#<syntax>", "#<function>", "#<function>"]
 		scmTrue = new scmObject(Tag.TRUE)
 		scmFalse = new scmObject(Tag.FALSE)
 		scmNil = new scmObject(Tag.NIL)

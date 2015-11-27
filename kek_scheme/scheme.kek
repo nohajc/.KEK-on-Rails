@@ -2,9 +2,10 @@
 #include "parser.kek"
 
 class Scheme {
-	static var input
+	static var parser
 	static var out
-	static var rd
+	static var wi
+	static var env
 
 	static Scheme() {
 		out = Sys.out
@@ -12,12 +13,10 @@ class Scheme {
 
 	static REPL() {
 		var expr
-		var env = new Environment()
-		Environment.initBuiltinFunctions(env)
 		while(1) {
 			try {
-				rd.prompt = "> "
-				expr = input.read()
+				wi.prompt = "> "
+				expr = parser.read()
 				if (!expr) {
 					out.writeln("\n")
 					break
@@ -39,6 +38,11 @@ class Scheme {
 					e.obj.print(out)
 					out.writeln("\" given.\n")
 				}
+				case ArgumentNumError: {
+					out.writeln(e.msg())
+					out.writeln(String.fromInt(e.expected) + " expected, ")
+					out.writeln(String.fromInt(e.given) + " given.\n")
+				}
 				default:
 					throw e
 				}
@@ -47,9 +51,12 @@ class Scheme {
 	}
 
 	static main(args) {
-		rd = new Reader(Sys.term)
-		input = new Parser(rd)
+		wi = new TermW(Sys.term)
+		var rd = new Reader(wi)
+		parser = new Parser(rd)
 
+		env = new Environment()
+		Environment.initBuiltinFunctions(env)
 		REPL()
 	}
 }

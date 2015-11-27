@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 	int ast_print;
 	Prog *prog;
 
-	ast_print = 1;
+	ast_print = 0;
 	printf("Syntakticky analyzator\n");
 	if (argc == 1) {
 		printf("Vstup z klavesnice, zadejte zdrojovy text\n");

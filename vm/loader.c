@@ -149,7 +149,7 @@ bool kexe_load_sym(FILE *f, symbol_t *sym) {
 	}
 
 	sym->const_ptr = kexe_load_uint32(f);
-	if (sym->addr == UINT32_MAX) {
+	if (sym->const_ptr == UINT32_MAX) {
 		vm_error("sym->const_ptr failed\n");
 		return (false);
 	} else {
