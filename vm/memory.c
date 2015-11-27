@@ -389,10 +389,12 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 	int var_offset = 0;
 	kek_obj_t * ret;
 
+	vm_debug(DBG_VM, "%s: syms_cnt before = %u\n", udo_class->name, syms_cnt);
 	if (syms_cnt) {
 		// Add symbols from parents
 		syms_cnt += udo_class->syms_instance[0].addr;
 	}
+	vm_debug(DBG_VM, "%s: syms_cnt after = %u\n", udo_class->name, syms_cnt);
 
 	// When parant is not udo, we need to set var_offset
 	if (udo_class->parent && udo_class->parent->allocator != alloc_udo) {

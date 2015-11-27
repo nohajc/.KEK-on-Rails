@@ -1,3 +1,19 @@
+class TermW {
+	var prompt
+	var term
+
+	TermW(term) {
+		this.term = term
+		prompt = ""
+	}
+
+	readln() {
+		var ln = term.readln(prompt)
+		prompt = ""
+		return ln
+	}
+}
+
 class Reader {
 	var f, line, idx, len, last
 	var prompt
@@ -21,8 +37,7 @@ class Reader {
 			idx++
 			return last
 		}
-		line = f.readln(prompt)
-		prompt = ""
+		line = f.readln()
 		if (!line) len = 0
 		else len = line.length()
 		idx = 0

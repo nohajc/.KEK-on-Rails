@@ -13,6 +13,15 @@ class Environment {
 
 	static initBuiltinFunctions(env) {
 		env.set(scmSymbol.getSym("define"), new scmDefine())
+		env.set(scmSymbol.getSym("quote"), new scmQuote())
+		env.set(scmSymbol.getSym("lambda"), new scmLambda())
+
+		env.set(scmSymbol.getSym("cons"), new scmConsF())
+		env.set(scmSymbol.getSym("car"), new scmCarF())
+		env.set(scmSymbol.getSym("cdr"), new scmCdrF())
+		env.set(scmSymbol.getSym("eval"), new scmEvalF())
+		env.set(scmSymbol.getSym("+"), new scmPlusF())
+		env.set(scmSymbol.getSym("-"), new scmMinusF())
 	}
 
 	Environment() {

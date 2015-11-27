@@ -108,6 +108,9 @@ class Parser {
 		var firstC = skipWS()
 		firstC = skipComment(firstC)
 
+		if (firstC == "\'") {
+			return new scmCons(scmSymbol.getSym("quote"), new scmCons(read(), G.scmNil))
+		}
 		if (firstC == "(") return readList()
 		return readAtom(firstC)
 	}

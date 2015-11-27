@@ -597,7 +597,7 @@ void vm_execute_bc(void) {
 				vm_error("Invalid pointer.\n");
 			}
 
-			if (!IS_INT(idx)) {
+			if (!idx || !IS_INT(idx)) {
 				vm_error("Invalid index.\n");
 			}
 			int idx_n = INT_VAL(idx);
@@ -630,7 +630,7 @@ void vm_execute_bc(void) {
 			POP(idx);
 			POP(obj);
 
-			if (obj && IS_ARR(obj) && IS_INT(idx)) {
+			if (obj && IS_ARR(obj) && idx && IS_INT(idx)) {
 				int idx_n = INT_VAL(idx);
 				if (idx_n >= obj->k_arr.alloc_size) {
 					native_grow_array(&obj->k_arr, idx_n + 1);
