@@ -973,6 +973,7 @@ void vm_execute_bc(void) {
 			}
 			obj = cls->allocator(cls); // Allocate tagged memory for the object
 			mth = cls->constructor;
+			vm_debug(DBG_BC, " - new object: %s\n", cls->name);
 
 			PUSH(obj); // Push instance pointer (THIS)
 			if (!mth) { // no constructor	

@@ -386,14 +386,17 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 	/* Calloc is used to avoid valgrind warnings about
 	 * invalid reads/writes to uninitialized memory */
 	uint32_t syms_cnt = udo_class->syms_instance_cnt;
+	class_t * p_cls = udo_class;
 	int var_offset = 0;
 	kek_obj_t * ret;
 
 	vm_debug(DBG_VM, "%s: syms_cnt before = %u\n", udo_class->name, syms_cnt);
-	if (syms_cnt) {
-		// Add symbols from parents
-		syms_cnt += udo_class->syms_instance[0].addr;
+	while (p_cls->syms_instance_cnt == 0 && p_cls->parent) {
+		p_cls = p_cls->parent;
 	}
+	// Add symbols from parents
+	syms_cnt += p_cls->syms_instance[0].addr + 1; // TODO: we should do this better
+
 	vm_debug(DBG_VM, "%s: syms_cnt after = %u\n", udo_class->name, syms_cnt);
 
 	// When parant is not udo, we need to set var_offset
