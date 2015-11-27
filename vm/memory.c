@@ -269,35 +269,101 @@ inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) 
 /******************************************************************************/
 /* obj_table */
 
-kek_obj_t **obj_table_g;
+obj_table_t *obj_table_g;
 uint32_t obj_table_size_g;
 
 void obj_table_init(void) {
+	vm_debug(DBG_OBJ_TBL, "Init!");
 	obj_table_size_g = OBJ_TABLE_DEFAULT_SIZE;
-	obj_table_g = calloc(obj_table_size_g, sizeof(kek_obj_t *));
+	obj_table_g = calloc(obj_table_size_g, sizeof(obj_table_t));
 	assert(obj_table_g);
 }
 
 void obj_table_free(void) {
+	vm_debug(DBG_OBJ_TBL, "Free!");
 	free(obj_table_g);
 }
 
-kek_obj_t * obj_table_add(kek_obj_t *obj) {
+static uint32_t obj_table_find(kek_obj_t *obj) {
 	uint32_t i;
 
 	for (i = 0; i < obj_table_size_g; i++) {
-		if (obj_table_g[i] == NULL) {
-			obj_table_g[i] = obj;
-			return (obj_table_g[i]);
+		if (obj_table_g[i].obj_ptr == obj) {
+			vm_debug(DBG_OBJ_TBL, "obj_table_find(%p) found %d\n", obj, i);
+			return (i);
 		}
 	}
 
+	vm_debug(DBG_OBJ_TBL, "obj_table_find(%p) not found\n", obj);
+	return (UINT32_MAX);
+}
+
+uint32_t obj_table_add(void *whoami, kek_obj_t *objptr) {
+	uint32_t i;
+
+	for (i = 0; i < obj_table_size_g; i++) {
+		if (obj_table_g[i].obj_ptr == NULL) {
+			obj_table_g[i].obj_ptr = objptr;
+			obj_table_g[i].ptr_from = whoami;
+			obj_table_g[i].state = OBJ_1ST_GEN_YOUNG;
+
+			vm_debug(DBG_OBJ_TBL, "obj_table_add(whoami=%p, obj=%p) added on %d\n",
+					whoami, objptr, i);
+			return (i);
+		}
+	}
+
+	/* if there is no more place, realloc */
+	vm_debug(DBG_OBJ_TBL, "obj_table_add(whoami=%p, obj=%p) realloced\n",
+			whoami, objptr);
 	obj_table_size_g *= 2;
-	obj_table_g = realloc(obj_table_g, obj_table_size_g * sizeof(kek_obj_t *));
+	obj_table_g = realloc(obj_table_g, obj_table_size_g * sizeof(obj_table_t));
 	assert(obj_table_g);
 	memset(&obj_table_g[obj_table_size_g / 2], 0, obj_table_size_g / 2);
 
-	return (obj_table_g[obj_table_size_g / 2]);
+	obj_table_g[obj_table_size_g / 2].obj_ptr = objptr;
+	obj_table_g[obj_table_size_g / 2].ptr_from = whoami;
+	obj_table_g[obj_table_size_g / 2].state = OBJ_1ST_GEN_YOUNG;
+
+	return (obj_table_size_g / 2);
+}
+
+uint32_t obj_table_getptr(void *whoisit, kek_obj_t *objptr) {
+	uint32_t i;
+
+	i = obj_table_find(objptr);
+	vm_debug(DBG_OBJ_TBL, "obj_table_getptr(whoami=%p, obj=%p) i=%d\n",
+				whoisit, objptr, i);
+	if (i == UINT32_MAX) {
+		/* obj is not in table yet */
+		return (obj_table_add(whoisit, objptr));
+	} else {
+		/* obj is on index i */
+		assert(obj_table_g[i].obj_ptr == objptr);
+		assert(obj_table_g[i].ptr_from != NULL);
+
+		/* now add whoisit to the pointer array */
+		if (obj_table_g[i].ptr_arr == NULL) {
+			vm_debug(DBG_OBJ_TBL, "obj_table_g[%d]->ptr_arr malloc\n", i);
+			obj_table_g[i].ptr_arr_size = OBJ_TABLE_PTR_ARR_DEFAULT_SIZE;
+			obj_table_g[i].ptr_arr_cnt = 0;
+			obj_table_g[i].ptr_arr = malloc(
+					obj_table_g[i].ptr_arr_size * sizeof(void *));
+			assert(obj_table_g[i].ptr_arr);
+		}
+
+		if (obj_table_g[i].ptr_arr_cnt == obj_table_g[i].ptr_arr_size) {
+			vm_debug(DBG_OBJ_TBL, "obj_table_g[%d]->ptr_arr realloc\n", i);
+			obj_table_g[i].ptr_arr_size *= 2;
+			obj_table_g[i].ptr_arr = realloc(obj_table_g[i].ptr_arr,
+					obj_table_g[i].ptr_arr_size * sizeof(void *));
+			assert(obj_table_g[i].ptr_arr);
+		}
+
+		obj_table_g[i].ptr_arr[obj_table_g[i].ptr_arr_cnt] = whoisit;
+
+		return (i);
+	}
 }
 
 /******************************************************************************/
@@ -326,10 +392,10 @@ void gc_rootset(void (*fn)(kek_obj_t *)) {
 	int i;
 	kek_obj_t *obj_ptr;
 
-	// the globals /* TODO */
-	//(*fn)( topLevelEnv );
+// the globals /* TODO */
+//(*fn)( topLevelEnv );
 
-	// and the stack
+// and the stack
 	for (i = sp_g - 1; i >= 0; i--) {
 		obj_ptr = stack_g[i];
 
@@ -341,7 +407,6 @@ void gc_rootset(void (*fn)(kek_obj_t *)) {
 
 void gc() {
 	vm_debug(DBG_GC, "gc %d\n", sysconf(_SC_PAGESIZE));
-
 
 //	gc_rootset(gc_rootset_print);
 }
@@ -394,12 +459,12 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 	while (p_cls->syms_instance_cnt == 0 && p_cls->parent) {
 		p_cls = p_cls->parent;
 	}
-	// Add symbols from parents
+// Add symbols from parents
 	syms_cnt += p_cls->syms_instance[0].addr + 1; // TODO: we should do this better
 
 	vm_debug(DBG_VM, "%s: syms_cnt after = %u\n", udo_class->name, syms_cnt);
 
-	// When parant is not udo, we need to set var_offset
+// When parant is not udo, we need to set var_offset
 	if (udo_class->parent && udo_class->parent->allocator != alloc_udo) {
 		var_offset = (int64_t) udo_class->parent->allocator(NULL);
 		syms_cnt += var_offset;

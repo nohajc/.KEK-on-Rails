@@ -58,14 +58,21 @@ typedef struct _segment_write_barrier {
 	struct _segment_slots_buffer *next;
 } segment_write_barrier_t;
 
+typedef struct _segment_new {
+	int a;
+} segment_new_t;
 
+typedef struct _segment_old {
+	int a;
+} segment_old_t;
 
-/*
+typedef union {
+	segment_new_t *hdr_new;
+	segment_old_t *hdr_old;
+} segment_header_t;
 
-|header|data|
-
- */
 typedef struct _segment {
+	segment_header_t header;
 	size_t size;
 	size_t used;
 	//segment_slots_buffer_t *slots_buffer;
@@ -83,17 +90,39 @@ extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern segment_t *segments_old_space_g;
 
-
 /******************************************************************************/
 /* obj_table */
 
-extern kek_obj_t **obj_table_g;
+typedef enum _obj_state {
+	OBJ_UNKNOWN_STATE = 0, //
+	OBJ_1ST_GEN_YOUNG, //
+	OBJ_2ND_GEN_YOUNG, //
+	OBJ_OLD_WHITE, //
+	OBJ_OLD_GRAY, //
+	OBJ_OLD_BLACK //
+} obj_state_t;
+
+typedef struct _obj_table {
+	kek_obj_t *obj_ptr;
+	obj_state_t state;
+
+	/* array of pointers that points to this obj */
+	/* we'll asume that most to most objt will point only one ptr */
+	void *ptr_from;
+
+	uint32_t ptr_arr_cnt;
+	uint32_t ptr_arr_size;
+	void **ptr_arr;
+} obj_table_t;
+
+extern obj_table_t *obj_table_g;
 extern uint32_t obj_table_size_g;
 #define REF(obj) (*(obj))
 #define OBJ_TABLE_DEFAULT_SIZE 2048
+#define OBJ_TABLE_PTR_ARR_DEFAULT_SIZE 256
 void obj_table_init(void);
 void obj_table_free(void);
-kek_obj_t * obj_table_add(kek_obj_t *);
+uint32_t obj_table_getptr(void *, kek_obj_t *);
 
 /******************************************************************************/
 /* gc */
@@ -116,8 +145,6 @@ void gc_delete_all(void);
 /* gc for young objects. objs who will survive 2 young gc r old */
 /* https://en.wikipedia.org/wiki/Cheney's_algorithm */
 void gc_scavenge(void);
-
-
 
 /******************************************************************************/
 

@@ -74,6 +74,8 @@ void debug_add(char *level) {
 		debug_level_g |= DBG_GC;
 	} else if (strcmp(level, "m") == 0 || strcmp(level, "mem") == 0) {
 		debug_level_g |= DBG_MEM;
+	} else if (strcmp(level, "o") == 0 || strcmp(level, "obj_tbl") == 0) {
+		debug_level_g |= DBG_OBJ_TBL;
 	}
 }
 

@@ -117,21 +117,23 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 static char *vm_debug_flag(uint32_t flag) {
 	switch (flag) {
 	case DBG_LOADING:
-		return "loading";
+		return ("loading");
 	case DBG_BC:
-		return "bc";
+		return ("bc");
 	case DBG_STACK:
-		return "stack";
+		return ("stack");
 	case DBG_STACK_FULL:
-		return "stack_full";
+		return ("stack_full");
 	case DBG_VM:
-		return "vm";
+		return ("vm");
 	case DBG_GC:
-		return "gc";
+		return ("gc");
 	case DBG_MEM:
-		return "mem";
+		return ("mem");
+	case DBG_OBJ_TBL:
+		return ("obj_tbl");
 	default:
-		return"unknown";
+		return ("unknown");
 	}
 }
 
