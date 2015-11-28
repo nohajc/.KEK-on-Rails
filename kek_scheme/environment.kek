@@ -23,6 +23,9 @@ class Environment {
 		env.set(scmSymbol.getSym("eval"), new scmEvalF())
 		env.set(scmSymbol.getSym("+"), new scmPlusF())
 		env.set(scmSymbol.getSym("-"), new scmMinusF())
+		env.set(scmSymbol.getSym("*"), new scmTimesF())
+		env.set(scmSymbol.getSym("eq?"), new scmEqF())
+		env.set(scmSymbol.getSym("="), new scmNumEqF())
 	}
 
 	Environment() {
