@@ -379,6 +379,24 @@ class scmPlusF : scmBFunction {
 	}
 }
 
+class scmTimesF : scmBFunction {
+	scmTimesF() {
+		super(-1)
+	}
+
+	eval(args) {
+		var prod = 1
+		var i
+		for (i = 0; i < args.length(); i++) {
+			if (args[i].tag != Tag.INTEGER) {
+				throw new EvalError("Argument expected to be an integer ", args[i])
+			}
+			prod *= args[i].val
+		}
+		return new scmInteger(prod)
+	}
+}
+
 class scmMinusF : scmBFunction {
 	scmMinusF() {
 		super(-1)
@@ -400,6 +418,40 @@ class scmMinusF : scmBFunction {
 			diff -= args[i].val
 		}
 		return new scmInteger(diff)
+	}
+}
+
+class scmEqF : scmBFunction {
+	scmEqF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		if (args[0] == args[1]) {
+			return G.scmTrue
+		}
+		return G.scmFalse
+	}
+}
+
+class scmNumEqF : scmBFunction {
+	scmNumEqF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		if (args[0].tag != Tag.INTEGER) {
+			throw new EvalError("Expected integer as first argument ", args[0])
+		}
+		if (args[1].tag != Tag.INTEGER) {
+			throw new EvalError("Expected integer as second argument ", args[1])
+		}
+		if (args[0].val == args[1].val) {
+			return G.scmTrue
+		}
+		return G.scmFalse
 	}
 }
 
