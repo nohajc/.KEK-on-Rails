@@ -586,7 +586,7 @@ void vm_execute_bc(void) {
 			POP(obj);
 			POP(addr);
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
-			DPTR_VAL(addr) = obj;
+			*DPTR_VAL(addr) = obj;
 			break;
 		}
 		case IDX: {
@@ -692,7 +692,7 @@ void vm_execute_bc(void) {
 		case DR: {
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "DR");
-			stack_g[sp_g - 1] = DPTR_VAL(stack_top());
+			stack_g[sp_g - 1] = *DPTR_VAL(stack_top());
 			break;
 		}
 		case WRT: {
