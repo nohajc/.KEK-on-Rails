@@ -66,7 +66,7 @@ void debug_add(char *level) {
 		debug_level_g |= DBG_LOADING;
 	} else if (strcmp(level, "b") == 0 || strcmp(level, "bc") == 0) {
 		debug_level_g |= DBG_BC;
-	} else if (strcmp(level, "v") == 0 || strcmp(level, "v") == 0) {
+	} else if (strcmp(level, "v") == 0 || strcmp(level, "vm") == 0) {
 		debug_level_g |= DBG_VM;
 	} else if (strcmp(level, "a") == 0 || strcmp(level, "all") == 0) {
 		debug_level_g |= DBG_ALL;
@@ -76,6 +76,9 @@ void debug_add(char *level) {
 		debug_level_g |= DBG_MEM;
 	} else if (strcmp(level, "o") == 0 || strcmp(level, "obj_tbl") == 0) {
 		debug_level_g |= DBG_OBJ_TBL;
+	} else {
+		fprintf(stderr, "Unknown debug level \"%s\"\n", level);
+		exit(1);
 	}
 }
 

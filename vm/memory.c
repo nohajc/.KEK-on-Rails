@@ -298,48 +298,54 @@ static uint32_t obj_table_find(kek_obj_t *obj) {
 	return (UINT32_MAX);
 }
 
-uint32_t obj_table_add(void *whoami, kek_obj_t *objptr) {
+uint32_t obj_table_add(kek_obj_t **objptr, kek_obj_t *obj) {
 	uint32_t i;
 
 	for (i = 0; i < obj_table_size_g; i++) {
 		if (obj_table_g[i].obj_ptr == NULL) {
-			obj_table_g[i].obj_ptr = objptr;
-			obj_table_g[i].ptr_from = whoami;
+			obj_table_g[i].obj_ptr = obj;
+			obj_table_g[i].ptr_from = objptr;
 			obj_table_g[i].state = OBJ_1ST_GEN_YOUNG;
 
 			vm_debug(DBG_OBJ_TBL, "obj_table_add(whoami=%p, obj=%p) added on %d\n",
-					whoami, objptr, i);
+					objptr, obj, i);
 			return (i);
 		}
 	}
 
 	/* if there is no more place, realloc */
 	vm_debug(DBG_OBJ_TBL, "obj_table_add(whoami=%p, obj=%p) realloced\n",
-			whoami, objptr);
+			objptr, obj);
 	obj_table_size_g *= 2;
 	obj_table_g = realloc(obj_table_g, obj_table_size_g * sizeof(obj_table_t));
 	assert(obj_table_g);
 	memset(&obj_table_g[obj_table_size_g / 2], 0, obj_table_size_g / 2);
 
-	obj_table_g[obj_table_size_g / 2].obj_ptr = objptr;
-	obj_table_g[obj_table_size_g / 2].ptr_from = whoami;
+	obj_table_g[obj_table_size_g / 2].obj_ptr = obj;
+	obj_table_g[obj_table_size_g / 2].ptr_from = objptr;
 	obj_table_g[obj_table_size_g / 2].state = OBJ_1ST_GEN_YOUNG;
 
 	return (obj_table_size_g / 2);
 }
 
-uint32_t obj_table_getptr(void *whoisit, kek_obj_t *objptr) {
+uint32_t obj_table_regptr(kek_obj_t **objptr) {
 	uint32_t i;
+	kek_obj_t *obj;
 
-	i = obj_table_find(objptr);
+	obj = *objptr;
+
+	assert(objptr);
+	assert(obj);
+
+	i = obj_table_find(obj);
 	vm_debug(DBG_OBJ_TBL, "obj_table_getptr(whoami=%p, obj=%p) i=%d\n",
-				whoisit, objptr, i);
+				objptr, obj, i);
 	if (i == UINT32_MAX) {
 		/* obj is not in table yet */
-		return (obj_table_add(whoisit, objptr));
+		return (obj_table_add(objptr, obj));
 	} else {
 		/* obj is on index i */
-		assert(obj_table_g[i].obj_ptr == objptr);
+		assert(obj_table_g[i].obj_ptr == obj);
 		assert(obj_table_g[i].ptr_from != NULL);
 
 		/* now add whoisit to the pointer array */
@@ -360,7 +366,7 @@ uint32_t obj_table_getptr(void *whoisit, kek_obj_t *objptr) {
 			assert(obj_table_g[i].ptr_arr);
 		}
 
-		obj_table_g[i].ptr_arr[obj_table_g[i].ptr_arr_cnt] = whoisit;
+		obj_table_g[i].ptr_arr[obj_table_g[i].ptr_arr_cnt] = objptr;
 
 		return (i);
 	}
@@ -440,10 +446,12 @@ void realloc_arr_elems(struct _kek_array * arr, int length) {
 }
 
 kek_obj_t * alloc_string(class_t * str_class, int length) {
+	vm_debug(DBG_MEM, "== alloc_string length=%d\n", length);
 	return (mem_obj_malloc(KEK_STR, str_class, sizeof(kek_string_t) + length));
 }
 
 kek_obj_t * alloc_integer(void) {
+	vm_debug(DBG_MEM, "== alloc_integer\n");
 	return (mem_obj_malloc(KEK_INT, NULL, sizeof(kek_int_t)));
 }
 

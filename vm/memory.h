@@ -115,6 +115,9 @@ typedef struct _obj_table {
 	void **ptr_arr;
 } obj_table_t;
 
+
+
+
 extern obj_table_t *obj_table_g;
 extern uint32_t obj_table_size_g;
 #define REF(obj) (*(obj))
@@ -122,7 +125,10 @@ extern uint32_t obj_table_size_g;
 #define OBJ_TABLE_PTR_ARR_DEFAULT_SIZE 256
 void obj_table_init(void);
 void obj_table_free(void);
-uint32_t obj_table_getptr(void *, kek_obj_t *);
+
+/* argument is a pointer to the pointer to the object.
+ * we need it for updating when the obj moves in the heap */
+uint32_t obj_table_regptr(kek_obj_t **);
 
 /******************************************************************************/
 /* gc */

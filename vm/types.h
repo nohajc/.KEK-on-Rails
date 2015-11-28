@@ -24,7 +24,12 @@ typedef enum _type {
 typedef struct _header {
 	type_t t;
 	struct _class * cls; /* Each object needs a pointer to its class. */
+
+	/* FIXME TODO compiler will broke? will i need it anyway? */
+	/* uint32_t uid; */ /* gc wants to know */
 } header_t;
+
+/* extern uint32_t uid_g; */ /* which uid was the last one */
 
 /* nil - immutable, singleton */
 typedef struct _kek_nil {

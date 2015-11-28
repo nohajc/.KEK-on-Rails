@@ -6,6 +6,18 @@
 // valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d mem ./tests/kexes/gc_loop.kexe
 
 
+class Integer {
+  var value
+
+  Integet(v) {
+    value = v
+  }
+
+  add(x) {
+    value = value + x
+  }
+}
+
 class Printer {
   var v
   
@@ -22,11 +34,15 @@ class Main {
   static main(args) {
     var printer
     var i
-    
+    var x
+
     for (i = 0; i < 1000; i++) {
       write i
       printer = new Printer()
       printer.hello()
+
+      x = new Integer(4)
+      x.add(1)
     }
   }
 }
