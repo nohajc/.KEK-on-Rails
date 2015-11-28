@@ -542,6 +542,7 @@ void method_free(method_t *method) {
 	}
 
 	free(method->name);
+	//free(method);
 }
 
 void class_free(class_t *class) {
@@ -554,16 +555,22 @@ void class_free(class_t *class) {
 	free(class->name);
 	free(class->parent_name);
 
+	method_free(class->constructor);
+	free(class->constructor);
+
 	for (i = 0; i < class->methods_cnt; i++) {
 		method_free(&class->methods[i]);
 	}
+	free(class->methods);
 
 	for (i = 0; i < class->syms_static_cnt; i++) {
 		symbol_free(&class->syms_static[i]);
 	}
+	free(class->syms_static);
 
 	for (i = 0; i < class->syms_instance_cnt; i++) {
 		symbol_free(&class->syms_instance[i]);
 	}
+	free(class->syms_instance);
 }
 

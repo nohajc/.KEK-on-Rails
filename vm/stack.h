@@ -14,6 +14,8 @@
 /******************************************************************************/
 /* stack **********************************************************************/
 
+#define STACK_DEFAULT_SIZE 1024*4
+
 extern kek_obj_t **stack_g;
 extern int stack_size_g;
 extern int sp_g; /* stack pointer */

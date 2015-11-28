@@ -117,19 +117,23 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 static char *vm_debug_flag(uint32_t flag) {
 	switch (flag) {
 	case DBG_LOADING:
-		return "loading";
+		return ("loading");
 	case DBG_BC:
-		return "bc";
+		return ("bc");
 	case DBG_STACK:
-		return "stack";
+		return ("stack");
 	case DBG_STACK_FULL:
-		return "stack_full";
+		return ("stack_full");
 	case DBG_VM:
-		return "vm";
+		return ("vm");
 	case DBG_GC:
-		return "gc";
+		return ("gc");
+	case DBG_MEM:
+		return ("mem");
+	case DBG_OBJ_TBL:
+		return ("obj_tbl");
 	default:
-		return"unknown";
+		return ("unknown");
 	}
 }
 
@@ -566,14 +570,14 @@ void vm_execute_bc(void) {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_ARG", arg1);
-			PUSH(&ARG(arg1));
+			PUSH(MAKE_DPTR(&ARG(arg1)));
 			break;
 		}
 		case LABI_LOC: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_LOC", arg1);
-			PUSH(&LOC(arg1));
+			PUSH(MAKE_DPTR(&LOC(arg1)));
 			break;
 		}
 		case ST: {
@@ -582,7 +586,7 @@ void vm_execute_bc(void) {
 			POP(obj);
 			POP(addr);
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
-			*addr = obj;
+			*DPTR_VAL(addr) = obj;
 			break;
 		}
 		case IDX: {
@@ -635,7 +639,7 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
-				PUSH(&obj->k_arr.elems[idx_n]);
+				PUSH(MAKE_DPTR(&obj->k_arr.elems[idx_n]));
 			} else {
 				vm_error("Invalid object or index.\n");
 			}
@@ -688,7 +692,7 @@ void vm_execute_bc(void) {
 		case DR: {
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "DR");
-			stack_g[sp_g - 1] = *(kek_obj_t**) stack_top();
+			stack_g[sp_g - 1] = *DPTR_VAL(stack_top());
 			break;
 		}
 		case WRT: {
@@ -845,7 +849,7 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(&cls_memb->value);
+			PUSH(MAKE_DPTR(&cls_memb->value));
 			break;
 		}
 		case LABI_CVE: {
@@ -865,7 +869,7 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(&cls_memb->value);
+			PUSH(MAKE_DPTR(&cls_memb->value));
 			break;
 		}
 		case LVBI_CV: {
@@ -952,7 +956,7 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(&cls_memb->value);
+			PUSH(MAKE_DPTR(&cls_memb->value));
 			break;
 		}
 		case NEW: {
@@ -1017,7 +1021,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(&INST_VAR(obj, arg1));
+			PUSH(MAKE_DPTR(&INST_VAR(obj, arg1)));
 			break;
 		}
 		case LVBI_IV: {
@@ -1075,7 +1079,7 @@ void vm_execute_bc(void) {
 			if (!obj_memb) {
 				vm_error("Instance member %s not found in %s.\n", sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(&INST_VAR(obj, obj_memb->addr));
+			PUSH(MAKE_DPTR(&INST_VAR(obj, obj_memb->addr)));
 			break;
 		}
 		case ST_EXINFO: {
