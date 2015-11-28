@@ -45,13 +45,18 @@ kek_obj_t* stack_top();
 #define TOP(obj) (obj) = (void*)stack_top()
 
 #define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
+	int i; \
 	PUSH(make_integer(ret)); \
 	PUSH(make_integer(ap_g)); \
 	ap_g = sp_g - (arg_cnt) - 3; \
 	PUSH(make_integer(fp_g)); \
 	fp_g = sp_g; \
 	stack_g[fp_g] = NULL; \
-	sp_g = sp_g + (locals_cnt) + 1; \
+	sp_g = sp_g + (locals_cnt) + 2; \
+	for (i = fp_g + 1; i < sp_g - 1; ++i) { \
+		stack_g[i] = NULL; \
+	} \
+	stack_g[sp_g - 1] = (kek_obj_t*)-1; \
 	ip_g = entry; \
 }
 
@@ -72,6 +77,7 @@ kek_obj_t* stack_top();
 	int caller_fp = (size_t)INT_VAL(stack_g[fp_g - 1]); \
 	int tmp_ap = sp_g - (arg_cnt) - 1; \
 	uint32_t i; \
+	int j; \
 	for (i = 0; i <= (arg_cnt); ++i) { \
 		stack_g[ap_g + i] = stack_g[tmp_ap + i]; \
 	} \
@@ -81,7 +87,11 @@ kek_obj_t* stack_top();
 	PUSH(make_integer(caller_fp)); \
 	fp_g = sp_g; \
 	stack_g[fp_g] = NULL; \
-	sp_g = sp_g + (locals_cnt) + 1; \
+	sp_g = sp_g + (locals_cnt) + 2; \
+	for (j = fp_g + 1; j < sp_g - 1; ++j) { \
+		stack_g[j] = NULL; \
+	} \
+	stack_g[sp_g - 1] = (kek_obj_t*)-1; \
 	ip_g = entry; \
 }
 
