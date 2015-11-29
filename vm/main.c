@@ -84,7 +84,7 @@ static void debug_add(char *type) {
 }
 
 static void set_gc(char *type) {
-	if (strcmp(type, "n") == 0 || strcmp(type, "none") == 0) {
+	if (strcmp(type, "x") == 0 || strcmp(type, "none") == 0) {
 		gc_type_g = GC_NONE;
 	} else if (strcmp(type, "n") == 0 || strcmp(type, "new") == 0) {
 		gc_type_g = GC_NEW;

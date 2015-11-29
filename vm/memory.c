@@ -73,18 +73,15 @@ void gc_delete_all() {
 /* global variables */
 segment_t *segments_from_space_g = NULL;
 segment_t *segments_to_space_g = NULL;
-void *from_space_free_g;
+void *to_space_free_g;
+size_t to_space_size_g = NULL;
 void *alloc_ptr_g;
 void *scan_ptr_g;
 
-bool gc_in_from_space(kek_obj_t *obj) {
-	return (obj->h.copied == false);
-}
-
 kek_obj_t *gc_cheney_copy_obj(kek_obj_t *obj) {
 	kek_obj_t *ret;
-	ret = memcpy(alloc_ptr_g, obj, sizeof(*obj));
-	alloc_ptr_g = ((uint8_t *) alloc_ptr_g + sizeof(*obj));
+	ret = memcpy(alloc_ptr_g, obj, vm_obj_size(obj));
+	alloc_ptr_g = ((uint8_t *) alloc_ptr_g + vm_obj_size(obj));
 	return (ret);
 }
 
@@ -92,84 +89,126 @@ void gc_cheney_copy_roots(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 	kek_obj_t *copy;
 
+	vm_debug(DBG_MEM, "gc_cheney_copy_roots: objptr=%p obj=%p\n", objptr, obj);
+
 	assert(IS_PTR(obj));
 
+	vm_debug(DBG_MEM, "is %p constatnt? (type=%d)\n", obj, obj->h.t);
 	if (vm_is_const(obj)) {
+		vm_debug(DBG_MEM, "yes it is!\n");
 		return;
 	}
 
-	if (gc_in_from_space(obj)) {
+	if (obj->h.t != KEK_COPIED) {
 		copy = gc_cheney_copy_obj(obj);
-		obj->h.forwarding_address = copy;
+		obj->h.t = KEK_COPIED;
+		obj->h.cls = (struct _class *) copy;
 		obj = copy;
-		obj->h.survived++;
-		obj->h.copied = true;
 	}
 }
 
-void gc_cheney_reset_copied(kek_obj_t **objptr) {
+void gc_cheney_copy_inner_obj(kek_obj_t **objptr) {
+	kek_obj_t *obj = *objptr;
+	kek_obj_t *from_neighbor;
+	kek_obj_t *to_neighbor;
+
+	if (IS_PTR(obj) /* TODO: not in old space */) {
+
+		vm_debug(DBG_MEM, "gc_cheney_scavenge() obj found! obj=%p\n", obj);
+
+		if (vm_is_const(obj)) {
+			vm_debug(DBG_MEM, "gc_cheney_scavenge() it's const\n");
+			return;
+		}
+
+		from_neighbor = obj;
+
+		if (from_neighbor->h.cls != NULL) {
+			to_neighbor = (kek_obj_t *) from_neighbor->h.cls;
+		} else {
+			to_neighbor = gc_cheney_copy_obj(from_neighbor);
+			from_neighbor->h.cls = (struct _class *) to_neighbor;
+		}
+
+		obj = to_neighbor;
+	}
+}
+
+void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 
-	obj->h.copied = false;
+	assert(IS_PTR(obj));
+
+	switch (obj->h.t) {
+	case KEK_INT:
+		break;
+	case KEK_STR:
+		break;
+	case KEK_SYM:
+		break;
+	case KEK_ARR:
+		obj->k_arr.elems; /* todo: ale jak se tam dostanu, potrebuju ptr */
+		break;
+	case KEK_ARR_OBJS:
+		break;
+	case KEK_EXINFO:
+		break;
+	case KEK_EXPT:
+		break;
+	case KEK_FILE:
+		break;
+	case KEK_TERM:
+		break;
+	case KEK_UDO:
+		break;
+	case KEK_CLASS:
+		break;
+	case KEK_COPIED:
+		break;
+	default:
+		vm_error("Unknown obj->h.t=%d in gc_cheney_copy_inner_objs\n",
+				obj->h.t);
+		break;
+	}
 }
 
 void gc_cheney_scavenge() {
 	segment_t *swap_ptr;
 	kek_obj_t *obj;
 	kek_obj_t *obj_inner;
-	kek_obj_t *from_neighbor;
-	kek_obj_t *to_neighbor;
+
 	uint8_t i;
 
 	vm_debug(DBG_MEM, "gc_cheney_scavenge()\n");
 
 	/* swap from-space to to-space */
+	vm_debug(DBG_MEM, "gc_cheney_scavenge() swap from- to-\n");
 	swap_ptr = segments_from_space_g;
 	segments_from_space_g = segments_to_space_g;
 	segments_to_space_g = swap_ptr;
 
+	to_space_size_g = 0;
+
 	/* set alloc and scan ptrs to the beginning of the to-space segment */
+	vm_debug(DBG_MEM, "gc_cheney_scavenge() alloc and scan set to beg of to\n");
 	alloc_ptr_g = segments_to_space_g;
 	scan_ptr_g = segments_to_space_g;
 
-	gc_rootset(gc_cheney_reset_copied);
-
 	/* copy roots to to-space and actualize alloc ptr */
+	vm_debug(DBG_MEM, "gc_cheney_scavenge() copy roots\n");
 	gc_rootset(gc_cheney_copy_roots);
 
-	while (scan_ptr_g < alloc_ptr_g) {
-		obj = (kek_obj_t *) scan_ptr_g;
-		assert(IS_PTR(obj));
-		scan_ptr_g = ((uint8_t *) scan_ptr_g) + sizeof(*obj);
+	vm_debug(DBG_MEM, "gc_cheney_scavenge() copy inner objs\n");
+	gc_rootset(gc_cheney_copy_inner_objs);
 
-		for (i = 0; i < sizeof(*obj); i++) {
-			obj_inner = (kek_obj_t *) (((uint8_t *) obj) + i);
-
-			if (IS_PTR(obj_inner) /* TODO: not in old space */) {
-				if (vm_is_const(obj_inner)) {
-					continue;
-				}
-
-				from_neighbor = obj_inner;
-
-				if (from_neighbor->h.forwarding_address != NULL) {
-					to_neighbor = from_neighbor->h.forwarding_address;
-				} else {
-					to_neighbor = gc_cheney_copy_obj(from_neighbor);
-					from_neighbor->h.forwarding_address = to_neighbor;
-				}
-
-				obj_inner = to_neighbor;
-			}
-		}
-	}
+	vm_debug(DBG_MEM, "gc_cheney_scavenge() end\n");
 }
 
 void gc_cheney_init() {
 	segments_from_space_g = mem_segment_init(SEGMENT_SIZE);
 	segments_to_space_g = mem_segment_init(SEGMENT_SIZE);
 
-	from_space_free_g = segments_from_space_g;
+	to_space_free_g = segments_to_space_g;
 }
 
 void gc_cheney_free() {
@@ -185,23 +224,27 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	assert(segments_from_space_g != NULL);
 
-	if (((uint8_t *) from_space_free_g + size) > //
-			(uint8_t *) segments_from_space_g + (size_t) NEW_SEGMENT_SIZE) {
-		vm_debug(DBG_MEM, "gc_cheney_malloc: From space needs GC.\n");
+	/* if (from_space_size_g + size >= NEW_SEGMENT_SIZE) { */
+	if ((data_t *) to_space_free_g
+			+ size>= (data_t *)segments_to_space_g + NEW_SEGMENT_SIZE) {
+		vm_debug(DBG_MEM, "gc_cheney_malloc: From space needs GC. "
+				"##########################################################\n");
 		gc_cheney_scavenge();
 	}
 
-	ptr = from_space_free_g;
-	from_space_free_g = ((uint8_t *) from_space_free_g) + size * OBJ_ALIGN;
+	ptr = to_space_free_g;
+	to_space_free_g = ((data_t *) to_space_free_g) + size * OBJ_ALIGN;
+	to_space_size_g += size * OBJ_ALIGN;
 
 	vm_debug(DBG_MEM, "gc_cheney_malloc: from=%p to=%p\n", ptr,
-			from_space_free_g);
+			to_space_free_g);
 
 	((kek_obj_t *) ptr)->h.t = type;
 	((kek_obj_t *) ptr)->h.cls = cls;
-	((kek_obj_t *) ptr)->h.forwarding_address = false;
-	((kek_obj_t *) ptr)->h.survived = 0;
-	((kek_obj_t *) ptr)->h.copied = false;
+
+#ifdef FORCE_CALLOC
+	memset(ptr, 0, size);
+#endif /* FORCE_CALLOC */
 
 	return (ptr);
 }
@@ -260,6 +303,11 @@ void *mem_segment_malloc(size_t size) {
 	segment_t *new;
 
 	size = ALIGNED(size);
+
+	if (gc_type_g != GC_NONE) {
+		int *x = (int *) 42;
+		*x = 666;
+	}
 
 	assert(segments_g != NULL);
 
@@ -494,6 +542,10 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	vm_debug(DBG_GC, "rootset: static vars of objs --\n");
 	for (j = 0; j < classes_cnt_g; j++) {
 		for (k = 0; k < classes_g[j].syms_static_cnt; k++) {
+
+			vm_debug(DBG_GC, "rootset: static vars[%d] has ptr=%p --\n", k,
+					&classes_g[j].syms_static[k].value);
+
 			if (classes_g[j].syms_static[k].value != NULL
 					&& IS_PTR(classes_g[j].syms_static[k].value)) {
 				(*fn)(&classes_g[j].syms_static[k].value);
@@ -504,7 +556,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	/* stack objects */
 	vm_debug(DBG_GC, "rootset: objs on the stack --\n");
 	for (i = sp_g - 1; i >= 0; i--) {
-		if (stack_g[i] == NULL && IS_PTR(stack_g[i])) {
+		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
 			(*fn)(&stack_g[i]);
 		}
 	}
@@ -514,7 +566,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 void gc() {
 	vm_debug(DBG_GC, "---------------- gc() ----------------\n");
 
-	//gc_rootset(gc_rootset_print);
+	gc_rootset(gc_rootset_print);
 	//obj_table_print();
 }
 
@@ -579,7 +631,12 @@ void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 /******************************************************************************/
 
 kek_obj_t * alloc_array(class_t * arr_class) {
-	return (mem_obj_malloc(KEK_ARR, arr_class, sizeof(kek_array_t)));
+	return (gc_obj_malloc(KEK_ARR, arr_class, sizeof(kek_array_t)));
+}
+
+kek_obj_t *alloc_array_objs(int items) {
+	return (gc_obj_malloc(KEK_ARR_OBJS, NULL,
+			sizeof(kek_array_objs_t) + items * sizeof(kek_obj_t *)));
 }
 
 void alloc_arr_elems(kek_array_t * arr) {
@@ -589,10 +646,9 @@ void alloc_arr_elems(kek_array_t * arr) {
 	arr->alloc_size = ARR_INIT_SIZE;
 }
 
-kek_obj_t ** alloc_const_arr_elems(int length) {
-	kek_obj_t ** elems = malloc(length * sizeof(kek_obj_t*));
-	assert(elems);
-	return elems;
+kek_obj_t **alloc_const_arr_elems(int length) {
+	kek_obj_t *array_objs = alloc_array_objs(length);
+	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems));
 }
 
 void realloc_arr_elems(struct _kek_array * arr, int length) {
@@ -606,12 +662,12 @@ void realloc_arr_elems(struct _kek_array * arr, int length) {
 
 kek_obj_t * alloc_string(class_t * str_class, int length) {
 	vm_debug(DBG_MEM, "== alloc_string length=%d\n", length);
-	return (mem_obj_malloc(KEK_STR, str_class, sizeof(kek_string_t) + length));
+	return (gc_obj_malloc(KEK_STR, str_class, sizeof(kek_string_t) + length));
 }
 
 kek_obj_t * alloc_integer(void) {
 	vm_debug(DBG_MEM, "== alloc_integer\n");
-	return (mem_obj_malloc(KEK_INT, NULL, sizeof(kek_int_t)));
+	return (gc_obj_malloc(KEK_INT, NULL, sizeof(kek_int_t)));
 }
 
 kek_obj_t * alloc_udo(class_t * udo_class) {
@@ -649,16 +705,16 @@ kek_obj_t * alloc_file(class_t * file_class) {
 	if (file_class == NULL) { // Helper for alloc_udo
 		return (kek_obj_t*) 1; // Returns desired var_offset for derived object
 	}
-	return (mem_obj_malloc(KEK_FILE, file_class, sizeof(kek_file_t)));
+	return (gc_obj_malloc(KEK_FILE, file_class, sizeof(kek_file_t)));
 }
 
 kek_obj_t * alloc_term(class_t * term_class) {
-	return (mem_obj_malloc(KEK_TERM, term_class, sizeof(kek_term_t)));
+	return (gc_obj_malloc(KEK_TERM, term_class, sizeof(kek_term_t)));
 }
 
 kek_obj_t * alloc_exception(class_t * expt_class) {
 	if (expt_class == NULL) { // Helper for alloc_udo
 		return (kek_obj_t*) 1; // Returns desired var_offset for derived object
 	}
-	return (mem_obj_malloc(KEK_EXPT, expt_class, sizeof(kek_except_t)));
+	return (gc_obj_malloc(KEK_EXPT, expt_class, sizeof(kek_except_t)));
 }

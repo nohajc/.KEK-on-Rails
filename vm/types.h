@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+typedef double data_t; /* data type */
+
 /******************************************************************************/
 /* objects ********************************************************************/
 
@@ -26,37 +28,31 @@ typedef enum _type {
 	KEK_STR, //
 	KEK_SYM, //
 	KEK_ARR, //
+	KEK_ARR_OBJS, //
 	KEK_EXINFO, //
 	KEK_EXPT, //
 	KEK_FILE, //
 	KEK_TERM, //
 	KEK_UDO, //
-	KEK_CLASS
+	KEK_CLASS, //
+	KEK_COPIED // when gc copies and obj, this will be the type of the old one
 } type_t;
 
 #define TYPE_CHECK(type) (((type) >= 0) && ((type) <= 10))
 #define OBJ_TYPE_CHECK(obj) (TYPE_CHECK((obj)->h.t))
 
 static const char *type_str_g[] = { "NIL", "INT", "STR", "SYM", "ARR", "EXINFO",
-		"EXPT", "FILE", "TERM", "UDO", "CLASS" };
+		"EXPT", "FILE", "TERM", "UDO", "CLASS", "COPIED" };
 
 /******************************************************************************/
 
 typedef struct _header {
 	type_t t;
-	struct _class * cls; /* Each object needs a pointer to its class. */
 
-	/* FIXME TODO compiler will broke? will i need it anyway? */
-	/* uint32_t uid; *//* gc wants to know */
-
-	/* gc */
-	bool copied;
-	union _kek_obj *forwarding_address;
-	int survived;
-	size_t size; /* not all obj's are the same size. f.ex. string */
+	/* Each object needs a pointer to its class. */
+	/* This pointer may use GC for forwarding address */
+	struct _class * cls;
 } header_t;
-
-/* extern uint32_t uid_g; *//* which uid was the last one */
 
 /* nil - immutable, singleton */
 typedef struct _kek_nil {
@@ -85,13 +81,18 @@ typedef struct _kek_symbol {
 } kek_symbol_t;
 
 /* array - mutable */
+typedef struct _kek_array_objs {
+	header_t h;
+	data_t elems[1]; /* kek_obj_t elems[lenght] */
+} kek_array_objs_t;
+
 typedef struct _kek_array {
 	header_t h;
 	// FIXME: We should mark final objects that cannot be parents.
 	int length;
 	int alloc_size;
 	/* Loader will need to transform each constant_array_t to this format */
-	union _kek_obj ** elems;
+	union _kek_obj **elems;
 } kek_array_t;
 
 typedef struct _try_range {
@@ -139,7 +140,6 @@ typedef struct _kek_udo {
 
 /******************************************************************************/
 
-
 /******************************************************************************/
 
 typedef union _kek_obj {
@@ -149,15 +149,12 @@ typedef union _kek_obj {
 	kek_string_t k_str;
 	kek_symbol_t k_sym;
 	kek_array_t k_arr;
+	kek_array_objs_t k_arr_objs;
 	kek_exinfo_t k_exi;
 	kek_except_t k_expt;
 	kek_file_t k_fil;
 	kek_term_t k_term;
 	kek_udo_t k_udo;
-
-	/* FIXME: class_t needs to be SMALLER than kek_obj_t
-	class_t k_class; */
-//	kek_cls_t k_cls;
 } kek_obj_t;
 
 #if defined(__LP64__)

@@ -1201,7 +1201,18 @@ void vm_throw_obj_from_native_ctxt(kek_obj_t * obj) {
 	longjmp(bc_loop_env_g, 1);
 }
 
+/* FIXME is this right? */
 bool vm_is_const(kek_obj_t *obj) {
-	return (((void *) const_table_g) >= ((void *) obj)
-			&& ((void *) (const_table_g + const_table_cnt_g)) <= ((void *) obj));
+	return (((void *) const_table_g) <= ((void *) obj)
+			&& ((void *) (const_table_g + const_table_cnt_g)) > ((void *) obj));
+}
+
+size_t vm_obj_size(kek_obj_t *obj) {
+	vm_debug(DBG_MEM, "vm_obj_size(%p), h.t=%d\n", obj, obj->h.t);
+	switch (obj->h.t) {
+	case KEK_STR:
+		return (sizeof(kek_string_t) + obj->k_str.length);
+	default:
+		return (sizeof(*obj));
+	}
 }
