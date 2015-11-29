@@ -5,7 +5,7 @@ class Main {
   static main(args) {
     var i
     var x = "a"
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 100; i++) {
       x = x + "a"
     }
     write x

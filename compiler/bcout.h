@@ -119,9 +119,10 @@ typedef struct _header {
 	constant_type_t t;
 	uint64_t cls; /* Each object needs a pointer to its class - resolved at runtime. */
 
-	bool from_space;
+	bool copied;
 	void *forwarding_address;
 	int survived;
+	size_t size;
 } header_t;
 
 typedef struct _constant_nil {

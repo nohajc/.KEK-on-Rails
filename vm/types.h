@@ -50,9 +50,10 @@ typedef struct _header {
 	/* uint32_t uid; *//* gc wants to know */
 
 	/* gc */
-	bool from_space;
+	bool copied;
 	union _kek_obj *forwarding_address;
 	int survived;
+	size_t size; /* not all obj's are the same size. f.ex. string */
 } header_t;
 
 /* extern uint32_t uid_g; *//* which uid was the last one */
@@ -137,46 +138,7 @@ typedef struct _kek_udo {
 } kek_udo_t;
 
 /******************************************************************************/
-/* FIXME: these are dups and not used anywhere */
 
-typedef struct _kek_method {
-	header_t h;
-	char *name;
-	union _entry {
-		uint32_t bc_addr;
-		method_ptr func;
-	} entry;
-	uint32_t args_cnt;
-	/* We need this number to properly set SP
-	 after call, thus reserving space for locals. */
-	uint32_t locals_cnt;
-	uint8_t is_static;
-	uint8_t is_native;
-} kek_method_t;
-
-typedef struct _kek_class {
-	header_t h;
-
-	char *name;
-	struct _kek_cls *parent;
-
-	uint32_t methods_cnt;
-	kek_method_t *methods;
-
-	alloc_ptr allocator;
-
-	kek_method_t *constructor;
-	kek_method_t *static_init; /* "Static constructor" */
-
-	uint32_t syms_static_cnt;
-	symbol_t *syms_static;
-
-	uint32_t syms_instance_cnt;
-	symbol_t *syms_instance;
-
-	/* helpers */
-	char *parent_name;
-} kek_class_t;
 
 /******************************************************************************/
 
@@ -195,7 +157,7 @@ typedef union _kek_obj {
 
 	/* FIXME: class_t needs to be SMALLER than kek_obj_t
 	class_t k_class; */
-	kek_cls_t k_cls;
+//	kek_cls_t k_cls;
 } kek_obj_t;
 
 #if defined(__LP64__)

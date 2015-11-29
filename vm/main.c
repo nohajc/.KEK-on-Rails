@@ -15,6 +15,7 @@
 
 uint32_t debug_level_g = 0;
 uint32_t test_g = 0;
+gc_type_t gc_type_g = GC_TYPE_DEFAULT;
 
 void usage(const char *progname) {
 	printf("Usage:\n");
@@ -57,27 +58,41 @@ void free_globals() {
 
 }
 
-void debug_add(char *level) {
-	if (strcmp(level, "s") == 0 || strcmp(level, "stack") == 0) {
+static void debug_add(char *type) {
+	if (strcmp(type, "s") == 0 || strcmp(type, "stack") == 0) {
 		debug_level_g |= DBG_STACK;
-	} else if (strcmp(level, "sf") == 0 || strcmp(level, "stack_full") == 0) {
+	} else if (strcmp(type, "sf") == 0 || strcmp(type, "stack_full") == 0) {
 		debug_level_g |= DBG_STACK_FULL;
-	} else if (strcmp(level, "l") == 0 || strcmp(level, "loading") == 0) {
+	} else if (strcmp(type, "l") == 0 || strcmp(type, "loading") == 0) {
 		debug_level_g |= DBG_LOADING;
-	} else if (strcmp(level, "b") == 0 || strcmp(level, "bc") == 0) {
+	} else if (strcmp(type, "b") == 0 || strcmp(type, "bc") == 0) {
 		debug_level_g |= DBG_BC;
-	} else if (strcmp(level, "v") == 0 || strcmp(level, "vm") == 0) {
+	} else if (strcmp(type, "v") == 0 || strcmp(type, "vm") == 0) {
 		debug_level_g |= DBG_VM;
-	} else if (strcmp(level, "a") == 0 || strcmp(level, "all") == 0) {
+	} else if (strcmp(type, "a") == 0 || strcmp(type, "all") == 0) {
 		debug_level_g |= DBG_ALL;
-	} else if (strcmp(level, "g") == 0 || strcmp(level, "gc") == 0) {
+	} else if (strcmp(type, "g") == 0 || strcmp(type, "gc") == 0) {
 		debug_level_g |= DBG_GC;
-	} else if (strcmp(level, "m") == 0 || strcmp(level, "mem") == 0) {
+	} else if (strcmp(type, "m") == 0 || strcmp(type, "mem") == 0) {
 		debug_level_g |= DBG_MEM;
-	} else if (strcmp(level, "o") == 0 || strcmp(level, "obj_tbl") == 0) {
+	} else if (strcmp(type, "o") == 0 || strcmp(type, "obj_tbl") == 0) {
 		debug_level_g |= DBG_OBJ_TBL;
 	} else {
-		fprintf(stderr, "Unknown debug level \"%s\"\n", level);
+		fprintf(stderr, "Unknown debug level \"%s\"\n", type);
+		exit(1);
+	}
+}
+
+static void set_gc(char *type) {
+	if (strcmp(type, "n") == 0 || strcmp(type, "none") == 0) {
+		gc_type_g = GC_NONE;
+	} else if (strcmp(type, "n") == 0 || strcmp(type, "new") == 0) {
+		gc_type_g = GC_NEW;
+	} else if (strcmp(type, "g") == 0 || strcmp(type, "gen") == 0) {
+		gc_type_g = GC_GEN;
+	} else {
+		fprintf(stderr, "Unknown gc type \"%s\" (use none, new or gen)\n",
+				type);
 		exit(1);
 	}
 }
@@ -86,10 +101,13 @@ int main(int argc, char *argv[]) {
 	int c;
 	char *filename = NULL;
 
-	while ((c = getopt(argc, argv, "d:t:")) != -1) {
+	while ((c = getopt(argc, argv, "d:g:t:")) != -1) {
 		switch (c) {
 		case 'd':
 			debug_add(optarg);
+			break;
+		case 'g':
+			set_gc(optarg);
 			break;
 		case 't':
 			sscanf(optarg, "%u", &test_g);

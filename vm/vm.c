@@ -1202,5 +1202,6 @@ void vm_throw_obj_from_native_ctxt(kek_obj_t * obj) {
 }
 
 bool vm_is_const(kek_obj_t *obj) {
-	return (const_table_g >= obj && (const_table_g + const_table_cnt_g) <= obj);
+	return (((void *) const_table_g) >= ((void *) obj)
+			&& ((void *) (const_table_g + const_table_cnt_g)) <= ((void *) obj));
 }

@@ -40,9 +40,7 @@ typedef double data_t; /* data type */
 #define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
 #define ALIGNED_SIZE_OF(obj) ALIGNED((obj)->h.size)
 
-/* this will main call to initialiaze everything and then free */
-bool mem_init(void);
-bool mem_free(void);
+
 
 /* Remember set */
 typedef struct _segment_slots_buffer {
@@ -86,12 +84,16 @@ typedef struct _segment {
 	/* data[size-1] */
 } segment_t;
 
-extern segment_t *segments_from_space_g;
-extern segment_t *segments_to_space_g;
-extern void *alloc_ptr_t;
-extern void *scan_ptr_t;
 
 extern segment_t *segments_old_space_g;
+
+/* this will main call to initialiaze everything and then free */
+bool mem_init(void);
+bool mem_free(void);
+segment_t *mem_segment_init(size_t size);
+
+void *mem_obj_malloc(type_t type, class_t *cls, size_t size);
+void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size);
 
 /******************************************************************************/
 /* obj_table */
@@ -133,6 +135,16 @@ uint32_t obj_table_regptr(kek_obj_t **);
 /******************************************************************************/
 /* gc */
 
+typedef enum _gc_type {
+	GC_NONE, //
+	GC_NEW, // just new space (cheney only)
+	GC_GEN // generational GC. new and old space
+} gc_type_t;
+
+#define GC_TYPE_DEFAULT GC_NONE
+extern gc_type_t gc_type_g;
+
+
 typedef struct _gc_obj {
 	kek_obj_t *obj;
 	size_t size;
@@ -146,11 +158,27 @@ extern gc_obj_t *gc_obj_root_g;
 
 /* this function will be called from the main loop in vm */
 void gc(void);
+void gc_init(void);
+void gc_free(void);
 void gc_delete_all(void);
 
-/* gc for young objects. objs who will survive 2 young gc r old */
-/* https://en.wikipedia.org/wiki/Cheney's_algorithm */
-void gc_scavenge(void);
+void gc_rootset(void (*fn)(kek_obj_t **));
+
+/******************************************************************************/
+/* cheney */
+
+#define NEW_SEGMENT_SIZE 1024
+extern segment_t *segments_from_space_g;
+extern segment_t *segments_to_space_g;
+extern void *from_space_free_g; /* points to the end of data in from-space */
+extern void *alloc_ptr_g;
+extern void *scan_ptr_g;
+
+void gc_cheney_init(void);
+void gc_cheney_free(void);
+void *gc_cheney_malloc(type_t type, class_t *cls, size_t size);
+void *gc_cheney_calloc(type_t type, class_t *cls, size_t size);
+void gc_cheney_scavenge();
 
 /******************************************************************************/
 
