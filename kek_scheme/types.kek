@@ -150,7 +150,7 @@ class scmCons : scmObject {
 	eval(env) {
 		var fnVal = car.eval(env)
 		var args, fargs, al, i
-		var ret, bl
+		var bl
 
 		switch (fnVal.tag) {
 		case Tag.B_SYNTAX:
@@ -183,10 +183,10 @@ class scmCons : scmObject {
 			if (args != G.scmNil) {
 				throw new EvalError("Too many parameters ", cdr)
 			}
-			for (bl = fnVal.bodyList; bl != G.scmNil; bl = bl.cdr) {
-				ret = bl.car.eval(fnEnv)
+			for (bl = fnVal.bodyList; bl.cdr != G.scmNil; bl = bl.cdr) {
+				bl.car.eval(fnEnv)
 			}
-			return ret
+			return bl.car.eval(fnEnv) // Tail call optimization
 		}
 		default:
 			throw new EvalError("Expected function or syntax ", fnVal)
@@ -261,6 +261,9 @@ class scmLambda : scmBSyntax {
 	}
 
 	eval(env, args) {
+		if (args.cdr == G.scmNil) {
+			throw new EvalError("lambda expects at least one body expression ", args.cdr)
+		}
 		return new scmUserFunction(args.car, args.cdr, env)
 	}
 }
@@ -321,7 +324,6 @@ class scmLet : scmBSyntax {
 		}
 		var bindings = args.car
 		var bl
-		var ret
 		if (bindings.tag != Tag.CONS) {
 			throw new EvalError("let expects a list of symbol bindings", bindings)
 		}
@@ -329,10 +331,10 @@ class scmLet : scmBSyntax {
 		if (args.cdr == G.scmNil) {
 			throw new EvalError("let expects at least one body expression", G.scmNil)
 		}
-		for (bl = args.cdr; bl != G.scmNil; bl = bl.cdr) {
-			ret = bl.car.eval(newEnv)
+		for (bl = args.cdr; bl.cdr != G.scmNil; bl = bl.cdr) {
+			bl.car.eval(newEnv)
 		}
-		return ret
+		return bl.car.eval(newEnv) // Tail call optimization
 	}
 }
 
