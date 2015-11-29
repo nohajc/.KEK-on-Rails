@@ -46,6 +46,7 @@ kek_obj_t* stack_top();
 #define TOP(obj) (obj) = (void*)stack_top()
 
 #define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
+	int i; \
 	vm_debug(DBG_STACK, "bc_call: ret\n"); \
 	PUSH(make_integer(ret)); \
 	vm_debug(DBG_STACK, "bc_call: ap\n"); \
@@ -57,6 +58,9 @@ kek_obj_t* stack_top();
 	vm_debug(DBG_STACK, "bc_call: stack[%d (fp_g)] is NULL\n", fp_g); \
 	stack_g[fp_g] = NULL; \
 	sp_g = sp_g + (locals_cnt) + 1; \
+	for (i = fp_g + 1; i < sp_g - 1; ++i) { \
+		stack_g[i] = NULL; \
+	} \
 	ip_g = entry; \
 }
 
@@ -72,6 +76,7 @@ kek_obj_t* stack_top();
  8. set IP to function entry point
  */
 #define BC_TCALL(entry, arg_cnt, locals_cnt) { \
+	int j; \
 	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
 	int caller_ap = (size_t)INT_VAL(stack_g[fp_g - 2]); \
 	int caller_fp = (size_t)INT_VAL(stack_g[fp_g - 1]); \
@@ -87,6 +92,9 @@ kek_obj_t* stack_top();
 	fp_g = sp_g; \
 	stack_g[fp_g] = NULL; \
 	sp_g = sp_g + (locals_cnt) + 1; \
+	for (j = fp_g + 1; j < sp_g - 1; ++j) { \
+		stack_g[j] = NULL; \
+	} \
 	ip_g = entry; \
 }
 
