@@ -296,6 +296,46 @@ class scmQuote : scmBSyntax {
 	}
 }
 
+class scmLet : scmBSyntax {
+	scmLet() {
+		super()
+	}
+
+	envFromBindings(bindings, env) {
+		var newEnv = new Environment()
+		newEnv.parentEnv = env
+		var b
+		for (b = bindings; b != G.scmNil; b = b.cdr) {
+			var kv = b.car
+			if (kv.tag != Tag.CONS) {
+				throw new EvalError("Symbol binding must be a list with symbol and value", kv)
+			}
+			newEnv.set(kv.car, kv.cdr.car.eval(env))
+		}
+		return newEnv
+	}
+
+	eval(env, args) {
+		if (args.tag != Tag.CONS) {
+			throw new EvalError("let expects a list of symbol bindings", args)
+		}
+		var bindings = args.car
+		var bl
+		var ret
+		if (bindings.tag != Tag.CONS) {
+			throw new EvalError("let expects a list of symbol bindings", bindings)
+		}
+		var newEnv = envFromBindings(bindings, env)
+		if (args.cdr == G.scmNil) {
+			throw new EvalError("let expects at least one body expression", G.scmNil)
+		}
+		for (bl = args.cdr; bl != G.scmNil; bl = bl.cdr) {
+			ret = bl.car.eval(newEnv)
+		}
+		return ret
+	}
+}
+
 class scmBFunction : scmObject {
 	var numArgs
 	scmBFunction(numArgs) {
