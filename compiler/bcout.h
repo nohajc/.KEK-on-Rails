@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "tabsym.h"
 
 enum Operator {
@@ -117,6 +118,10 @@ typedef enum _constant_type {
 typedef struct _header {
 	constant_type_t t;
 	uint64_t cls; /* Each object needs a pointer to its class - resolved at runtime. */
+
+	bool from_space;
+	void *forwarding_address;
+	int survived;
 } header_t;
 
 typedef struct _constant_nil {
@@ -312,7 +317,8 @@ uint32_t bco_sym(bcout_t *bco, const char *str);
 uint32_t bco_arr(bcout_t *bco, size_t len);
 void bco_arr_set_idx(bcout_t *bco, uint32_t arr, size_t idx, uint32_t elem);
 uint32_t bco_exinfo(bcout_t *bco, size_t try_block_cnt);
-void bco_exinfo_add_block(bcout_t *bco, uint32_t exinfo, int try_addr, int catch_addr);
+void bco_exinfo_add_block(bcout_t *bco, uint32_t exinfo, int try_addr,
+		int catch_addr);
 
 /* helper functions */
 size_t bco_get_ip(bcout_t *bco);

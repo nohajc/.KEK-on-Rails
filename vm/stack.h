@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include "types.h"
+#include "vm.h"
 #include "k_integer.h"
 
 /******************************************************************************/
@@ -46,16 +47,22 @@ kek_obj_t* stack_top();
 
 #define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
 	int i; \
+	vm_debug(DBG_STACK, "bc_call: ret\n"); \
 	PUSH(make_integer(ret)); \
+	vm_debug(DBG_STACK, "bc_call: ap\n"); \
 	PUSH(make_integer(ap_g)); \
 	ap_g = sp_g - (arg_cnt) - 3; \
+	vm_debug(DBG_STACK, "bc_call: fp\n"); \
 	PUSH(make_integer(fp_g)); \
 	fp_g = sp_g; \
+	vm_debug(DBG_STACK, "bc_call: stack[%d (fp_g)] is NULL\n", fp_g); \
 	stack_g[fp_g] = NULL; \
 	sp_g = sp_g + (locals_cnt) + 2; \
 	for (i = fp_g + 1; i < sp_g - 1; ++i) { \
+		vm_debug(DBG_STACK, "bc_call: stack[%d] is LOCAL\n", i); \
 		stack_g[i] = NULL; \
 	} \
+	vm_debug(DBG_STACK, "bc_call: stack[%d] is -1\n", sp_g - 1); \
 	stack_g[sp_g - 1] = (kek_obj_t*)-1; \
 	ip_g = entry; \
 }
@@ -101,6 +108,7 @@ kek_obj_t* stack_top();
 	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
 	ap_g = (size_t)INT_VAL(stack_g[fp_g - 2]); \
 	fp_g = (size_t)INT_VAL(stack_g[fp_g - 1]); \
+	vm_debug(DBG_STACK, "bc_ret\n"); \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 } while (0)
@@ -111,6 +119,7 @@ kek_obj_t* stack_top();
 	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
 	ap_g = (size_t)INT_VAL(stack_g[fp_g - 2]); \
 	fp_g = (size_t)INT_VAL(stack_g[fp_g - 1]); \
+	vm_debug(DBG_STACK, "bc_ret_self\n"); \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 }

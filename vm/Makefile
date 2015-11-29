@@ -21,7 +21,7 @@ kek: $(OBJS)
 $(OBJS): stack.h vm.h types.h bc.h loader.h k_integer.h k_array.h k_string.h k_file.h k_term.h k_sys.h k_exception.h memory.h
 
 clean:
-	rm $(OBJS)
+	rm -f $(OBJS)
 
 clobber: clean
-	rm kek
+	rm -f kek

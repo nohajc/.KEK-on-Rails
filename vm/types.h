@@ -17,19 +17,45 @@
 struct _class;
 union _kek_obj;
 
+/******************************************************************************/
+/* object type */
+
 typedef enum _type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO, KEK_EXPT, KEK_FILE, KEK_TERM, KEK_UDO, KEK_CLASS
+	KEK_NIL, //
+	KEK_INT, //
+	KEK_STR, //
+	KEK_SYM, //
+	KEK_ARR, //
+	KEK_EXINFO, //
+	KEK_EXPT, //
+	KEK_FILE, //
+	KEK_TERM, //
+	KEK_UDO, //
+	KEK_CLASS
 } type_t;
+
+#define TYPE_CHECK(type) (((type) >= 0) && ((type) <= 10))
+#define OBJ_TYPE_CHECK(obj) (TYPE_CHECK((obj)->h.t))
+
+static const char *type_str_g[] = { "NIL", "INT", "STR", "SYM", "ARR", "EXINFO",
+		"EXPT", "FILE", "TERM", "UDO", "CLASS" };
+
+/******************************************************************************/
 
 typedef struct _header {
 	type_t t;
 	struct _class * cls; /* Each object needs a pointer to its class. */
 
 	/* FIXME TODO compiler will broke? will i need it anyway? */
-	/* uint32_t uid; */ /* gc wants to know */
+	/* uint32_t uid; *//* gc wants to know */
+
+	/* gc */
+	bool from_space;
+	union _kek_obj *forwarding_address;
+	int survived;
 } header_t;
 
-/* extern uint32_t uid_g; */ /* which uid was the last one */
+/* extern uint32_t uid_g; *//* which uid was the last one */
 
 /* nil - immutable, singleton */
 typedef struct _kek_nil {
@@ -110,6 +136,50 @@ typedef struct _kek_udo {
 	union _kek_obj * inst_var[1]; /* inst_var[syms_instance_cnt] */
 } kek_udo_t;
 
+/******************************************************************************/
+/* FIXME: these are dups and not used anywhere */
+
+typedef struct _kek_method {
+	header_t h;
+	char *name;
+	union _entry {
+		uint32_t bc_addr;
+		method_ptr func;
+	} entry;
+	uint32_t args_cnt;
+	/* We need this number to properly set SP
+	 after call, thus reserving space for locals. */
+	uint32_t locals_cnt;
+	uint8_t is_static;
+	uint8_t is_native;
+} kek_method_t;
+
+typedef struct _kek_class {
+	header_t h;
+
+	char *name;
+	struct _kek_cls *parent;
+
+	uint32_t methods_cnt;
+	kek_method_t *methods;
+
+	alloc_ptr allocator;
+
+	kek_method_t *constructor;
+	kek_method_t *static_init; /* "Static constructor" */
+
+	uint32_t syms_static_cnt;
+	symbol_t *syms_static;
+
+	uint32_t syms_instance_cnt;
+	symbol_t *syms_instance;
+
+	/* helpers */
+	char *parent_name;
+} kek_class_t;
+
+/******************************************************************************/
+
 typedef union _kek_obj {
 	header_t h;
 	kek_nil_t k_nil;
@@ -122,6 +192,10 @@ typedef union _kek_obj {
 	kek_file_t k_fil;
 	kek_term_t k_term;
 	kek_udo_t k_udo;
+
+	/* FIXME: class_t needs to be SMALLER than kek_obj_t
+	class_t k_class; */
+	kek_cls_t k_cls;
 } kek_obj_t;
 
 #if defined(__LP64__)

@@ -88,6 +88,9 @@ typedef struct _segment {
 
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
+extern void *alloc_ptr_t;
+extern void *scan_ptr_t;
+
 extern segment_t *segments_old_space_g;
 
 /******************************************************************************/
@@ -103,20 +106,17 @@ typedef enum _obj_state {
 } obj_state_t;
 
 typedef struct _obj_table {
-	kek_obj_t *obj_ptr;
 	obj_state_t state;
+	kek_obj_t *obj_ptr;
 
 	/* array of pointers that points to this obj */
 	/* we'll asume that most to most objt will point only one ptr */
-	void *ptr_from;
+	kek_obj_t **ptr;
 
 	uint32_t ptr_arr_cnt;
 	uint32_t ptr_arr_size;
-	void **ptr_arr;
+	kek_obj_t ***ptr_arr;
 } obj_table_t;
-
-
-
 
 extern obj_table_t *obj_table_g;
 extern uint32_t obj_table_size_g;

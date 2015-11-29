@@ -19,6 +19,8 @@ int fp_g; /* frame pointer */
 int ip_g; /* instruction pointer */
 
 void stack_init(void) {
+	vm_debug(DBG_STACK, "init, size=%d\n", STACK_DEFAULT_SIZE);
+
 	stack_size_g = STACK_DEFAULT_SIZE;
 	sp_g = 0;
 	fp_g = 0;
@@ -28,35 +30,26 @@ void stack_init(void) {
 }
 
 void stack_destroy(void) {
+	vm_debug(DBG_STACK, "destroy\n");
 	free(stack_g);
 }
 
 void stack_push(void *obj) {
 	if (sp_g >= stack_size_g) {
-		stack_size_g *= 2;
-		stack_g = realloc(stack_g, stack_size_g * sizeof(kek_obj_t*));
-		assert(stack_g != NULL);
-		vm_debug(DBG_STACK,
-				"== stack realloced stack=%p size=%lu sizeof(kek_obj_t)=%lu \n",
-				stack_g, stack_size_g, sizeof(kek_obj_t));
-		assert(0 && "stack reallocing do not work right");
+		vm_error("Stack overflowed. Please increase STACK_DEFAULT_SIZE in "
+				"stack.h\n");
+		exit(1);
 	}
 
-	/* FIXME
-	 if (IS_PTR(obj)) {
-		vm_debug(DBG_STACK, "stack_push: \"%s\"\n", kek_obj_print(obj));
-	}*/
-
+	vm_debug(DBG_STACK, "push to   stack[%3d] = %p\n", sp_g, obj);
 	stack_g[sp_g++] = obj;
 }
 
 kek_obj_t* stack_pop() {
-	/*vm_debug(DBG_STACK, "stack_pop: \"%s\"\n",
-	 kek_obj_print(stack_g[sp_g - 1]));*/
+	vm_debug(DBG_STACK, "pop  from stack[%3d] = %p\n", sp_g, stack_g[sp_g - 1]);
 	return (stack_g[--sp_g]);
 }
 kek_obj_t* stack_top() {
-	/*vm_debug(DBG_STACK, "stack_top: \"%s\"\n",
-	 kek_obj_print(stack_g[sp_g - 1]));*/
+	vm_debug(DBG_STACK, "top from stack[%d] = %p\n", sp_g, stack_g[sp_g - 1]);
 	return (stack_g[sp_g - 1]);
 }

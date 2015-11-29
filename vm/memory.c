@@ -65,50 +65,86 @@ void gc_delete_all() {
 	}
 }
 
-//void gc_scavenge() {
-//	segment_t *swap_ptr;
-//
-//	/* swap from-space to to-space */
-//	swap_ptr = segments_from_space_g;
-//	segments_from_space_g = segments_to_space_g;
-//	segments_to_space_g = swap_ptr;
+/******************************************************************************/
+/* Cheney */
+/* https://en.wikipedia.org/wiki/Cheney's_algorithm */
+/* http://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
 
-/* TODO */
+segment_t *segments_from_space_g = NULL;
+segment_t *segments_to_space_g = NULL;
+void *alloc_ptr_t;
+void *scan_ptr_t;
 
-/*
- def scavenge():
- swap(fromSpace, toSpace)
- allocationPtr = toSpace.bottom
- scanPtr = toSpace.bottom
+bool gc_in_from_space(kek_obj_t *obj) {
+	return (obj->h.from_space);
+}
 
- for i = 0..len(roots):
- root = roots[i]
- if inFromSpace(root):
- rootCopy = copyObject(&allocationPtr, root)
- setForwardingAddress(root, rootCopy)
- roots[i] = rootCopy
+kek_obj_t * gc_cheney_copy_obj(kek_obj_t *obj) {
+	kek_obj_t *ret;
+	ret = memcpy(alloc_ptr_t, obj, sizeof(*obj));
+	alloc_ptr_t = ((uint8_t *) alloc_ptr_t + sizeof(*obj));
+	return (ret);
+}
 
- while scanPtr < allocationPtr:
- obj = object at scanPtr
- scanPtr += size(obj)
- n = sizeInWords(obj)
- for i = 0..n:
- if isPointer(obj[i]) and not inOldSpace(obj[i]):
- fromNeighbor = obj[i]
- if hasForwardingAddress(fromNeighbor):
- toNeighbor = getForwardingAddress(fromNeighbor)
- else:
- toNeighbor = copyObject(&allocationPtr, fromNeighbor)
- setForwardingAddress(fromNeighbor, toNeighbor)
- obj[i] = toNeighbor
+void gc_cheney_copy_roots(kek_obj_t **objptr) {
+	kek_obj_t *obj = *objptr;
+	kek_obj_t *copy;
 
- def copyObject(*allocationPtr, object):
- copy = *allocationPtr
- *allocationPtr += size(object)
- memcpy(copy, object, size(object))
- return copy
- */
-//}
+	if (vm_is_const(obj)) {
+		return;
+	}
+
+	if (gc_in_from_space(obj)) {
+		copy = gc_cheney_copy_obj(obj);
+		obj->h.forwarding_address = copy;
+		objptr = &copy; /* FIXME timhle si nejsem jistej */
+	}
+}
+
+void gc_cheney() {
+	segment_t *swap_ptr;
+	kek_obj_t *obj;
+	kek_obj_t *from_neighbor;
+	kek_obj_t *to_neighbor;
+	uint8_t i;
+
+	/* swap from-space to to-space */
+	swap_ptr = segments_from_space_g;
+	segments_from_space_g = segments_to_space_g;
+	segments_to_space_g = swap_ptr;
+
+	/* set alloc and scan ptrs to the beginning of the to-space segment */
+	alloc_ptr_t = segments_to_space_g;
+	scan_ptr_t = segments_to_space_g;
+
+	/* copy roots to to-space and actualize alloc ptr */
+	gc_rootset(gc_cheney_copy_roots);
+
+	while (scan_ptr_t < alloc_ptr_t) {
+		obj = (kek_obj_t *) scan_ptr_t;
+		scan_ptr_t = (uint8_t *) scan_ptr_t + sizeof(*obj);
+
+		for (i = 0; i < sizeof(*obj); i++) {
+			if (IS_PTR(((uint8_t * )obj)[i]) /* TODO: not in old space */) {
+				if (vm_is_const((kek_obj_t *)((uint8_t * )obj)[i])) {
+					continue;
+				}
+
+				from_neighbor = ((uint8_t *) obj)[i];
+
+				if (from_neighbor->h.forwarding_address != NULL) {
+					to_neighbor = from_neighbor->h.forwarding_address;
+				} else {
+					to_neighbor = gc_cheney_copy_obj(from_neighbor);
+					from_neighbor->h.forwarding_address = to_neighbor;
+				}
+
+				((uint8_t *) obj)[i] = to_neighbor;
+			}
+		}
+	}
+}
+
 /******************************************************************************/
 /* memory managment */
 
@@ -284,6 +320,18 @@ void obj_table_free(void) {
 	free(obj_table_g);
 }
 
+void obj_table_print() {
+	uint32_t i;
+	vm_debug(DBG_OBJ_TBL, "-------------- obj_table_print() ------------\n");
+	for (i = 0; i < obj_table_size_g; i++) {
+		if (obj_table_g[i].obj_ptr != NULL) {
+			vm_debug(DBG_OBJ_TBL, "%d: obj=%p from=%p from_arr=%p\n", i,
+					obj_table_g[i].obj_ptr, obj_table_g[i].ptr,
+					obj_table_g[i].ptr_arr);
+		}
+	}
+}
+
 static uint32_t obj_table_find(kek_obj_t *obj) {
 	uint32_t i;
 
@@ -304,11 +352,12 @@ uint32_t obj_table_add(kek_obj_t **objptr, kek_obj_t *obj) {
 	for (i = 0; i < obj_table_size_g; i++) {
 		if (obj_table_g[i].obj_ptr == NULL) {
 			obj_table_g[i].obj_ptr = obj;
-			obj_table_g[i].ptr_from = objptr;
+			obj_table_g[i].ptr = objptr;
 			obj_table_g[i].state = OBJ_1ST_GEN_YOUNG;
 
-			vm_debug(DBG_OBJ_TBL, "obj_table_add(whoami=%p, obj=%p) added on %d\n",
-					objptr, obj, i);
+			vm_debug(DBG_OBJ_TBL,
+					"obj_table_add(whoami=%p, obj=%p) added on %d\n", objptr,
+					obj, i);
 			return (i);
 		}
 	}
@@ -322,7 +371,7 @@ uint32_t obj_table_add(kek_obj_t **objptr, kek_obj_t *obj) {
 	memset(&obj_table_g[obj_table_size_g / 2], 0, obj_table_size_g / 2);
 
 	obj_table_g[obj_table_size_g / 2].obj_ptr = obj;
-	obj_table_g[obj_table_size_g / 2].ptr_from = objptr;
+	obj_table_g[obj_table_size_g / 2].ptr = objptr;
 	obj_table_g[obj_table_size_g / 2].state = OBJ_1ST_GEN_YOUNG;
 
 	return (obj_table_size_g / 2);
@@ -338,15 +387,15 @@ uint32_t obj_table_regptr(kek_obj_t **objptr) {
 	assert(obj);
 
 	i = obj_table_find(obj);
-	vm_debug(DBG_OBJ_TBL, "obj_table_getptr(whoami=%p, obj=%p) i=%d\n",
-				objptr, obj, i);
+	vm_debug(DBG_OBJ_TBL, "obj_table_getptr(whoami=%p, obj=%p) i=%d\n", objptr,
+			obj, i);
 	if (i == UINT32_MAX) {
 		/* obj is not in table yet */
 		return (obj_table_add(objptr, obj));
 	} else {
 		/* obj is on index i */
 		assert(obj_table_g[i].obj_ptr == obj);
-		assert(obj_table_g[i].ptr_from != NULL);
+		assert(obj_table_g[i].ptr != NULL);
 
 		/* now add whoisit to the pointer array */
 		if (obj_table_g[i].ptr_arr == NULL) {
@@ -354,7 +403,7 @@ uint32_t obj_table_regptr(kek_obj_t **objptr) {
 			obj_table_g[i].ptr_arr_size = OBJ_TABLE_PTR_ARR_DEFAULT_SIZE;
 			obj_table_g[i].ptr_arr_cnt = 0;
 			obj_table_g[i].ptr_arr = malloc(
-					obj_table_g[i].ptr_arr_size * sizeof(void *));
+					obj_table_g[i].ptr_arr_size * sizeof(kek_obj_t **));
 			assert(obj_table_g[i].ptr_arr);
 		}
 
@@ -362,7 +411,7 @@ uint32_t obj_table_regptr(kek_obj_t **objptr) {
 			vm_debug(DBG_OBJ_TBL, "obj_table_g[%d]->ptr_arr realloc\n", i);
 			obj_table_g[i].ptr_arr_size *= 2;
 			obj_table_g[i].ptr_arr = realloc(obj_table_g[i].ptr_arr,
-					obj_table_g[i].ptr_arr_size * sizeof(void *));
+					obj_table_g[i].ptr_arr_size * sizeof(kek_obj_t **));
 			assert(obj_table_g[i].ptr_arr);
 		}
 
@@ -377,7 +426,10 @@ uint32_t obj_table_regptr(kek_obj_t **objptr) {
 
 int gc_ticks_g = GC_TICKS_DEFAULT;
 
-void gc_rootset_print(kek_obj_t *obj) {
+void gc_rootset_print(kek_obj_t **objptr) {
+	kek_obj_t *obj = *objptr;
+	assert(IS_PTR(obj));
+
 	switch (obj->h.t) {
 	case KEK_INT:
 		vm_debug(DBG_GC, "rootset: int %d\n", obj->k_int.value);
@@ -388,33 +440,76 @@ void gc_rootset_print(kek_obj_t *obj) {
 	case KEK_SYM:
 		vm_debug(DBG_GC, "rootset: sym %s\n", &(obj->k_sym.symbol));
 		break;
+	case KEK_ARR:
+		vm_debug(DBG_GC, "rootset: arr\n");
+		break;
+	case KEK_EXINFO:
+		vm_debug(DBG_GC, "rootset: exinfo\n");
+		break;
+	case KEK_EXPT:
+		vm_debug(DBG_GC, "rootset: expt\n");
+		break;
+	case KEK_FILE:
+		vm_debug(DBG_GC, "rootset: file\n");
+		break;
+	case KEK_TERM:
+		vm_debug(DBG_GC, "rootset: term\n");
+		break;
+	case KEK_UDO:
+		vm_debug(DBG_GC, "rootset: udo\n");
+		break;
+	case KEK_CLASS:
+		vm_debug(DBG_GC, "rootset: class %s\n", ((class_t *) (obj))->name);
+		break;
 	default:
-		vm_debug(DBG_GC, "rootset: IDK");
+		vm_debug(DBG_GC, "rootset: ??? obj=%p\n", obj);
 		break;
 	}
 }
 
-void gc_rootset(void (*fn)(kek_obj_t *)) {
+void gc_rootset(void (*fn)(kek_obj_t **)) {
 	int i;
+	uint32_t j;
+	uint32_t k;
 	kek_obj_t *obj_ptr;
 
-// the globals /* TODO */
-//(*fn)( topLevelEnv );
+	/* static variables of objects */
+	vm_debug(DBG_GC, "rootset: static vars of objs --\n");
+	for (j = 0; j < classes_cnt_g; j++) {
+		for (k = 0; k < classes_g[j].syms_static_cnt; k++) {
+			if (classes_g[j].syms_static[k].value != NULL
+					&& IS_PTR(classes_g[j].syms_static[k].value)) {
+				(*fn)(&classes_g[j].syms_static[k].value);
+			}
+		}
+	}
 
-// and the stack
+	/* stack objects */
+	vm_debug(DBG_GC, "rootset: objs on the stack --\n");
 	for (i = sp_g - 1; i >= 0; i--) {
 		obj_ptr = stack_g[i];
 
-		if ((obj_ptr != NULL) && IS_PTR(obj_ptr)) {
-			(*fn)(obj_ptr);
+		if (obj_ptr == NULL) {
+			continue;
+		}
+
+		/*if (IS_DPTR(obj_ptr)) {
+			(*fn)(DPTR_VAL(obj_ptr));
+		}*/
+
+		if (IS_PTR(obj_ptr)) {
+			(*fn)(&obj_ptr);
 		}
 	}
+
 }
 
 void gc() {
-	vm_debug(DBG_GC, "gc %d\n", sysconf(_SC_PAGESIZE));
+	vm_debug(DBG_GC, "---------------- gc() ----------------\n");
 
-//	gc_rootset(gc_rootset_print);
+	gc_rootset(gc_rootset_print);
+
+	obj_table_print();
 }
 
 /******************************************************************************/
