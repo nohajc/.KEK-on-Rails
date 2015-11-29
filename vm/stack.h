@@ -46,7 +46,6 @@ kek_obj_t* stack_top();
 #define TOP(obj) (obj) = (void*)stack_top()
 
 #define BC_CALL(entry, ret, arg_cnt, locals_cnt) { \
-	int i; \
 	vm_debug(DBG_STACK, "bc_call: ret\n"); \
 	PUSH(make_integer(ret)); \
 	vm_debug(DBG_STACK, "bc_call: ap\n"); \
@@ -57,34 +56,27 @@ kek_obj_t* stack_top();
 	fp_g = sp_g; \
 	vm_debug(DBG_STACK, "bc_call: stack[%d (fp_g)] is NULL\n", fp_g); \
 	stack_g[fp_g] = NULL; \
-	sp_g = sp_g + (locals_cnt) + 2; \
-	for (i = fp_g + 1; i < sp_g - 1; ++i) { \
-		vm_debug(DBG_STACK, "bc_call: stack[%d] is LOCAL\n", i); \
-		stack_g[i] = NULL; \
-	} \
-	vm_debug(DBG_STACK, "bc_call: stack[%d] is -1\n", sp_g - 1); \
-	stack_g[sp_g - 1] = (kek_obj_t*)-1; \
+	sp_g = sp_g + (locals_cnt) + 1; \
 	ip_g = entry; \
 }
 
 // Tail call - we reuse the current stack frame thus destroying it.
 /* How it works:
-	1. save return address, caller AP and caller FP from the current frame
-	2. set tmp AP to SP-arg_cnt-1
-	3. copy arguments and instance/class pointer from tmp AP to current AP
-	4. set current SP to current AP+arg_cnt+1 (after instance/class pointer)
-	5. push return address, caller AP and caller FP after that
-	6. set current FP to SP
-	7. increment SP by locals_cnt
-	8. set IP to function entry point
-*/
+ 1. save return address, caller AP and caller FP from the current frame
+ 2. set tmp AP to SP-arg_cnt-1
+ 3. copy arguments and instance/class pointer from tmp AP to current AP
+ 4. set current SP to current AP+arg_cnt+1 (after instance/class pointer)
+ 5. push return address, caller AP and caller FP after that
+ 6. set current FP to SP
+ 7. increment SP by locals_cnt
+ 8. set IP to function entry point
+ */
 #define BC_TCALL(entry, arg_cnt, locals_cnt) { \
 	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
 	int caller_ap = (size_t)INT_VAL(stack_g[fp_g - 2]); \
 	int caller_fp = (size_t)INT_VAL(stack_g[fp_g - 1]); \
 	int tmp_ap = sp_g - (arg_cnt) - 1; \
 	uint32_t i; \
-	int j; \
 	for (i = 0; i <= (arg_cnt); ++i) { \
 		stack_g[ap_g + i] = stack_g[tmp_ap + i]; \
 	} \
@@ -94,11 +86,7 @@ kek_obj_t* stack_top();
 	PUSH(make_integer(caller_fp)); \
 	fp_g = sp_g; \
 	stack_g[fp_g] = NULL; \
-	sp_g = sp_g + (locals_cnt) + 2; \
-	for (j = fp_g + 1; j < sp_g - 1; ++j) { \
-		stack_g[j] = NULL; \
-	} \
-	stack_g[sp_g - 1] = (kek_obj_t*)-1; \
+	sp_g = sp_g + (locals_cnt) + 1; \
 	ip_g = entry; \
 }
 
@@ -108,7 +96,6 @@ kek_obj_t* stack_top();
 	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
 	ap_g = (size_t)INT_VAL(stack_g[fp_g - 2]); \
 	fp_g = (size_t)INT_VAL(stack_g[fp_g - 1]); \
-	vm_debug(DBG_STACK, "bc_ret\n"); \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 } while (0)
@@ -119,7 +106,6 @@ kek_obj_t* stack_top();
 	uint32_t ret_addr = (size_t)INT_VAL(stack_g[fp_g - 3]); \
 	ap_g = (size_t)INT_VAL(stack_g[fp_g - 2]); \
 	fp_g = (size_t)INT_VAL(stack_g[fp_g - 1]); \
-	vm_debug(DBG_STACK, "bc_ret_self\n"); \
 	PUSH(ret_val); \
 	ip_g = ret_addr; \
 }
@@ -128,6 +114,5 @@ kek_obj_t* stack_top();
 #define BC_OP8(i) bc_arr_g[(i)]
 // Read 16-bit instruction operand
 #define BC_OP16(i) *(uint16_t*) &bc_arr_g[(i)]
-
 
 #endif /* STACK_H_ */

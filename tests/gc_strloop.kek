@@ -1,0 +1,14 @@
+//KEK_TEST_RUNS 1
+//KEK_TEST_ARGS_0 
+
+class Main {
+  static main(args) {
+    var i
+    var x = "a"
+    for (i = 0; i < 3; i++) {
+      x = x + "a"
+    }
+    write x
+    write "\n"
+  }
+}

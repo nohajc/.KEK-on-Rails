@@ -210,6 +210,10 @@ typedef union _kek_obj {
 #define INT_VAL(obj) (((uint64_t)(obj) & 1) ? \
 		((int32_t)(int64_t)(obj) >> 1) : ((obj)->k_int.value))
 
+#define IS_DPTR(obj) (((uint64_t)(obj) & 3) == 3)
+#define MAKE_DPTR(obj) ((uint64_t)(obj) | 3)
+#define DPTR_VAL(obj) ((kek_obj_t**)((uint64_t)(obj) & ~3ULL))
+
 #else
 
 #define IS_PTR(obj) (((uint32_t)(obj) & 3) == 0)
@@ -221,6 +225,10 @@ typedef union _kek_obj {
 #define IS_INT(obj) (((uint32_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
 #define INT_VAL(obj) (((uint32_t)(obj) & 1) ? \
 		((int32_t)(obj) >> 1) : ((obj)->k_int.value))
+
+#define IS_DPTR(obj) (((uint32_t)(obj) & 3) == 3)
+#define MAKE_DPTR(obj) ((uint32_t)(obj) | 3)
+#define DPTR_VAL(obj) ((kek_obj_t**)((uint32_t)(obj) & ~3))
 
 #endif
 
