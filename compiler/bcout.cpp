@@ -42,6 +42,9 @@ void bco_print_const(bcout_t *bco, uint32_t idx) {
 		}
 		bco_debug("]");
 		break;
+	case KEK_ARR_OBJS:
+		bco_debug("kek_arr_objs");
+		break;
 	case KEK_EXINFO:
 		bco_debug("exinfo [length: %d", item->cei.length);
 		if (item->cei.length) {

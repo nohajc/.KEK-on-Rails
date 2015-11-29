@@ -112,7 +112,13 @@ extern const char *op_str[];
 // This is dangerous. We should use appropriate __attribute__ to ensure compatibility
 
 typedef enum _constant_type {
-	KEK_NIL, KEK_INT, KEK_STR, KEK_SYM, KEK_ARR, KEK_EXINFO
+	KEK_NIL, //
+	KEK_INT, //
+	KEK_STR, //
+	KEK_SYM, //
+	KEK_ARR, //
+	KEK_ARR_OBJS, //
+	KEK_EXINFO
 } constant_type_t;
 
 typedef struct _header {

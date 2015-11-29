@@ -40,7 +40,7 @@ void gc_obj_free(gc_obj_t *obj) {
 	switch (obj->obj->h.t) {
 	case KEK_ARR:
 		/* TODO FIXME: shouldn't we delete also the elems? */
-		free(obj->obj->k_arr.elems);
+//		free(obj->obj->k_arr.elems);
 		break;
 	default:
 		break;
@@ -74,7 +74,7 @@ void gc_delete_all() {
 segment_t *segments_from_space_g = NULL;
 segment_t *segments_to_space_g = NULL;
 void *to_space_free_g;
-size_t to_space_size_g = NULL;
+size_t to_space_size_g;
 void *alloc_ptr_g;
 void *scan_ptr_g;
 
@@ -146,8 +146,11 @@ void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
 		break;
 	case KEK_SYM:
 		break;
-	case KEK_ARR:
-		obj->k_arr.elems; /* todo: ale jak se tam dostanu, potrebuju ptr */
+	case KEK_ARR: {
+		kek_obj_t **arr_objs = (kek_obj_t **) ((uint8_t *) obj->k_arr.elems
+				- sizeof(header_t));
+		gc_cheney_copy_inner_obj(arr_objs);
+	}
 		break;
 	case KEK_ARR_OBJS:
 		break;
@@ -209,6 +212,7 @@ void gc_cheney_init() {
 	segments_to_space_g = mem_segment_init(SEGMENT_SIZE);
 
 	to_space_free_g = segments_to_space_g;
+	to_space_size_g = 0;
 }
 
 void gc_cheney_free() {
@@ -222,11 +226,11 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	size = ALIGNED(size);
 
-	assert(segments_from_space_g != NULL);
+	assert(segments_to_space_g != NULL);
 
-	/* if (from_space_size_g + size >= NEW_SEGMENT_SIZE) { */
-	if ((data_t *) to_space_free_g
-			+ size>= (data_t *)segments_to_space_g + NEW_SEGMENT_SIZE) {
+	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
+//	if ((data_t *) to_space_free_g
+//			+ size>= (data_t *)segments_to_space_g + NEW_SEGMENT_SIZE) {
 		vm_debug(DBG_MEM, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -234,10 +238,12 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	ptr = to_space_free_g;
 	to_space_free_g = ((data_t *) to_space_free_g) + size * OBJ_ALIGN;
-	to_space_size_g += size * OBJ_ALIGN;
+	to_space_size_g += size;
 
-	vm_debug(DBG_MEM, "gc_cheney_malloc: from=%p to=%p\n", ptr,
-			to_space_free_g);
+	vm_debug(DBG_MEM,
+			"gc_cheney_malloc: size=%lufrom=%p to=%p (to=%p toend=%p\n", size,
+			ptr, to_space_free_g, segments_to_space_g,
+			(uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN);
 
 	((kek_obj_t *) ptr)->h.t = type;
 	((kek_obj_t *) ptr)->h.cls = cls;
@@ -640,18 +646,20 @@ kek_obj_t *alloc_array_objs(int items) {
 }
 
 void alloc_arr_elems(kek_array_t * arr) {
-	/* TODO: mem_malloc */
-	arr->elems = malloc(ARR_INIT_SIZE * sizeof(kek_obj_t*));
+	arr->elems = alloc_const_arr_elems(ARR_INIT_SIZE);
 	assert(arr->elems);
 	arr->alloc_size = ARR_INIT_SIZE;
 }
 
 kek_obj_t **alloc_const_arr_elems(int length) {
 	kek_obj_t *array_objs = alloc_array_objs(length);
-	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems));
+	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 }
 
 void realloc_arr_elems(struct _kek_array * arr, int length) {
+	assert(0 && "realloc_arr_elems: implement me pls"
+			"(create bigger elems and copy");
+
 	while (arr->alloc_size < length) {
 		arr->alloc_size *= 2;
 	}

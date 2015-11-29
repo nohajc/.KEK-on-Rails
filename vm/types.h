@@ -83,7 +83,7 @@ typedef struct _kek_symbol {
 /* array - mutable */
 typedef struct _kek_array_objs {
 	header_t h;
-	data_t elems[1]; /* kek_obj_t elems[lenght] */
+	union _kek_obj *elems[1];
 } kek_array_objs_t;
 
 typedef struct _kek_array {
