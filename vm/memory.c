@@ -230,6 +230,7 @@ void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
 	case KEK_UDO:
 		break;
 	case KEK_CLASS:
+		assert(0);
 		break;
 	case KEK_COPIED:
 		break;
@@ -268,7 +269,7 @@ void gc_cheney_scavenge() {
 	gc_rootset(gc_cheney_copy_roots);
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs\n");
-	//gc_rootset(gc_cheney_copy_inner_objs);
+	gc_rootset(gc_cheney_copy_inner_objs);
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() end"
 			"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
