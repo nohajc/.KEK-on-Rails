@@ -18,6 +18,10 @@ gc_obj_t *gc_obj_root_g = NULL;
 void gc_obj_add(kek_obj_t *obj, size_t size) {
 	gc_obj_t *go;
 
+	if (gc_type_g != GC_NONE) {
+		return;
+	}
+
 	vm_debug(DBG_GC, "gc_obj_add objptr=%p\n");
 
 	go = malloc(sizeof(gc_obj_t));
@@ -55,6 +59,10 @@ void gc_delete_all() {
 	gc_obj_t *gcptr = gc_obj_root_g;
 	gc_obj_t *gcptr_next;
 
+	if (gc_type_g != GC_NONE) {
+		return;
+	}
+
 	vm_debug(DBG_GC, "gc_delete_all\n");
 
 	while (gcptr != NULL) {
@@ -78,10 +86,31 @@ size_t to_space_size_g;
 void *alloc_ptr_g;
 void *scan_ptr_g;
 
+bool gc_cheney_ptr_in_from_space(void *ptr) {
+	vm_debug(DBG_MEM, "gc_cheney_ptr_in_from_space:"
+			"\n(segment start)%p < \n(ptr          )%p < \n(segment end  )%p\n",
+			segments_from_space_g, ptr,
+			((uint8_t *) segments_from_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN));
+	return ((void *) segments_from_space_g <= ptr
+			&& (void *) ((uint8_t *) segments_from_space_g
+					+ NEW_SEGMENT_SIZE * OBJ_ALIGN) > ptr);
+}
+
+bool gc_cheney_ptr_in_to_space(void *ptr) {
+	vm_debug(DBG_MEM, "gc_cheney_ptr_in_to_space:"
+			"\n(segment start)%p < \n(ptr          )%p < \n(segment end  )%p\n",
+			segments_to_space_g, ptr,
+			((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN));
+	return ((void *) segments_to_space_g <= ptr
+			&& (void *) ((uint8_t *) segments_to_space_g
+					+ NEW_SEGMENT_SIZE * OBJ_ALIGN) > ptr);
+}
+
 kek_obj_t *gc_cheney_copy_obj(kek_obj_t *obj) {
 	kek_obj_t *ret;
-	ret = memcpy(alloc_ptr_g, obj, vm_obj_size(obj));
-	alloc_ptr_g = ((uint8_t *) alloc_ptr_g + vm_obj_size(obj));
+	ret = memcpy(to_space_free_g, obj, vm_obj_size(obj));
+	to_space_free_g = ((uint8_t *) to_space_free_g
+			+ vm_obj_size(obj) * OBJ_ALIGN);
 	return (ret);
 }
 
@@ -139,6 +168,8 @@ void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
 
 	assert(IS_PTR(obj));
 
+	if(1)return;
+
 	switch (obj->h.t) {
 	case KEK_INT:
 		break;
@@ -191,12 +222,13 @@ void gc_cheney_scavenge() {
 	segments_from_space_g = segments_to_space_g;
 	segments_to_space_g = swap_ptr;
 
-	to_space_size_g = 0;
+	/* set free ptr to the beginning of the to-space segment */
+	to_space_free_g = segments_to_space_g;
 
-	/* set alloc and scan ptrs to the beginning of the to-space segment */
-	vm_debug(DBG_GC, "gc_cheney_scavenge() alloc and scan set to beg of to\n");
-	alloc_ptr_g = segments_to_space_g;
-	scan_ptr_g = segments_to_space_g;
+	/* clear to space */
+#if FORCE_CALLOC == 1
+	memset(segments_to_space_g, 0, NEW_SEGMENT_SIZE);
+#endif /* FORCE_CALLOC */
 
 	/* copy roots to to-space and actualize alloc ptr */
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots\n");
@@ -209,10 +241,11 @@ void gc_cheney_scavenge() {
 }
 
 void gc_cheney_init() {
+	vm_debug(DBG_GC, "gc_cheney_init()\n");
 	segments_from_space_g = mem_segment_init(SEGMENT_SIZE);
 	segments_to_space_g = mem_segment_init(SEGMENT_SIZE);
 
-	to_space_free_g = segments_to_space_g;
+	to_space_free_g = segments_to_space_g->end;
 	to_space_size_g = 0;
 }
 
@@ -229,21 +262,24 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	assert(segments_to_space_g != NULL);
 
-	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
-//	if ((data_t *) to_space_free_g
-//			+ size>= (data_t *)segments_to_space_g + NEW_SEGMENT_SIZE) {
+//	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
+	if (((uint8_t *) to_space_free_g + size) >= //
+			((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
 	}
+
+	assert(gc_cheney_ptr_in_to_space(to_space_free_g));
 
 	ptr = to_space_free_g;
 
 	assert((void *) (((uint8_t *) to_space_free_g) + size * OBJ_ALIGN) == //
 			(void *) (((data_t *) to_space_free_g) + size));
 
-//	to_space_free_g = ((uint8_t *) to_space_free_g) + size * OBJ_ALIGN;
-	to_space_free_g = ((data_t *) to_space_free_g) + size;
+	to_space_free_g =
+			(data_t *) ((uint8_t *) to_space_free_g + size * OBJ_ALIGN);
+//	to_space_free_g = ((data_t *) to_space_free_g) + size;
 	to_space_size_g += size;
 
 	vm_debug(DBG_GC,
@@ -255,8 +291,12 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	((kek_obj_t *) ptr)->h.cls = cls;
 
 #ifdef FORCE_CALLOC
-	memset(ptr, 0, size);
+	//memset(ptr, 0, size);
 #endif /* FORCE_CALLOC */
+
+	if (!gc_cheney_ptr_in_to_space(ptr)) {
+		vm_error("cheney malloc: ptr=%p is not in to-space\n", ptr);
+	}
 
 	return (ptr);
 }
@@ -280,7 +320,12 @@ segment_t *mem_segment_init(size_t size) {
 
 	assert(size > 0);
 
+#if FORCE_CALLOC == 1
+	s = calloc(sizeof(segment_t) + (size - 1), OBJ_ALIGN);
+#else /* FORCE_CALLOC */
 	s = malloc(sizeof(segment_t) + (size - 1) * OBJ_ALIGN);
+#endif /* FORCE_CALLOC */
+
 	assert(s);
 
 	vm_debug(DBG_MEM, "mem_segment_init(size=%u), segment ptr=%p\n", size, s);
@@ -477,7 +522,8 @@ uint32_t obj_table_regptr(kek_obj_t **objptr) {
 		/* now add whoisit to the pointer array */
 		if (obj_table_g[i].ptr_arr == NULL) {
 			vm_debug(DBG_OBJ_TBL, "obj_table_g[%d]->ptr_arr malloc\n", i);
-			obj_table_g[i].ptr_arr_size = OBJ_TABLE_PTR_ARR_DEFAULT_SIZE;
+			obj_table_g[i].ptr_arr_size =
+			OBJ_TABLE_PTR_ARR_DEFAULT_SIZE;
 			obj_table_g[i].ptr_arr_cnt = 0;
 			obj_table_g[i].ptr_arr = malloc(
 					obj_table_g[i].ptr_arr_size * sizeof(kek_obj_t **));
@@ -576,9 +622,9 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 /* this function will be called every X ticks */
 void gc() {
-	vm_debug(DBG_GC, "---------------- gc() ----------------\n");
-
-	gc_rootset(gc_rootset_print);
+	return;
+	//vm_debug(DBG_GC, "---------------- gc() ----------------\n");
+	//gc_rootset(gc_rootset_print);
 	//obj_table_print();
 }
 
