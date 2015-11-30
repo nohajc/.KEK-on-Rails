@@ -191,14 +191,14 @@ void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
 	}
 
 	/*if (!gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj))) {
-		if (gc_cheney_ptr_in_to_space(obj, vm_obj_size(obj))) {
-			vm_error("gc_cheney_copy_inner_objs: obj=%p (type=%d) is not "
-					"in from space but it's in to space\n", obj, obj->h.t);
-		} else {
-			vm_error("gc_cheney_copy_inner_objs: obj=%p is not in from space\n",
-					obj);
-		}
-	}*/
+	 if (gc_cheney_ptr_in_to_space(obj, vm_obj_size(obj))) {
+	 vm_error("gc_cheney_copy_inner_objs: obj=%p (type=%d) is not "
+	 "in from space but it's in to space\n", obj, obj->h.t);
+	 } else {
+	 vm_error("gc_cheney_copy_inner_objs: obj=%p is not in from space\n",
+	 obj);
+	 }
+	 }*/
 
 	switch (obj->h.t) {
 	case KEK_INT:
@@ -230,7 +230,7 @@ void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
 	case KEK_UDO:
 		break;
 	case KEK_CLASS:
-		assert(0);
+		vm_error("ok we will copy class");
 		break;
 	case KEK_COPIED:
 		break;
@@ -259,9 +259,10 @@ void gc_cheney_scavenge() {
 	/* set free ptr to the beginning of the to-space segment */
 	to_space_free_g = segments_to_space_g;
 
-	/* clear to space */
+	/* clear space */
 #if FORCE_CALLOC == 1
 	memset(segments_to_space_g, 0, NEW_SEGMENT_SIZE);
+	memset(segments_from_space_g, 0, NEW_SEGMENT_SIZE);
 #endif /* FORCE_CALLOC */
 
 	/* copy roots to to-space and actualize alloc ptr */
@@ -271,7 +272,7 @@ void gc_cheney_scavenge() {
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs\n");
 	gc_rootset(gc_cheney_copy_inner_objs);
 
-	vm_debug(DBG_GC, "gc_cheney_scavenge() end"
+	vm_debug(DBG_GC, "gc_cheney_scavenge() end "
 			"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
 }
 
@@ -324,14 +325,12 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 		vm_error("cheney_malloc: ptr=%p is not in to-space\n", ptr);
 	}
 
-	*((uint8_t *) ptr) = 42;
+#ifdef FORCE_CALLOC
+	memset(ptr, 0, size);
+#endif /* FORCE_CALLOC */
 
 	((kek_obj_t *) ptr)->h.t = type;
 	((kek_obj_t *) ptr)->h.cls = cls;
-
-#ifdef FORCE_CALLOC
-//memset(ptr, 0, size);
-#endif /* FORCE_CALLOC */
 
 	return (ptr);
 }

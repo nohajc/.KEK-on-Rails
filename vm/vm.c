@@ -804,8 +804,9 @@ void vm_execute_bc(void) {
 			assert(cls);
 			mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
 			if (mth == NULL) {
-				vm_error("%s has no method %s.\n",
-						(static_call ? "Class" : "Object"), sym->k_sym.symbol);
+				vm_error("%s \"%s\" has no method %s.\n",
+						(static_call ? "Class" : "Object"), cls->name,
+						sym->k_sym.symbol);
 			}
 			if (mth->args_cnt != arg2) {
 				vm_error("Method expects %d arguments, %d given.\n",
