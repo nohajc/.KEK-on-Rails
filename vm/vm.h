@@ -12,6 +12,8 @@
 #include "bc.h"
 #include "types.h"
 
+#define KEK_MAGIC 0x42666CEC
+
 /* stolen from "../compiler/tabsym.h" */
 /* We don't need DruhId and Scope in the final structures
  * LOCAL and ARG variable's names won't be stored
@@ -32,9 +34,10 @@ enum Scope {
 };
 
 /******************************************************************************/
+/* error handling */
 
-#define EXIT_ON_ERROR 1
-#define KEK_MAGIC 0x42666CEC
+#define EXIT_ON_ERROR 1 /* if not, kek will try to run even after an error */
+#define BRUTAL_KILL 1 /* valgrind tell us stack trace on error */
 
 /******************************************************************************/
 /* debugging */

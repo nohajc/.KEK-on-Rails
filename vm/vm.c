@@ -46,13 +46,24 @@ jmp_buf bc_loop_env_g;
 void vm_error(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
+	fprintf(stderr, "vm_error: ");
 	vfprintf(stderr, format, args);
 	va_end(args);
-	fflush(stderr);
 
-#ifdef EXIT_ON_ERROR
+#if EXIT_ON_ERROR == 1
+
+# if BRUTAL_KILL
+	fprintf(stderr, "!!! let's kill kek by writing into invalid memory !!!\n");
+	int *x = (int *) 42;
+	*x = 666;
+# else /* BRUTAL_KILL */
 	exit(EXIT_FAILURE);
-#endif
+# endif /* BRUTAL_KILL */
+#else /* EXIT_ON_ERROR */
+	fprintf(stderr,
+			"ERRORERRORERRORERRORERRORERRORERRORERRORERRORERRORERRORERROR\n");
+#endif /* EXIT_ON_ERROR */
+	fflush(stderr);
 }
 
 #if DEBUG
@@ -389,7 +400,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	chr_a[1] = chr_b[1] = '\0';
 
 	if (IS_INT(a) && IS_INT(b)) {
-		kek_int_t *res;
+		kek_int_t *res = NULL;
 
 		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
 
@@ -462,7 +473,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		/* After the condition is evaluated, we know this is a str/str
 		 * char/str or str/char comparison. Furthermore, we have set up
 		 * str_a and str_b to point to the string/char values. */
-		kek_obj_t *res;
+		kek_obj_t *res = NULL;
 
 		switch (o) {
 		case Plus:
@@ -493,7 +504,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		}
 		return res;
 	} else {
-		kek_int_t *res;
+		kek_int_t *res = NULL;
 
 		switch (o) {
 		case Eq:
@@ -743,12 +754,14 @@ void vm_execute_bc(void) {
 			call_type++;
 			// Here is an intentional fallthrough to CALL
 		}
+			//no break
 		case CALL: {
 			call_type++;
 			PUSH(THIS);
 			vm_debug(DBG_BC, " - %s\n", kek_obj_print(stack_top()));
 			// Here is an intentional fallthrough to CALLE
 		}
+			//no break
 		case CALLE: {
 			bool static_call;
 			bool tail_call;
