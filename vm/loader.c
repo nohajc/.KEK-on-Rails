@@ -330,8 +330,8 @@ bool kexe_load_classes(FILE *f) {
 		classes_g[i].t = KEK_CLASS;
 		classes_g[i].name = kexe_load_string(f);
 
-		vm_debug(DBG_MEM, "=== name \"%s\" is at %p\n", classes_g[i].name,
-				classes_g[i].name);
+		vm_debug(DBG_MEM, "=== classptr=%p name \"%s\" is at %p\n",
+				&classes_g[i], classes_g[i].name, classes_g[i].name);
 
 		if (classes_g[i].name == NULL) {
 			vm_error("loading classes_g[%d].name failed\n", i);
@@ -556,11 +556,11 @@ void class_free(class_t *class) {
 		return;
 	}
 
-	vm_debug(DBG_MEM, "=== deleting class %p\n", class);
+	vm_debug(DBG_MEM, "=== deleting class %p \"%s\"\n", class, class->name);
 
 	if (gc_type_g != GC_NONE) {
-		assert(!gc_cheney_ptr_in_to_space(class));
-		assert(!gc_cheney_ptr_in_from_space(class));
+		assert(!gc_cheney_ptr_in_to_space(class, sizeof(class_t)));
+		assert(!gc_cheney_ptr_in_from_space(class, sizeof(class_t)));
 	}
 
 	free(class->name);

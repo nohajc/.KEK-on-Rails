@@ -164,9 +164,9 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 /******************************************************************************/
 /* cheney */
 
-#define FORCE_CALLOC 0 /* always set memory to 0 when mallocing */
+#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
 
-#define NEW_SEGMENT_SIZE 1024
+#define NEW_SEGMENT_SIZE 1024*5
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */
@@ -174,8 +174,8 @@ extern size_t to_space_size_g;
 extern void *alloc_ptr_g;
 extern void *scan_ptr_g;
 
-bool gc_cheney_ptr_in_from_space(void *);
-bool gc_cheney_ptr_in_to_space(void *);
+bool gc_cheney_ptr_in_from_space(void *, size_t);
+bool gc_cheney_ptr_in_to_space(void *, size_t);
 
 void gc_cheney_init(void);
 void gc_cheney_free(void);

@@ -180,5 +180,6 @@ void vm_throw_obj(kek_obj_t * obj);
 void vm_throw_obj_from_native_ctxt(kek_obj_t * obj);
 bool vm_is_const(kek_obj_t *obj);
 size_t vm_obj_size(kek_obj_t *obj);
+size_t vm_type_size(type_t type);
 
 #endif /* VM_H_ */

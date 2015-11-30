@@ -54,7 +54,7 @@ void vm_error(const char *format, ...) {
 
 # if BRUTAL_KILL
 	fprintf(stderr, "!!! let's kill kek by writing into invalid memory !!!\n");
-	int *x = (int *) 42;
+	int *x = (int *) 0x666;
 	*x = 666;
 # else /* BRUTAL_KILL */
 	exit(EXIT_FAILURE);
@@ -514,7 +514,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 			res = make_integer(a != b);
 			break;
 		default:
-			vm_error("bc_bop: unsupported bop %d\n", o);
+			vm_error("bc_bop: unsupported bop %d (a=%p, b=%p)\n", o, a, b);
 			break;
 		}
 		return (kek_obj_t*) res;
@@ -1228,4 +1228,8 @@ size_t vm_obj_size(kek_obj_t *obj) {
 	default:
 		return (sizeof(*obj));
 	}
+}
+
+size_t vm_type_size(type_t type) {
+	return (sizeof(kek_obj_t));
 }

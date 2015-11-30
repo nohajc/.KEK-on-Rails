@@ -29,17 +29,6 @@ void free_globals() {
 
 	if (classes_g != NULL) {
 		for (i = 0; i < classes_cnt_g; i++) {
-			/* why this doesn't work? */
-			for (j = 0; j < classes_g[i].syms_instance_cnt; j++) {
-				//free(classes_g[i].syms_instance[i].name);
-				//free(classes_g[i].syms_instance[i].value);
-			}
-
-			for (j = 0; j < classes_g[i].syms_static_cnt; j++) {
-				//free(classes_g[i].syms_static[i].name);
-				//free(classes_g[i].syms_static[i].value);
-			}
-
 			class_free(&classes_g[i]);
 		}
 	}
