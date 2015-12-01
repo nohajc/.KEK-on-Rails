@@ -840,7 +840,10 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 		p_cls = p_cls->parent;
 	}
 // Add symbols from parents
-	syms_cnt += p_cls->syms_instance[0].addr + 1; // TODO: we should do this better
+	if (p_cls->syms_instance_cnt > 0) {
+		// TODO: we should do this better
+		syms_cnt += p_cls->syms_instance[0].addr + 1;
+	}
 
 	vm_debug(DBG_VM, "%s: syms_cnt after = %u\n", udo_class->name, syms_cnt);
 

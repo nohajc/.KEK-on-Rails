@@ -5,8 +5,12 @@
 // clear && make -C vm && valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d gc -d mem -gn ./tests/kexes/gc_strloop.kexe
 
 class A {
-  add_a(str) {
-    return str + a
+  var x
+  A(y) {
+    x = y
+  }
+  append(str) {
+    return str + x
   }
 }
 
@@ -22,9 +26,13 @@ class Main {
   static main(args) {
     var i
     var x = ""
-    var a = new A()
+    var a = new A("x")
+    var tmp
     for (i = 0; i < 1000; i++) {
+      tmp = new A(ch(i))
       x = x + ch(i)
+      x = a.append(x)
+      x = tmp.append(x)
     }
     write x
     write "\n"
