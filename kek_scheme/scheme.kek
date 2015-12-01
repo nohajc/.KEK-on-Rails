@@ -18,7 +18,6 @@ class Scheme {
 				wi.prompt = "> "
 				expr = parser.read()
 				if (!expr) {
-					out.writeln("\n")
 					break
 				}
 				expr = expr.eval(env)
@@ -51,12 +50,28 @@ class Scheme {
 	}
 
 	static main(args) {
-		wi = new TermW(Sys.term)
-		var rd = new Reader(wi)
-		parser = new Parser(rd)
-
+		var rd, f
 		env = new Environment()
 		Environment.initBuiltinFunctions(env)
+
+		// Load init.scm
+		try {
+			f = new File("init.scm", "r")
+			wi = new FileW(f)
+			rd = new Reader(wi)
+			parser = new Parser(rd)
+			REPL()
+			f.close()
+		}
+		catch (e) {
+			out.writeln(e.msg())
+		}
+
+		// Launch interactive shell
+		wi = new TermW(Sys.term)
+		rd = new Reader(wi)
+		parser = new Parser(rd)
 		REPL()
+		out.writeln("\n")
 	}
 }

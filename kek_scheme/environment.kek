@@ -16,6 +16,7 @@ class Environment {
 		env.set(scmSymbol.getSym("quote"), new scmQuote())
 		env.set(scmSymbol.getSym("lambda"), new scmLambda())
 		env.set(scmSymbol.getSym("if"), new scmIf())
+		env.set(scmSymbol.getSym("let"), new scmLet())
 
 		env.set(scmSymbol.getSym("cons"), new scmConsF())
 		env.set(scmSymbol.getSym("car"), new scmCarF())

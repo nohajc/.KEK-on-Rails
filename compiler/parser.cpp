@@ -1131,7 +1131,7 @@ Expr * Faktor(Env env) {
 		return su;
 	}
 	case LBRAC:
-		Symb = readLexem(); // TODO: array initializer
+		Symb = readLexem();
 		e = Pole(env);
 		Srovnani(RBRAC);
 		return e;
@@ -1143,34 +1143,16 @@ Expr * Faktor(Env env) {
 
 ArgList * ZbElems(Env env) {
 	Const * e = NULL;
-	PrvekTab * p;
-	int hodn;
-	char id[MAX_IDENT_LEN];
 
 	if(Symb.type == RBRAC) {
 		return NULL;
 	}
 
+	skipNewlines();
 	Srovnani(COMMA);
+	skipNewlines();
 
-	if (Symb.type == NUMB) {
-		Srovnani_NUMB(&hodn);
-		e = new Numb(hodn);
-	}
-	else if (Symb.type == STR) {
-		Srovnani_STR(id);
-		e = new String(id);
-	}
-	else if (Symb.type == IDENT) {
-		Srovnani_IDENT(id);
-		p = adrSym(id, env.clsEnv, env.mthEnv);
-		if (p->druh == IdConstNum) {
-			e = new Numb(p->val.num);
-		}
-		else if (p->druh == IdConstStr) {
-			e = new String(p->val.str);
-		}
-	}
+	e = dynamic_cast<Const*>(Vyraz(env)->Optimize());
 
 	if(!e) {
 		Chyba("Inicializator pole muze obsahovat pouze konstantni vyrazy.");
@@ -1180,19 +1162,9 @@ ArgList * ZbElems(Env env) {
 }
 
 ArgList * Elems(Env env) {
-	Const * e;
-	int hodn;
-	char id[MAX_IDENT_LEN];
+	Const * e = dynamic_cast<Const*>(Vyraz(env)->Optimize());
 
-	if (Symb.type == NUMB) {
-		Srovnani_NUMB(&hodn);
-		e = new Numb(hodn);
-	}
-	else if (Symb.type == STR) {
-		Srovnani_STR(id);
-		e = new String(id);
-	}
-	else {
+	if (!e) {
 		Chyba("Inicializator pole muze obsahovat pouze konstantni vyrazy.");
 	}
 
