@@ -4,6 +4,11 @@
 // make -C vm && make -C compiler && ./compiler/kekc ./tests/gc_strloop.kek ./tests/kexes/gc_strloop.kexe 
 // clear && make -C vm && valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d gc -d mem -gn ./tests/kexes/gc_strloop.kexe
 
+class A {
+  add_a(str) {
+    return str + a
+  }
+}
 
 class Main {
   static ch(i) {
@@ -17,12 +22,11 @@ class Main {
   static main(args) {
     var i
     var x = ""
+    var a = new A()
     for (i = 0; i < 1000; i++) {
-      x = x + ch(i)//"a"
-      write "--------------------"
-      write i
-      write x
-      write "\n"
+      x = x + ch(i)
     }
+    write x
+    write "\n"
   }
 }

@@ -37,7 +37,6 @@ union _kek_obj * alloc_term(struct _class * term_class);
 #define SEGMENT_SIZE (2*1024) /* FIXME TODO 2KB for now */
 #define OBJ_ALIGN sizeof(data_t)
 #define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
-#define ALIGNED_SIZE_OF(obj) ALIGNED((obj)->h.size)
 
 /* Remember set */
 typedef struct _segment_slots_buffer {
@@ -166,7 +165,7 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 
 #define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
 
-#define NEW_SEGMENT_SIZE 1024*5
+#define NEW_SEGMENT_SIZE 1024*10
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */

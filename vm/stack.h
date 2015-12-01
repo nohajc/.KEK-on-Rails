@@ -38,9 +38,11 @@ kek_obj_t* stack_top();
 
 #if defined(__LP64__)
 #define PUSH(obj) stack_push((void*)(uint64_t)(obj))
-#else
+typedef uint64_t ptrint_t;
+#else /* defined(__LP64__) */
 #define PUSH(obj) stack_push((void*)(obj))
-#endif
+typedef uint32_t ptrint_t;
+#endif /* defined(__LP64__) */
 
 #define POP(obj) (obj) = (void*)stack_pop()
 #define TOP(obj) (obj) = (void*)stack_top()

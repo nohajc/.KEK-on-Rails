@@ -86,65 +86,70 @@ size_t to_space_size_g;
 void *alloc_ptr_g;
 void *scan_ptr_g;
 
+bool gc_cheney_ptr_in_space(void *segment_data, void *ptr, size_t size) {
+	vm_debug(DBG_MEM, "gc_cheney_ptr_in_from_space:\n"
+			" (segment_data start) %lu\n"
+			" (          ptr from) %lu\n"
+			" (            ptr to) %lu\n"
+			" (segment_data end  ) %lu\n", //
+			(ptrint_t) segment_data, //
+			(ptrint_t) ptr, //
+			(ptrint_t) ((uint8_t *) ptr + size), //
+			(ptrint_t) ((uint8_t *) segment_data + NEW_SEGMENT_SIZE));
+
+	return ((ptrint_t) segment_data <= (ptrint_t) ptr && //
+			(ptrint_t) ((uint8_t *) ptr + size)
+					< (ptrint_t) ((uint8_t *) segment_data + NEW_SEGMENT_SIZE));
+}
+
 bool gc_cheney_ptr_in_from_space(void *ptr, size_t size) {
-	vm_debug(DBG_MEM, "gc_cheney_ptr_in_from_space:"
-			"\n(segment start)%p < \n(ptr from     )%p "
-			"\n(ptr to       )%p < \n(segment end  )%p\n", //
-			segments_from_space_g, //
-			ptr, //
-			((uint8_t*) ptr) + size * OBJ_ALIGN, //
-			((uint8_t *) segments_from_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN));
-	return ((void *) segments_from_space_g <= (void *) ptr && //
-			(void *) ((uint8_t *) segments_from_space_g
-					+ NEW_SEGMENT_SIZE * OBJ_ALIGN)
-					> (void *) ((uint8_t *) ptr + size * OBJ_ALIGN));
+	return (gc_cheney_ptr_in_space(segments_from_space_g->beginning, ptr, size));
 }
 
 bool gc_cheney_ptr_in_to_space(void *ptr, size_t size) {
-	vm_debug(DBG_MEM, "gc_cheney_ptr_in_from_space:"
-			"\n(segment start)%p < \n(ptr from     )%p "
-			"\n(ptr to       )%p < \n(segment end  )%p\n", //
-			segments_to_space_g, //
-			ptr, //
-			((uint8_t*) ptr) + size * OBJ_ALIGN, //
-			((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN));
-	return ((void *) segments_to_space_g <= (void *) ptr && //
-			(void *) ((uint8_t *) segments_to_space_g
-					+ NEW_SEGMENT_SIZE * OBJ_ALIGN)
-					> (void *) ((uint8_t *) ptr + size * OBJ_ALIGN));
+	return (gc_cheney_ptr_in_space(segments_to_space_g->beginning, ptr, size));
 }
 
-kek_obj_t *gc_cheney_copy_obj(kek_obj_t *obj) {
+kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 	kek_obj_t *ret;
-	ret = memcpy(to_space_free_g, obj, vm_obj_size(obj));
-	to_space_free_g = ((uint8_t *) to_space_free_g
-			+ vm_obj_size(obj) * OBJ_ALIGN);
+	size_t size;
+
+	size = ALIGNED(vm_obj_size(obj));
+
+	if ((ptrint_t) ((uint8_t *) to_space_free_g + size) >= //
+			(ptrint_t) ((uint8_t *) segments_to_space_g->beginning
+					+ NEW_SEGMENT_SIZE)) {
+		vm_error("To space run out of space. Increase NEW_SEGMENT_SIZE.\n");
+	}
+
+	ret = memcpy(to_space_free_g, obj, size);
+	to_space_free_g = ((uint8_t *) to_space_free_g + size);
+
 	return (ret);
 }
 
-void gc_cheney_copy_roots(kek_obj_t **objptr) {
+void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 	kek_obj_t *copy;
 
-	vm_debug(DBG_MEM, "gc_cheney_copy_roots: objptr=%p obj=%p\n", objptr, obj);
+	vm_debug(DBG_MEM, "gc_cheney_copy_roots: objptr=%p obj=%p t=%d\n", objptr,
+			obj, obj->h.t);
 
 	assert(IS_PTR(obj));
-
-	vm_debug(DBG_GC, "is %p constatnt? (type=%d)\n", obj, obj->h.t);
-	if (vm_is_const(obj)) {
-		vm_debug(DBG_GC, "yes it is!\n");
-		return;
-	}
+	assert(!vm_is_const(obj));
 
 	if (obj->h.t == KEK_COPIED) {
 		vm_debug(DBG_MEM, "gc_cheney_copy_roots: it's a copy, skip\n");
+		*objptr = (kek_obj_t *) obj->h.cls;
 		return;
 	}
 
-	copy = gc_cheney_copy_obj(obj);
+	copy = gc_cheney_copy_obj_to_space_free(obj);
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) copy;
 	obj = copy;
+
+	*objptr = obj;
 }
 
 void gc_cheney_copy_inner_obj(kek_obj_t **objptr) {
@@ -168,7 +173,7 @@ void gc_cheney_copy_inner_obj(kek_obj_t **objptr) {
 		if (from_neighbor->h.cls != NULL) {
 			to_neighbor = (kek_obj_t *) from_neighbor->h.cls;
 		} else {
-			to_neighbor = gc_cheney_copy_obj(from_neighbor);
+			to_neighbor = gc_cheney_copy_obj_to_space_free(from_neighbor);
 			from_neighbor->h.cls = (struct _class *) to_neighbor;
 			from_neighbor->h.t = KEK_COPIED;
 		}
@@ -177,62 +182,90 @@ void gc_cheney_copy_inner_obj(kek_obj_t **objptr) {
 	}
 }
 
-void gc_cheney_copy_inner_objs(kek_obj_t **objptr) {
+void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
+	kek_obj_t *obj = *objptr;
+	kek_obj_t *from;
+	kek_obj_t *to;
+
+	assert(obj != NULL);
+	assert(IS_PTR(obj));
+
+	from = obj;
+	if (from->h.cls != NULL) {
+		to = (kek_obj_t *) from->h.cls;
+	} else {
+		to = gc_cheney_copy_obj_to_space_free(from);
+		from->h.cls = (struct _class *) to;
+	}
+	obj = to;
+
+	*objptr = obj;
+}
+
+void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 
-	vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: objptr=%p obj=%p\n", objptr,
-			obj);
+	vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: objptr=%p obj=%p t=%d\n",
+			objptr, obj, obj->h.t);
 
 	assert(IS_PTR(obj));
 
-	if (obj->h.t == KEK_COPIED) {
-		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs %p is copied. skip\n", obj);
-		return;
-	}
-
-	/*if (!gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj))) {
-	 if (gc_cheney_ptr_in_to_space(obj, vm_obj_size(obj))) {
-	 vm_error("gc_cheney_copy_inner_objs: obj=%p (type=%d) is not "
-	 "in from space but it's in to space\n", obj, obj->h.t);
-	 } else {
-	 vm_error("gc_cheney_copy_inner_objs: obj=%p is not in from space\n",
-	 obj);
-	 }
-	 }*/
-
 	switch (obj->h.t) {
+	case KEK_NIL:
+		assert(0 && "only in cost tbl");
+		break;
 	case KEK_INT:
 		break;
 	case KEK_STR:
 		break;
 	case KEK_SYM:
+		assert(0 && "only in cost tbl");
 		break;
 	case KEK_ARR: {
+		kek_obj_t *arr_objs;
+		int i;
+
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs() KEK_ARR\n");
-		kek_obj_t **arr_objs = (kek_obj_t **) ((uint8_t *) obj->k_arr.elems
+
+		arr_objs = (kek_obj_t *) ((uint8_t *) obj->k_arr.elems
 				- sizeof(header_t));
+		assert(arr_objs->h.t == KEK_ARR_OBJS);
 
-		assert((*arr_objs)->h.t == KEK_ARR_OBJS);
+		gc_cheney_copy_neighbor_inner(&arr_objs);
 
-		gc_cheney_copy_inner_obj(arr_objs);
+		for (i = 0; i < obj->k_arr.length; i++) {
+			gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
+		}
 	}
 		break;
 	case KEK_ARR_OBJS:
+		assert(0 && "kek_arr_objs?!");
 		break;
 	case KEK_EXINFO:
+		assert(0 && "only in cost tbl");
 		break;
 	case KEK_EXPT:
+		/* copy union _kek_obj * msg; */
+		gc_cheney_copy_neighbor_inner(&(obj->k_expt.msg));
 		break;
 	case KEK_FILE:
 		break;
 	case KEK_TERM:
+		assert(0 && "this should  be in oldspace");
+		/* todo: bude v oldspace (vsechno  co je v sys) */
 		break;
-	case KEK_UDO:
+	case KEK_UDO: {
+		uint32_t i;
+		for (i = 0; i < obj->h.cls->syms_instance_cnt; i++) {
+			gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
+		}
+	}
 		break;
 	case KEK_CLASS:
-		vm_error("ok we will copy class");
+		assert(0);
 		break;
 	case KEK_COPIED:
+		assert(0);
 		break;
 	default:
 		vm_error("Unknown obj->h.t=%d in gc_cheney_copy_inner_objs\n",
@@ -256,21 +289,29 @@ void gc_cheney_scavenge() {
 	segments_from_space_g = segments_to_space_g;
 	segments_to_space_g = swap_ptr;
 
-	/* set free ptr to the beginning of the to-space segment */
-	to_space_free_g = segments_to_space_g;
+	/* set free and alloc ptr to the beginning of the to-space segment */
+	to_space_free_g = segments_to_space_g->beginning;
+	alloc_ptr_g = to_space_free_g;
+	scan_ptr_g = to_space_free_g;
 
 	/* clear space */
 #if FORCE_CALLOC == 1
-	memset(segments_to_space_g, 0, NEW_SEGMENT_SIZE);
-	memset(segments_from_space_g, 0, NEW_SEGMENT_SIZE);
+	memset(segments_to_space_g->beginning, 0, NEW_SEGMENT_SIZE);
 #endif /* FORCE_CALLOC */
 
-	/* copy roots to to-space and actualize alloc ptr */
-	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots\n");
-	gc_rootset(gc_cheney_copy_roots);
+	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots BEGIN\n");
+	gc_rootset(gc_cheney_copy_root_obj);
+	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots END\n");
 
-	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs\n");
-	gc_rootset(gc_cheney_copy_inner_objs);
+	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs BEGIN\n");
+	while ((ptrint_t) scan_ptr_g < (ptrint_t) alloc_ptr_g) {
+		obj = (kek_obj_t *) scan_ptr_g;
+		assert(obj != NULL);
+		assert(IS_PTR(obj));
+		scan_ptr_g = ((uint8_t *) scan_ptr_g) + ALIGNED(vm_obj_size(obj));
+		gc_cheney_copy_neighbor(&obj);
+	}
+	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs END\n");
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() end "
 			"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
@@ -280,6 +321,11 @@ void gc_cheney_init() {
 	vm_debug(DBG_GC, "gc_cheney_init()\n");
 	segments_from_space_g = mem_segment_init(NEW_SEGMENT_SIZE);
 	segments_to_space_g = mem_segment_init(NEW_SEGMENT_SIZE);
+
+#if FORCE_CALLOC == 1
+	memset(segments_from_space_g->beginning, 0, NEW_SEGMENT_SIZE);
+	memset(segments_to_space_g->beginning, 0, NEW_SEGMENT_SIZE);
+#endif /* FORCE_CALLOC */
 
 	to_space_free_g = segments_to_space_g->end;
 	to_space_size_g = 0;
@@ -296,11 +342,15 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	size = ALIGNED(size);
 
+	if (size >= NEW_SEGMENT_SIZE) {
+		vm_error("Size %d is too big for NEW_SEGMENT_SIZE\n", size);
+	}
+
 	assert(segments_to_space_g != NULL);
 
 //	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
-	if (((uint8_t *) to_space_free_g + size * OBJ_ALIGN) >= //
-			((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN)) {
+	if (((uint8_t *) to_space_free_g + size) >= //
+			((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -311,9 +361,7 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	assert((void *) (((uint8_t *) to_space_free_g) + size * OBJ_ALIGN) == //
 			(void *) (((data_t *) to_space_free_g) + size));
 
-	to_space_free_g =
-			(data_t *) ((uint8_t *) to_space_free_g + size * OBJ_ALIGN);
-//	to_space_free_g = ((data_t *) to_space_free_g) + size;
+	to_space_free_g = (uint8_t *) to_space_free_g + size;
 	to_space_size_g += size;
 
 	vm_debug(DBG_GC,
@@ -649,6 +697,21 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	vm_debug(DBG_GC, "rootset: objs on the stack --\n");
 	for (i = sp_g - 1; i >= 0; i--) {
 		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
+
+			if (((kek_obj_t *) stack_g[i])->h.t == KEK_CLASS) {
+				vm_debug(DBG_GC, "rootset: ignoring class\n");
+				continue;
+			}
+
+			if (((kek_obj_t *) stack_g[i])->h.t == KEK_NIL) {
+				assert(vm_is_const((kek_obj_t * ) stack_g[i]));
+			}
+
+			if (vm_is_const(((kek_obj_t *) stack_g[i]))) {
+				vm_debug(DBG_GC, "rootset: ignoring const\n");
+				continue;
+			}
+
 			(*fn)(&stack_g[i]);
 		}
 	}
@@ -728,7 +791,7 @@ kek_obj_t * alloc_array(class_t * arr_class) {
 
 kek_obj_t *alloc_array_objs(int items) {
 	return (gc_obj_malloc(KEK_ARR_OBJS, NULL,
-			sizeof(kek_array_objs_t) + items * sizeof(kek_obj_t *)));
+			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
 }
 
 void alloc_arr_elems(kek_array_t * arr) {
@@ -787,9 +850,9 @@ kek_obj_t * alloc_udo(class_t * udo_class) {
 		syms_cnt += var_offset;
 	}
 
-	ret = mem_obj_calloc(KEK_UDO, udo_class,
+	ret = gc_obj_malloc(KEK_UDO, udo_class,
 			sizeof(kek_udo_t)
-					+ (syms_cnt ? syms_cnt - 1 : 0) * sizeof(kek_obj_t), 1);
+					+ (syms_cnt ? syms_cnt - 1 : 0) * sizeof(kek_obj_t));
 	ret->k_udo.var_offset = var_offset;
 
 	return (ret);
