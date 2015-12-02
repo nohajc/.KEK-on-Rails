@@ -808,6 +808,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u %u, tail: %s\n", call_str[call_type], arg1,
 					arg2, (tail_call ? "true" : "false"));
 			TOP(obj);
+			assert(obj);
 
 			if (!IS_PTR(obj)) {
 				vm_error("Invalid class/object pointer.\n");

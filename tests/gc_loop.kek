@@ -5,44 +5,50 @@
 // make -C vm
 // valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d mem ./tests/kexes/gc_loop.kexe
 
-
 class Integer {
-  var value
+  var value1
+  static var value2
 
   Integet(v) {
-    value = v
+    value1 = v
+    value2 = v
   }
 
   add(x) {
-    value = value + x
-  }
-}
-
-class Printer {
-  var v
-  
-  Printer() {
-    v = "0123456789\n"
+    value2 = value2 + x
+    value1 = value1 + value2
   }
   
-  hello() {
-    write v
+  val() {
+    return (value2)
   }
 }
 
 class Main {
   static main(args) {
-    var printer
-    var i
-    var x
-
-    for (i = 0; i < 200; i++) {
-      write i
-      printer = new Printer()
-      printer.hello()
-
-      //x = new Integer(4)
-      //x.add(1)
+    var it
+    var i = new Integer(1)
+    var i2
+    var i3
+    //var j
+    //var j2
+    //var j3
+    var k
+    for (it = 0; it < 200; it++) {
+      i2 = i
+      i3 = i2
+    
+      //j = new Integer(1000)
+      //j2 = j
+      //j3 = j2
+      
+      i2.add(1)
+      //j3.add(1)
+      
+      //k = k + i.val() + j.val()
+      k = k + i3.val()
     }
+    write k
   }
 }
+
