@@ -77,6 +77,7 @@ void init_kek_sys_class(void) {
 	classes_g[classes_cnt_g].syms_static[3].const_flag = CONST;
 	classes_g[classes_cnt_g].syms_static[3].addr = 3;
 
+	classes_g[classes_cnt_g].total_syms_instance_cnt = 0;
 	classes_g[classes_cnt_g].syms_instance_cnt = 0;
 	classes_g[classes_cnt_g].syms_instance = NULL;
 

@@ -178,6 +178,38 @@ void vm_init_builtin_classes(void) {
 	init_kek_exception_class();
 }
 
+static uint32_t calc_total_syms_cnt(class_t * cls) {
+	uint32_t syms_cnt = cls->syms_instance_cnt;
+
+	if (cls->total_syms_instance_cnt != -1) { // if already set
+		return cls->total_syms_instance_cnt;
+	}
+	if (!cls->parent) {
+
+		cls->total_syms_instance_cnt = syms_cnt;
+		return syms_cnt;
+	}
+	cls->total_syms_instance_cnt = syms_cnt + calc_total_syms_cnt(cls->parent);
+	return cls->total_syms_instance_cnt;
+}
+
+static int calc_syms_offset(class_t * cls) {
+	if (cls->allocator != alloc_udo) {
+		cls->syms_instance_offset =
+				cls->allocator ? (ptrint_t)cls->allocator(NULL) : 0;
+		return cls->syms_instance_offset;
+	}
+	if (cls->syms_instance_offset != -1) { // if already set
+		return cls->syms_instance_offset;
+	}
+	if (cls->parent) {
+		cls->syms_instance_offset = calc_syms_offset(cls->parent);
+		return cls->syms_instance_offset;
+	}
+	cls->syms_instance_offset = 0;
+	return 0;
+}
+
 void vm_init_parent_pointers(void) {
 	uint32_t i;
 	for (i = 0; i < classes_cnt_g; i++) {
@@ -188,6 +220,8 @@ void vm_init_parent_pointers(void) {
 			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
 			assert(classes_g[i].parent != NULL);
 		}
+		(void)calc_total_syms_cnt(&classes_g[i]);
+		(void)calc_syms_offset(&classes_g[i]);
 	}
 }
 

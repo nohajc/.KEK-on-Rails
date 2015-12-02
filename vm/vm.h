@@ -127,8 +127,10 @@ typedef struct _class {
 	uint32_t syms_static_cnt;
 	symbol_t *syms_static;
 
+	int total_syms_instance_cnt; /* Including inherited members */
 	uint32_t syms_instance_cnt;
 	symbol_t *syms_instance;
+	int syms_instance_offset;
 
 	/* helpers */
 	char *parent_name;

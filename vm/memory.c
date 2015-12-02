@@ -830,32 +830,15 @@ kek_obj_t * alloc_integer(void) {
 kek_obj_t * alloc_udo(class_t * udo_class) {
 	/* Calloc is used to avoid valgrind warnings about
 	 * invalid reads/writes to uninitialized memory */
-	uint32_t syms_cnt = udo_class->syms_instance_cnt;
-	class_t * p_cls = udo_class;
-	int var_offset = 0;
+	int syms_cnt = udo_class->total_syms_instance_cnt;
+	int var_offset = udo_class->syms_instance_offset;
+	/* total_size is the number of elements in inst_var */
+	int total_size = syms_cnt + var_offset;
 	kek_obj_t * ret;
-
-	vm_debug(DBG_VM, "%s: syms_cnt before = %u\n", udo_class->name, syms_cnt);
-	while (p_cls->syms_instance_cnt == 0 && p_cls->parent) {
-		p_cls = p_cls->parent;
-	}
-// Add symbols from parents
-	if (p_cls->syms_instance_cnt > 0) {
-		// TODO: we should do this better
-		syms_cnt += p_cls->syms_instance[0].addr + 1;
-	}
-
-	vm_debug(DBG_VM, "%s: syms_cnt after = %u\n", udo_class->name, syms_cnt);
-
-// When parant is not udo, we need to set var_offset
-	if (udo_class->parent && udo_class->parent->allocator != alloc_udo) {
-		var_offset = (int64_t) udo_class->parent->allocator(NULL);
-		syms_cnt += var_offset;
-	}
 
 	ret = gc_obj_malloc(KEK_UDO, udo_class,
 			sizeof(kek_udo_t)
-					+ (syms_cnt ? syms_cnt - 1 : 0) * sizeof(kek_obj_t));
+					+ (total_size ? total_size - 1 : 0) * sizeof(kek_obj_t));
 	ret->k_udo.var_offset = var_offset;
 
 	return (ret);

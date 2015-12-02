@@ -35,6 +35,7 @@ void init_kek_term_class(void) {
 	classes_g[classes_cnt_g].allocator = alloc_term;
 	classes_g[classes_cnt_g].constructor = NULL;
 
+	classes_g[classes_cnt_g].total_syms_instance_cnt = 0;
 	classes_g[classes_cnt_g].syms_static_cnt = 0;
 	classes_g[classes_cnt_g].syms_static = NULL;
 	classes_g[classes_cnt_g].syms_instance_cnt = 0;

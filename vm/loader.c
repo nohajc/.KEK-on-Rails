@@ -372,6 +372,9 @@ bool kexe_load_classes(FILE *f) {
 			assert(classes_g[i].syms_instance != NULL);
 		}
 
+		classes_g[i].total_syms_instance_cnt = -1;
+		classes_g[i].syms_instance_offset = -1;
+
 		has_static_init = kexe_load_uint8(f);
 		if (has_static_init == UINT8_MAX) {
 			vm_error("has_static_init\n");
