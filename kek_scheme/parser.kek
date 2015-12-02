@@ -85,7 +85,7 @@ class Parser {
 		if (n != nil) return new scmInteger(n)
 		if (str == "#t") return G.scmTrue
 		if (str == "#f") return G.scmFalse
-		if (str == "#nil") return G.scmNil
+		if (str == "null") return G.scmNil
 		return scmSymbol.getSym(str)
 	}
 

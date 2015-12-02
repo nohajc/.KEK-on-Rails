@@ -502,7 +502,7 @@ class G {
 	static var tagName
 	
 	static G() {
-		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil",	"",
+		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "()", "",
 				"#<syntax>", "#<function>", "#<function>"]
 		scmTrue = new scmObject(Tag.TRUE)
 		scmFalse = new scmObject(Tag.FALSE)
