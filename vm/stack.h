@@ -60,7 +60,7 @@ typedef uint32_t ptrint_t;
 	vm_debug(DBG_STACK, "bc_call: stack[%d (fp_g)] is NULL\n", fp_g); \
 	stack_g[fp_g] = NULL; \
 	sp_g = sp_g + (locals_cnt) + 1; \
-	for (i = fp_g + 1; i < sp_g - 1; ++i) { \
+	for (i = fp_g + 1; i < sp_g; ++i) { \
 		stack_g[i] = NULL; \
 	} \
 	ip_g = entry; \
@@ -94,7 +94,7 @@ typedef uint32_t ptrint_t;
 	fp_g = sp_g; \
 	stack_g[fp_g] = NULL; \
 	sp_g = sp_g + (locals_cnt) + 1; \
-	for (j = fp_g + 1; j < sp_g - 1; ++j) { \
+	for (j = fp_g + 1; j < sp_g; ++j) { \
 		stack_g[j] = NULL; \
 	} \
 	ip_g = entry; \

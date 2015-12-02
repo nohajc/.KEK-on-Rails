@@ -163,7 +163,8 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 /******************************************************************************/
 /* cheney */
 
-#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
+/* moved to vm.h */
+//#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
 
 #define NEW_SEGMENT_SIZE 1024*10
 extern segment_t *segments_from_space_g;

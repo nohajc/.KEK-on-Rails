@@ -24,8 +24,14 @@ void stack_init(void) {
 	stack_size_g = STACK_DEFAULT_SIZE;
 	sp_g = 0;
 	fp_g = 0;
+	ap_g = 0;
 
+#if FORCE_CALLOC == 1
+	stack_g = calloc(stack_size_g, sizeof(kek_obj_t*));
+#else /* FORCE_CALLOC == 1 */
 	stack_g = malloc(stack_size_g * sizeof(kek_obj_t*));
+#endif /* FORCE_CALLOC == 1 */
+
 	assert(stack_g);
 }
 
