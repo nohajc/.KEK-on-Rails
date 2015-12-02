@@ -1,0 +1,81 @@
+//KEK_TEST_RUNS 1
+//KEK_TEST_ARGS_0 
+
+#include "operators.kek"
+#include "switch.kek"
+
+class Object {
+	static const a = 5
+	var v, b
+
+	Object() {
+	}
+
+	method1() {
+		b = 101
+		//v = [1, 2, 3, "ahoj", "b", "c", a, b] // does not compile
+		v = [1, 2, 3, "ahoj", "b", "c", a]
+		v[7] = b
+		return new Object()
+	}
+
+	method2() {
+		var method1 = 0
+		var a = 1
+		method1()
+		a = 2
+		//this.a = 42 // does not compile
+		return
+	}
+
+	/*static foo() {
+		return v
+		return this
+	}*/
+};
+
+class Test: Object {
+	var v1, v2
+	static const c1 = 42
+	static const str = "Cool"
+	static var sv
+	var im
+
+	static Test() { // Static class initializer
+		sv = 0xCAFEB1BE
+	}
+
+	Test() { // Constructor
+		super()
+	}
+
+	/*Test(c) {
+		c++
+	}*/
+
+	method1(a, b) {
+		var obj = super.method1()
+		return a + b
+	}
+
+	static main(args) {
+		//v1 = "Forbidden"
+		var t = new Test()
+		return t.method1(7, "Hello \"world\"!\n")
+	}
+
+	getRef() {
+		const im = 97
+		this.im = 23
+		v2 = im
+		v1 = str
+
+		return this
+	}
+};
+
+class Loader {
+	Loader() {
+		Test.main()
+	}
+};

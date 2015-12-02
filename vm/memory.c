@@ -117,6 +117,8 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 
 	size = ALIGNED(vm_obj_size(obj));
 
+	vm_debug(DBG_MEM, "gc_cheney_copy_obj_to_space_free: ptr=%p\n", obj);
+
 	if ((ptrint_t) ((uint8_t *) to_space_free_g + size) >= //
 			(ptrint_t) ((uint8_t *) segments_to_space_g->beginning
 					+ NEW_SEGMENT_SIZE)) {
@@ -281,6 +283,8 @@ void gc_cheney_scavenge() {
 	kek_obj_t *obj_inner;
 
 	uint8_t i;
+
+	vm_debug(DBG_GC_STATS, "new space scavenge\n");
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge()\n");
 
@@ -721,10 +725,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 /* this function will be called every X ticks */
 void gc() {
-	return;
-//vm_debug(DBG_GC, "---------------- gc() ----------------\n");
-//gc_rootset(gc_rootset_print);
-//obj_table_print();
+	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %\n", ticks_g, gc_remaining());
 }
 
 void gc_init() {
@@ -791,6 +792,12 @@ void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 	}
 
 	return (ptr);
+}
+
+double gc_remaining(void) {
+	return ((double) ((ptrint_t) to_space_free_g
+			- (ptrint_t) segments_to_space_g->beginning)
+			/ (double) NEW_SEGMENT_SIZE);
 }
 
 /******************************************************************************/

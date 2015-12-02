@@ -15,7 +15,8 @@
 
 struct _class;
 
-// Integers are primitive objects without methods - they don't need a class pointer
+// Integers are primitive objects without methods - they don't need a class
+// pointer
 union _kek_obj * alloc_integer(void);
 union _kek_obj * alloc_array(struct _class * arr_class);
 void alloc_arr_elems(struct _kek_array * arr);
@@ -30,8 +31,8 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /******************************************************************************/
 /* memory managment */
 
-/* http://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
-/* http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
+/* jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
+/* citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
 
 /* from claus */
 #define SEGMENT_SIZE (2*1024) /* FIXME TODO 2KB for now */
@@ -79,7 +80,6 @@ typedef struct _segment {
 	double data[1];
 	/* data[size-1] */
 } segment_t;
-
 
 extern segment_t *segments_old_space_g;
 
@@ -140,7 +140,6 @@ typedef enum _gc_type {
 #define GC_TYPE_DEFAULT GC_NEW
 extern gc_type_t gc_type_g;
 
-
 typedef struct _gc_obj {
 	kek_obj_t *obj;
 	size_t size;
@@ -158,12 +157,19 @@ extern gc_obj_t *gc_obj_g;
 extern gc_obj_t *gc_obj_root_g;
 extern gc_carrlist_t *gc_carrlist_root_g;
 
-/* this function will be called from the main loop in vm */
+/* GC API */
 void gc(void);
+void gc_lock(void);
+void gc_unlock(void);
+double gc_remaining(void);
+void *gc_obj_malloc(type_t type, class_t *cls, size_t size);
+bool gc_in_new(void *ptr, size_t size);
+bool gc_in_old(void *ptr, size_t size);
+
+
 void gc_init(void);
 void gc_free(void);
 void gc_delete_all(void);
-
 void gc_rootset(void (*fn)(kek_obj_t **));
 
 /******************************************************************************/
@@ -171,7 +177,6 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 
 /* moved to vm.h */
 //#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
-
 #define NEW_SEGMENT_SIZE 1024*10
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;

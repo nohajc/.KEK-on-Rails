@@ -52,6 +52,10 @@ typedef struct _header {
 	/* Each object needs a pointer to its class. */
 	/* This pointer may use GC for forwarding address */
 	struct _class * cls;
+
+	/* todo: pocet preziti */
+	/* gc se bude moc volat nasilne, gc bude mit zamek, kdy se gc volat nebude*/
+	/* todo: gc se bude volat s rezervou */
 } header_t;
 
 /* nil - immutable, singleton */

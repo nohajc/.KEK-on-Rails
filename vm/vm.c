@@ -39,6 +39,8 @@ uint8_t *bc_arr_g = NULL;
 
 jmp_buf bc_loop_env_g;
 
+uint32_t ticks_g = 0; /* global ticks */
+
 //class_t *classes_g;
 /******************************************************************************/
 /* debugging/printing code */
@@ -141,6 +143,8 @@ static char *vm_debug_flag(uint32_t flag) {
 		return ("mem");
 	case DBG_OBJ_TBL:
 		return ("obj_tbl");
+	case DBG_GC_STATS:
+		return ("gc stats");
 	default:
 		return ("unknown");
 	}
@@ -594,7 +598,7 @@ void vm_execute_bc(void) {
 
 	setjmp(bc_loop_env_g);
 
-	for (tick = 0;; tick++) {
+	for (tick = 0;; tick++, ticks_g++) {
 		call_type = -1;
 		op_c = bc_arr_g[ip_g];
 		decode_instr: // For debugging (gdb can set a breakpoint at label)
