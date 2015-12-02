@@ -682,6 +682,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	uint32_t j;
 	uint32_t k;
 	kek_obj_t *obj_ptr;
+	gc_carrlist_t *carr;
 
 	/* static variables of objects */
 	vm_debug(DBG_GC, "rootset: static vars of objs --\n");
@@ -696,6 +697,11 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 				(*fn)(&classes_g[j].syms_static[k].value);
 			}
 		}
+	}
+
+	/* arrays from const table */
+	for (carr = gc_carrlist_root_g; carr; carr = carr->next) {
+		(*fn)((kek_obj_t **) &(carr->arr));
 	}
 
 	/* stack objects */
@@ -725,7 +731,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 /* this function will be called every X ticks */
 void gc() {
-	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %\n", ticks_g, gc_remaining());
+	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%\n", ticks_g, gc_remaining());
 }
 
 void gc_init() {
@@ -822,16 +828,32 @@ kek_obj_t **alloc_const_arr_elems(int length) {
 	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 }
 
-void realloc_arr_elems(struct _kek_array * arr, int length) {
-	assert(0 && "realloc_arr_elems: implement me pls"
-			"(create bigger elems and copy");
+void realloc_arr_elems(kek_array_t *arr, int length) {
+	kek_obj_t **new_elems;
+	int i;
+
+	vm_debug(DBG_MEM, "realloc_arr_elems\n");
 
 	while (arr->alloc_size < length) {
 		arr->alloc_size *= 2;
 	}
-	/* TODO: mem_realloc? */
-	arr->elems = realloc(arr->elems, arr->alloc_size * sizeof(kek_obj_t*));
-	assert(arr->elems);
+
+	new_elems = alloc_const_arr_elems(arr->alloc_size);
+
+	for (i = 0; i < arr->length; i++) {
+		new_elems[i] = arr->elems[i];
+	}
+
+#if FORCE_CALLOC == 1
+	for (; i < arr->alloc_size; i++) {
+		new_elems[i] = NULL;
+	}
+#endif /* FORCE_CALLOC == 1 */
+
+	arr->elems = new_elems;
+	arr->length = length;
+
+	/* NOTE: the old elems will cleanup GC */
 }
 
 kek_obj_t * alloc_string(class_t * str_class, int length) {

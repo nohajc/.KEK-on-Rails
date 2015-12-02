@@ -667,6 +667,10 @@ void vm_execute_bc(void) {
 			if (IS_ARR(obj)) {
 				if (idx_n < obj->k_arr.length) {
 					PUSH(obj->k_arr.elems[idx_n]);
+
+					/* FIXME: delete this */
+					printf("TMP: idx_n=%d\n", idx_n);
+
 					vm_debug(DBG_BC, " - %s\n",
 							kek_obj_print(obj->k_arr.elems[idx_n]));
 				} else {
