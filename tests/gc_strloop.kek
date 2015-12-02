@@ -28,7 +28,7 @@ class Main {
     var x = ""
     var a = new A("x")
     var tmp
-    for (i = 0; i < 1000; i++) {
+    for (i = 0; i < 200; i++) {
       tmp = new A(ch(i))
       x = x + ch(i)
       x = a.append(x)

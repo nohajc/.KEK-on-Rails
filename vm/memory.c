@@ -696,6 +696,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	/* stack objects */
 	vm_debug(DBG_GC, "rootset: objs on the stack --\n");
 	for (i = sp_g - 1; i >= 0; i--) {
+		vm_debug(DBG_GC, "rootset stack[%d]\n", i);
 		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
 
 			if (((kek_obj_t *) stack_g[i])->h.t == KEK_CLASS) {
