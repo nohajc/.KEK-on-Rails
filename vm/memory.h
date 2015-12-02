@@ -137,7 +137,7 @@ typedef enum _gc_type {
 	GC_GEN // generational GC. new and old space
 } gc_type_t;
 
-#define GC_TYPE_DEFAULT GC_NONE
+#define GC_TYPE_DEFAULT GC_NEW
 extern gc_type_t gc_type_g;
 
 

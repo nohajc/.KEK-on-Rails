@@ -5,11 +5,11 @@
 // make -C vm
 // valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d mem ./tests/kexes/gc_loop.kexe
 
-class Integer {
+class MyInt {
   var value1
   static var value2
 
-  Integet(v) {
+  MyInt(v) {
     value1 = v
     value2 = v
   }
@@ -20,33 +20,32 @@ class Integer {
   }
   
   val() {
-    return (value2)
+    return (value1 + value2)
   }
 }
 
 class Main {
   static main(args) {
     var it
-    var i = new Integer(1)
+    var i = new MyInt(1)
     var i2
     var i3
-    //var j
-    //var j2
-    //var j3
-    var k
-    for (it = 0; it < 200; it++) {
+    var j
+    var j2
+    var j3
+    var k = 0
+    for (it = 0; it < 1000; it++) {
       i2 = i
       i3 = i2
     
-      //j = new Integer(1000)
-      //j2 = j
-      //j3 = j2
+      j = new MyInt(1)
+      j2 = j
+      j3 = j2
       
       i2.add(1)
-      //j3.add(1)
+      j2.add(1)
       
-      //k = k + i.val() + j.val()
-      k = k + i3.val()
+      k = k + i3.val() + j3.val()
     }
     write k
   }

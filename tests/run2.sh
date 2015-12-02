@@ -127,7 +127,7 @@ kek_execute() {
 		#echo "$i \"$args\""
 
 		out=$KEK_OUT_DIR/${kek_name}.vm.${i}.out
-		$VM_VALGRIND_CMD $VM_EXE -d all -t 1 $VM_ARGS $kexe $args >$out 2>&1
+		$VM_VALGRIND_CMD $VM_EXE -t 1 $VM_ARGS $kexe $args >$out 2>&1
 		if (( $? != 0 )); then
 			kek_error "exexuting of $kek_name has failed" $out
 			(( fail++ ))
