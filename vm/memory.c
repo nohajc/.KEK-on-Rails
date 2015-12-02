@@ -14,6 +14,7 @@
 
 gc_obj_t *gc_obj_g = NULL;
 gc_obj_t *gc_obj_root_g = NULL;
+gc_carrlist_t *gc_carrlist_root_g = NULL;
 
 void gc_obj_add(kek_obj_t *obj, size_t size) {
 	gc_obj_t *go;
@@ -744,6 +745,7 @@ void gc_init() {
 void gc_free() {
 	segment_t *ptr;
 	segment_t *next;
+	gc_carrlist_t *cal;
 
 	switch (gc_type_g) {
 	case GC_NONE:
@@ -763,6 +765,13 @@ void gc_free() {
 		break;
 	}
 
+	// Free constant array list
+	cal = gc_carrlist_root_g;
+	while (cal != NULL) {
+		gc_carrlist_t *next = cal->next;
+		free(cal);
+		cal = next;
+	}
 }
 
 void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {

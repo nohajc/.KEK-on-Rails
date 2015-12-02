@@ -225,6 +225,14 @@ void vm_init_parent_pointers(void) {
 	}
 }
 
+static void add_carray_to_gc_rootset(kek_array_t * arr) {
+	// Prepend this array to the array list
+	gc_carrlist_t * cal_new = malloc(sizeof(gc_carrlist_t));
+	cal_new->arr = arr;
+	cal_new->next = gc_carrlist_root_g;
+	gc_carrlist_root_g = cal_new;
+}
+
 // Init class pointers and fix array layout
 void vm_init_const_table_elems(void) {
 	uint8_t * ptr = const_table_g;
@@ -261,6 +269,7 @@ void vm_init_const_table_elems(void) {
 				elems[i] = CONST(c_arr->elems[i]);
 			}
 			obj->k_arr.elems = elems;
+			add_carray_to_gc_rootset(&obj->k_arr);
 
 			ptr += sizeof(constant_array_t)
 					+ (obj->k_arr.length - 1) * sizeof(uint32_t);
