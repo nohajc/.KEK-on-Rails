@@ -200,7 +200,7 @@ static uint32_t calc_total_syms_cnt(class_t * cls) {
 static int calc_syms_offset(class_t * cls) {
 	if (cls->allocator != alloc_udo) {
 		cls->syms_instance_offset = 0;
-		return cls->allocator ? (ptruint_t)cls->allocator(NULL) : 0;
+		return cls->allocator ? (ptruint_t) cls->allocator(NULL) : 0;
 	}
 	if (cls->syms_instance_offset != -1) { // if already set
 		return cls->syms_instance_offset;
@@ -223,8 +223,8 @@ void vm_init_parent_pointers(void) {
 			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
 			assert(classes_g[i].parent != NULL);
 		}
-		(void)calc_total_syms_cnt(&classes_g[i]);
-		(void)calc_syms_offset(&classes_g[i]);
+		(void) calc_total_syms_cnt(&classes_g[i]);
+		(void) calc_syms_offset(&classes_g[i]);
 	}
 }
 
@@ -576,7 +576,8 @@ static inline symbol_t * SYM_STATIC(class_t * cls, int idx) {
 
 	while (cls_ptr->parent && c_idx < 0) {
 		cls_ptr = cls_ptr->parent;
-		if (cls_ptr->syms_static_cnt == 0) continue;
+		if (cls_ptr->syms_static_cnt == 0)
+			continue;
 		c_idx = idx - cls_ptr->syms_static[0].addr;
 	}
 
@@ -675,7 +676,6 @@ void vm_execute_bc(void) {
 
 					/* FIXME: delete this */
 					//vm_debug(DBG_GC, "IDX: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
-
 					vm_debug(DBG_BC, " - %s\n",
 							kek_obj_print(obj->k_arr.elems[idx_n]));
 				} else {
@@ -712,7 +712,6 @@ void vm_execute_bc(void) {
 				TOP(obj); // Pointer could have changed after native_grow_array
 				/* FIXME: delete this */
 				//vm_debug(DBG_GC, "IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
-
 				PUSH(MAKE_DPTR(obj, &obj->k_arr.elems[idx_n]));
 			} else {
 				vm_error("Invalid object or index.\n");
@@ -1299,10 +1298,11 @@ size_t vm_obj_size(kek_obj_t *obj) {
 		return (sizeof(class_t));
 	case KEK_STR:
 		return (sizeof(kek_string_t) + obj->k_str.length);
-	/*case KEK_SYM: // Should be only in const. table
-		return (sizeof(kek_symbol_t) + obj->k_sym.length);*/
+		/*case KEK_SYM: // Should be only in const. table
+		 return (sizeof(kek_symbol_t) + obj->k_sym.length);*/
 	case KEK_ARR_OBJS:
-		return (sizeof(kek_array_objs_t) + (obj->k_arr_objs.h.length - 1) * sizeof(kek_obj_t*));
+		return (sizeof(kek_array_objs_t)
+				+ (obj->k_arr_objs.h.length - 1) * sizeof(kek_obj_t*));
 	case KEK_UDO: {
 		int var_count;
 		assert(obj->h.cls != NULL);
