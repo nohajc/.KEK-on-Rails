@@ -11,7 +11,11 @@
 
 #include "vm.h"
 
-#define ARR_INIT_SIZE 1024
+// For NEW_SEGMENT_SIZE 1024*10 and ARR_INIT_SIZE 1024
+// The array in gc_arrloop.kexe is too big.
+// We need to detect it does not fit into segment
+// and possibly allocate it in old space.
+#define ARR_INIT_SIZE 512
 
 struct _class;
 

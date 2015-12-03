@@ -863,6 +863,10 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 	}
 
 	new_elems = alloc_const_arr_elems(arr->alloc_size);
+	// TODO: we need arr pointer update
+	// if realloc triggered GC.
+	// This means we copy the argument arr
+	// to local variable and pass its address to GC rootset
 
 	for (i = 0; i < arr->length; i++) {
 		new_elems[i] = arr->elems[i];

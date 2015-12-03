@@ -391,6 +391,8 @@ void vm_call_main(int argc, char *argv[]) {
 	method_t * kek_main;
 	kek_array_t * kek_argv;
 
+	// TODO: add all object pointers to gc rootset
+
 	// Wrap argv in kek array
 	kek_argv = (kek_array_t*) alloc_array(vm_find_class("Array"));
 	native_new_array(kek_argv);
@@ -694,7 +696,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s\n", "IDXA");
 			ip_g++;
 			POP(idx);
-			POP(obj);
+			TOP(obj);
 
 			if (obj && IS_ARR(obj) && idx && IS_INT(idx)) {
 				int idx_n = INT_VAL(idx);
@@ -703,6 +705,7 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
+				POP(obj); // Pointer could have changed after native_grow_array
 				/* FIXME: delete this */
 				printf("IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
 
