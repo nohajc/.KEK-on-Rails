@@ -127,6 +127,7 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 
 	ret = memcpy(to_space_free_g, obj, size);
 	to_space_free_g = ((uint8_t *) to_space_free_g + size);
+	alloc_ptr_g = ((uint8_t *) alloc_ptr_g + size);
 
 	return (ret);
 }
@@ -190,14 +191,21 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 	kek_obj_t *from;
 	kek_obj_t *to;
 
+	//vm_debug(DBG_GC, "obj: %p\n", obj);
+
 	assert(obj != NULL);
 	assert(IS_PTR(obj));
 
+	if (vm_is_const(obj)) {
+		return;
+	}
+
 	from = obj;
-	if (from->h.cls != NULL) {
+	if (from->h.t == KEK_COPIED) {
 		to = (kek_obj_t *) from->h.cls;
 	} else {
 		to = gc_cheney_copy_obj_to_space_free(from);
+		from->h.t = KEK_COPIED;
 		from->h.cls = (struct _class *) to;
 	}
 	obj = to;
@@ -234,15 +242,30 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 				- sizeof(header_t));
 		assert(arr_objs->h.t == KEK_ARR_OBJS);
 
+		vm_debug(DBG_GC,
+				"gc_cheney_copy_inner_objs: before copy: obj->k_arr.elems: %p\n",
+				obj->k_arr.elems);
+
 		gc_cheney_copy_neighbor_inner(&arr_objs);
+		obj->k_arr.elems = &(arr_objs->k_arr_objs.elems[0]);
+
+		vm_debug(DBG_GC,
+				"gc_cheney_copy_inner_objs: after copy: obj->k_arr.elems: %p\n",
+				obj->k_arr.elems);
+		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: obj->k_arr.length: %d\n",
+				obj->k_arr.length);
 
 		for (i = 0; i < obj->k_arr.length; i++) {
-			gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
+			kek_obj_t * el = obj->k_arr.elems[i];
+			if (el != NULL && IS_PTR(el)) {
+				gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
+			}
 		}
 	}
 		break;
 	case KEK_ARR_OBJS:
-		assert(0 && "kek_arr_objs?!");
+		/* We will encounter this while scanning. However, we know
+		that elems have been already copied, so we just skip this */
 		break;
 	case KEK_EXINFO:
 		assert(0 && "only in cost tbl");
@@ -254,7 +277,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	case KEK_FILE:
 		break;
 	case KEK_TERM:
-		assert(0 && "this should  be in oldspace");
+		// assert(0 && "this should  be in oldspace");
 		/* todo: bude v oldspace (vsechno  co je v sys) */
 		break;
 	case KEK_UDO: {
@@ -354,8 +377,8 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	assert(segments_to_space_g != NULL);
 
 //	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
-	if (((uint8_t *) to_space_free_g + size) >= //
-			((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
+	if ((ptrint_t)((uint8_t *) to_space_free_g + size) >= //
+			(ptrint_t)((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -723,6 +746,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 				vm_debug(DBG_GC, "rootset: ignoring const\n");
 				continue;
 			}
+			gc_rootset_print(&stack_g[i]);
 
 			(*fn)(&stack_g[i]);
 		}
@@ -851,7 +875,7 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 #endif /* FORCE_CALLOC == 1 */
 
 	arr->elems = new_elems;
-	arr->length = length;
+	//arr->length = length;
 
 	/* NOTE: the old elems will cleanup GC */
 }

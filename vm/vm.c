@@ -199,9 +199,8 @@ static uint32_t calc_total_syms_cnt(class_t * cls) {
 
 static int calc_syms_offset(class_t * cls) {
 	if (cls->allocator != alloc_udo) {
-		cls->syms_instance_offset =
-				cls->allocator ? (ptrint_t)cls->allocator(NULL) : 0;
-		return cls->syms_instance_offset;
+		cls->syms_instance_offset = 0;
+		return cls->allocator ? (ptrint_t)cls->allocator(NULL) : 0;
 	}
 	if (cls->syms_instance_offset != -1) { // if already set
 		return cls->syms_instance_offset;
@@ -669,7 +668,7 @@ void vm_execute_bc(void) {
 					PUSH(obj->k_arr.elems[idx_n]);
 
 					/* FIXME: delete this */
-					printf("TMP: idx_n=%d\n", idx_n);
+					printf("IDX: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
 
 					vm_debug(DBG_BC, " - %s\n",
 							kek_obj_print(obj->k_arr.elems[idx_n]));
@@ -704,6 +703,9 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
+				/* FIXME: delete this */
+				printf("IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
+
 				PUSH(MAKE_DPTR(&obj->k_arr.elems[idx_n]));
 			} else {
 				vm_error("Invalid object or index.\n");
