@@ -38,7 +38,7 @@ void free_globals() {
 	free(bc_arr_g);
 	free(const_table_g);
 	free(classes_g);
-	free(stack_g);
+	stack_destroy();
 
 #ifdef DEBUG
 	/* free the buffer inside */

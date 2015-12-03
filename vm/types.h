@@ -35,6 +35,7 @@ typedef enum _type {
 	KEK_TERM, //
 	KEK_UDO, //
 	KEK_CLASS, //
+	KEK_STACK, //
 	KEK_COPIED // when gc copies and obj, this will be the type of the old one
 } type_t;
 
@@ -42,7 +43,7 @@ typedef enum _type {
 #define OBJ_TYPE_CHECK(obj) (TYPE_CHECK((obj)->h.t))
 
 static const char *type_str_g[] = { "NIL", "INT", "STR", "SYM", "ARR", "EXINFO",
-		"EXPT", "FILE", "TERM", "UDO", "CLASS", "COPIED" };
+		"EXPT", "FILE", "TERM", "UDO", "CLASS", "STACK", "COPIED" };
 
 /******************************************************************************/
 
@@ -162,38 +163,26 @@ typedef union _kek_obj {
 } kek_obj_t;
 
 #if defined(__LP64__)
-
-#define IS_PTR(obj) (((uint64_t)(obj) & 3) == 0)
-
-#define IS_CHAR(obj) (((uint64_t)(obj) & 3) == 2)
-#define MAKE_CHAR(c) (((uint64_t)(c) << 2) | 2)
-#define CHAR_VAL(c) (char)((uint64_t)(c) >> 2)
-
-#define IS_INT(obj) (((uint64_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
-#define INT_VAL(obj) (((uint64_t)(obj) & 1) ? \
-		((int32_t)(int64_t)(obj) >> 1) : ((obj)->k_int.value))
-
-#define IS_DPTR(obj) (((uint64_t)(obj) & 3) == 3)
-#define MAKE_DPTR(obj) ((uint64_t)(obj) | 3)
-#define DPTR_VAL(obj) ((kek_obj_t**)((uint64_t)(obj) & ~3ULL))
-
+typedef uint64_t ptruint_t;
 #else
-
-#define IS_PTR(obj) (((uint32_t)(obj) & 3) == 0)
-
-#define IS_CHAR(obj) (((uint32_t)(obj) & 3) == 2)
-#define MAKE_CHAR(c) (((uint32_t)(c) << 2) | 2)
-#define CHAR_VAL(c) (char)((uint32_t)(c) >> 2)
-
-#define IS_INT(obj) (((uint32_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
-#define INT_VAL(obj) (((uint32_t)(obj) & 1) ? \
-		((int32_t)(obj) >> 1) : ((obj)->k_int.value))
-
-#define IS_DPTR(obj) (((uint32_t)(obj) & 3) == 3)
-#define MAKE_DPTR(obj) ((uint32_t)(obj) | 3)
-#define DPTR_VAL(obj) ((kek_obj_t**)((uint32_t)(obj) & ~3))
-
+typedef uint32_t ptruint_t;
 #endif
+
+#define IS_PTR(obj) (((ptruint_t)(obj) & 3) == 0)
+
+#define IS_CHAR(obj) (((ptruint_t)(obj) & 3) == 2)
+#define MAKE_CHAR(c) (((ptruint_t)(c) << 2) | 2)
+#define CHAR_VAL(c) (char)((ptruint_t)(c) >> 2)
+
+#define IS_INT(obj) \
+		(((ptruint_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
+#define INT_VAL(obj) (((ptruint_t)(obj) & 1) ? \
+		((int32_t)(ptruint_t)(obj) >> 1) : ((obj)->k_int.value))
+
+#define IS_DPTR(obj) (((ptruint_t)(obj) & 3) == 3)
+#define MAKE_DPTR(obj, addr) (((ptruint_t)(addr) - (ptruint_t)(obj)) | 3)
+#define DPTR_VAL(obj, addr) \
+		((kek_obj_t**)((uint8_t*)(obj) + ((ptruint_t)(addr) & ~3ULL)))
 
 #define IS_NIL(obj) (IS_PTR(obj) && (obj)->h.t == KEK_NIL)
 #define IS_STR(obj) (IS_PTR(obj) && (obj)->h.t == KEK_STR)

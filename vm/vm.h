@@ -97,7 +97,7 @@ typedef struct _symbol {
 	 * the right element in kek_udo_t.
 	 */
 	uint32_t const_ptr;
-	kek_obj_t * value; // TODO: make it better?
+	kek_obj_t * value;
 	uint32_t addr;
 	const_flag_t const_flag;
 } symbol_t;

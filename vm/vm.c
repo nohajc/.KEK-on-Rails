@@ -200,7 +200,7 @@ static uint32_t calc_total_syms_cnt(class_t * cls) {
 static int calc_syms_offset(class_t * cls) {
 	if (cls->allocator != alloc_udo) {
 		cls->syms_instance_offset = 0;
-		return cls->allocator ? (ptrint_t)cls->allocator(NULL) : 0;
+		return cls->allocator ? (ptruint_t)cls->allocator(NULL) : 0;
 	}
 	if (cls->syms_instance_offset != -1) { // if already set
 		return cls->syms_instance_offset;
@@ -576,13 +576,13 @@ static inline symbol_t * SYM_STATIC(class_t * cls, int idx) {
 
 	while (cls_ptr->parent && c_idx < 0) {
 		cls_ptr = cls_ptr->parent;
+		if (cls_ptr->syms_static_cnt == 0) continue;
 		c_idx = idx - cls_ptr->syms_static[0].addr;
 	}
 
 	if (c_idx < 0) {
 		vm_error("Class member not found.\n");
 	}
-
 	return &cls_ptr->syms_static[c_idx];
 }
 
@@ -631,23 +631,27 @@ void vm_execute_bc(void) {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_ARG", arg1);
-			PUSH(MAKE_DPTR(&ARG(arg1)));
+			PUSH(STACK_HEADER(stack_g));
+			PUSH(MAKE_DPTR(STACK_HEADER(stack_g), &ARG(arg1)));
 			break;
 		}
 		case LABI_LOC: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_LOC", arg1);
-			PUSH(MAKE_DPTR(&LOC(arg1)));
+			PUSH(STACK_HEADER(stack_g));
+			PUSH(MAKE_DPTR(STACK_HEADER(stack_g), &LOC(arg1)));
 			break;
 		}
 		case ST: {
+			kek_obj_t * dst_obj;
 			vm_debug(DBG_BC, "%s\n", "ST");
 			ip_g++;
 			POP(obj);
 			POP(addr);
+			POP(dst_obj);
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
-			*DPTR_VAL(addr) = obj;
+			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
 		}
 		case IDX: {
@@ -670,7 +674,7 @@ void vm_execute_bc(void) {
 					PUSH(obj->k_arr.elems[idx_n]);
 
 					/* FIXME: delete this */
-					printf("IDX: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
+					//vm_debug(DBG_GC, "IDX: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
 
 					vm_debug(DBG_BC, " - %s\n",
 							kek_obj_print(obj->k_arr.elems[idx_n]));
@@ -705,11 +709,11 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
-				POP(obj); // Pointer could have changed after native_grow_array
+				TOP(obj); // Pointer could have changed after native_grow_array
 				/* FIXME: delete this */
-				printf("IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
+				//vm_debug(DBG_GC, "IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
 
-				PUSH(MAKE_DPTR(&obj->k_arr.elems[idx_n]));
+				PUSH(MAKE_DPTR(obj, &obj->k_arr.elems[idx_n]));
 			} else {
 				vm_error("Invalid object or index.\n");
 			}
@@ -752,16 +756,18 @@ void vm_execute_bc(void) {
 
 			break;
 		}
-		case DUP: {
+		case DUP: { // Actually duplicates a pair of top stack elements
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "DUP");
-			PUSH(stack_top());
+			PUSH(stack_g[sp_g - 2]);
+			PUSH(stack_g[sp_g - 2]);
 			break;
 		}
 		case DR: {
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "DR");
-			stack_g[sp_g - 1] = *DPTR_VAL(stack_top());
+			POP(addr);
+			stack_g[sp_g - 1] = *DPTR_VAL(stack_g[sp_g - 1], addr);
 			break;
 		}
 		case WRT: {
@@ -927,7 +933,8 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(MAKE_DPTR(&cls_memb->value));
+			PUSH(NULL);
+			PUSH(MAKE_DPTR(NULL, &cls_memb->value));
 			break;
 		}
 		case LABI_CVE: {
@@ -947,7 +954,8 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(MAKE_DPTR(&cls_memb->value));
+			PUSH(NULL);
+			PUSH(MAKE_DPTR(NULL, &cls_memb->value));
 			break;
 		}
 		case LVBI_CV: {
@@ -1036,7 +1044,8 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(MAKE_DPTR(&cls_memb->value));
+			PUSH(NULL);
+			PUSH(MAKE_DPTR(NULL, &cls_memb->value));
 			break;
 		}
 		case NEW: {
@@ -1102,7 +1111,8 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(MAKE_DPTR(&INST_VAR(obj, arg1)));
+			PUSH(obj);
+			PUSH(MAKE_DPTR(obj, &INST_VAR(obj, arg1)));
 			break;
 		}
 		case LVBI_IV: {
@@ -1146,7 +1156,7 @@ void vm_execute_bc(void) {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABS_IVE", arg1);
-			POP(obj);
+			TOP(obj);
 			if (!IS_PTR(obj)) {
 				vm_error("Invalid object pointer.\n");
 			}
@@ -1164,7 +1174,7 @@ void vm_execute_bc(void) {
 				vm_error("Instance member %s not found in %s.\n",
 						sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(MAKE_DPTR(&INST_VAR(obj, obj_memb->addr)));
+			PUSH(MAKE_DPTR(obj, &INST_VAR(obj, obj_memb->addr)));
 			break;
 		}
 		case ST_EXINFO: {
@@ -1276,10 +1286,10 @@ void vm_throw_obj_from_native_ctxt(kek_obj_t * obj) {
 bool vm_is_const(kek_obj_t *obj) {
 	vm_debug(DBG_MEM,
 			"is %lu (type=%d) const? const from=%lu to=%lu\n", //
-			(ptrint_t) obj, obj->h.t, (ptrint_t) const_table_g,
-			(ptrint_t) (const_table_g + const_table_cnt_g));
-	return ((ptrint_t) const_table_g <= (ptrint_t) obj
-			&& (ptrint_t) (const_table_g + const_table_cnt_g) > (ptrint_t) obj);
+			(ptruint_t) obj, obj->h.t, (ptruint_t) const_table_g,
+			(ptruint_t) (const_table_g + const_table_cnt_g));
+	return ((ptruint_t) const_table_g <= (ptruint_t) obj
+			&& (ptruint_t) (const_table_g + const_table_cnt_g) > (ptruint_t) obj);
 }
 
 size_t vm_obj_size(kek_obj_t *obj) {

@@ -30,6 +30,8 @@ void stack_push(void *);
 kek_obj_t* stack_pop();
 kek_obj_t* stack_top();
 
+#define STACK_HEADER(st) (((header_t*)(st)) - 1)
+
 #define ARG(i) stack_g[ap_g + (i)]
 #define LOC(i) stack_g[fp_g + (i) + 1]
 #define THIS stack_g[fp_g - 4]
@@ -38,10 +40,8 @@ kek_obj_t* stack_top();
 
 #if defined(__LP64__)
 #define PUSH(obj) stack_push((void*)(uint64_t)(obj))
-typedef uint64_t ptrint_t;
 #else /* defined(__LP64__) */
 #define PUSH(obj) stack_push((void*)(obj))
-typedef uint32_t ptrint_t;
 #endif /* defined(__LP64__) */
 
 #define POP(obj) (obj) = (void*)stack_pop()

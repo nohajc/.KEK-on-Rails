@@ -93,14 +93,14 @@ bool gc_cheney_ptr_in_space(void *segment_data, void *ptr, size_t size) {
 			" (          ptr from) %lu\n"
 			" (            ptr to) %lu\n"
 			" (segment_data end  ) %lu\n", //
-			(ptrint_t) segment_data, //
-			(ptrint_t) ptr, //
-			(ptrint_t) ((uint8_t *) ptr + size), //
-			(ptrint_t) ((uint8_t *) segment_data + NEW_SEGMENT_SIZE));
+			(ptruint_t) segment_data, //
+			(ptruint_t) ptr, //
+			(ptruint_t) ((uint8_t *) ptr + size), //
+			(ptruint_t) ((uint8_t *) segment_data + NEW_SEGMENT_SIZE));
 
-	return ((ptrint_t) segment_data <= (ptrint_t) ptr && //
-			(ptrint_t) ((uint8_t *) ptr + size)
-					< (ptrint_t) ((uint8_t *) segment_data + NEW_SEGMENT_SIZE));
+	return ((ptruint_t) segment_data <= (ptruint_t) ptr && //
+			(ptruint_t) ((uint8_t *) ptr + size)
+					< (ptruint_t) ((uint8_t *) segment_data + NEW_SEGMENT_SIZE));
 }
 
 bool gc_cheney_ptr_in_from_space(void *ptr, size_t size) {
@@ -119,8 +119,8 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 
 	vm_debug(DBG_MEM, "gc_cheney_copy_obj_to_space_free: ptr=%p\n", obj);
 
-	if ((ptrint_t) ((uint8_t *) to_space_free_g + size) >= //
-			(ptrint_t) ((uint8_t *) segments_to_space_g->beginning
+	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
+			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
 					+ NEW_SEGMENT_SIZE)) {
 		vm_error("To space run out of space. Increase NEW_SEGMENT_SIZE.\n");
 	}
@@ -332,7 +332,7 @@ void gc_cheney_scavenge() {
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots END\n");
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs BEGIN\n");
-	while ((ptrint_t) scan_ptr_g < (ptrint_t) alloc_ptr_g) {
+	while ((ptruint_t) scan_ptr_g < (ptruint_t) alloc_ptr_g) {
 		obj = (kek_obj_t *) scan_ptr_g;
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
@@ -377,8 +377,8 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	assert(segments_to_space_g != NULL);
 
 //	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
-	if ((ptrint_t)((uint8_t *) to_space_free_g + size) >= //
-			(ptrint_t)((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
+	if ((ptruint_t)((uint8_t *) to_space_free_g + size) >= //
+			(ptruint_t)((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -738,6 +738,11 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 				continue;
 			}
 
+			if (((kek_obj_t *) stack_g[i])->h.t == KEK_STACK) {
+				vm_debug(DBG_GC, "rootset: ignoring stack reference\n");
+				continue;
+			}
+
 			if (((kek_obj_t *) stack_g[i])->h.t == KEK_NIL) {
 				assert(vm_is_const((kek_obj_t * ) stack_g[i]));
 			}
@@ -825,8 +830,9 @@ void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 }
 
 double gc_remaining(void) {
-	return ((double) ((ptrint_t) to_space_free_g
-			- (ptrint_t) segments_to_space_g->beginning)
+	if (gc_type_g == GC_NONE) return;
+	return ((double) ((ptruint_t) to_space_free_g
+			- (ptruint_t) segments_to_space_g->beginning)
 			/ (double) NEW_SEGMENT_SIZE);
 }
 
