@@ -39,8 +39,12 @@ enum Scope {
 #define EXIT_ON_ERROR 1 /* if not, kek will try to run even after an error */
 #define BRUTAL_KILL 1 /* valgrind tell us stack trace on error */
 
+#define FORCE_CALLOC 0
+
 /******************************************************************************/
 /* debugging */
+
+extern uint32_t ticks_g;
 
 #define DEBUG 1
 #define DBG_NONE		0x00000000 /* no debug */
@@ -52,9 +56,10 @@ enum Scope {
 #define DBG_GC			0x00000020 /* garbage collector */
 #define DBG_MEM			0x00000080 /* memory */
 #define DBG_OBJ_TBL		0x00000100 /* object table */
+#define DBG_GC_STATS	0x00000200 /* gc stats */
 
 #define DBG_ALL (DBG_LOADING|DBG_BC|DBG_STACK|DBG_STACK_FULL|DBG_VM|DBG_BC| \
-	DBG_OBJ_TBL)
+	DBG_OBJ_TBL|DBG_GC_STATS)
 
 void vm_debug(uint32_t level, const char *format, ...);
 void vm_error(const char *format, ...);
@@ -92,7 +97,7 @@ typedef struct _symbol {
 	 * the right element in kek_udo_t.
 	 */
 	uint32_t const_ptr;
-	kek_obj_t * value; // TODO: make it better?
+	kek_obj_t * value;
 	uint32_t addr;
 	const_flag_t const_flag;
 } symbol_t;

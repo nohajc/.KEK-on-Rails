@@ -1,0 +1,41 @@
+//KEK_TEST_RUNS 1
+//KEK_TEST_ARGS_0 
+
+class MyArr {
+  var cnt
+  var arr
+  MyArr(c) {
+    cnt = c
+    arr = []
+  }
+  
+  fill() {
+    var i
+    for (i = 0; i < cnt; i++) {
+      arr[i] = i
+    }
+  }
+  
+  print() {
+    var i
+    for (i = 0; i < cnt; i++) {
+      write arr[i]
+    }
+  }
+}
+
+class Main {
+  static main(args) {
+    var i
+    var arr = []
+    var cnt = 1000
+    
+    for (i = 0; i < cnt; i++) {
+      arr[i] = i
+    }
+    
+    for (i = 0; i < cnt; i++) {
+      write arr[i]
+    }
+  }
+}

@@ -63,6 +63,8 @@ void native_new_array(kek_array_t * arr) {
 void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 	if (idx >= arr->alloc_size) {
 		native_grow_array(arr, idx + 1);
+		// TODO: this is problematic
+		// We need to update arr pointer if it was copied by GC
 	}
 	else if (idx >= arr->length) {
 		arr->length = idx + 1;
@@ -92,6 +94,9 @@ void array_append(void) {
 	old_len = arr->length;
 	if (new_len > arr->alloc_size) {
 		native_grow_array(arr, new_len);
+		// GC phase could have occured, we need to update pointers
+		arr = (kek_array_t*)THIS;
+		obj = ARG(0);
 	}
 	else {
 		arr->length = new_len;
@@ -103,8 +108,6 @@ void array_append(void) {
 	BC_RET;
 }
 
-// TODO: We could cache the kek_int object containing length
-// so we don't have to create a new one on each call.
 kek_obj_t * native_array_length(kek_array_t * arr) {
 	kek_obj_t * kek_len = (kek_obj_t*)make_integer(arr->length);
 
@@ -115,6 +118,8 @@ void native_grow_array(kek_array_t * arr, int length) {
 	int i;
 	realloc_arr_elems(arr, length);
 
+	// TODO: we need arr pointer update
+	// if realloc triggered GC
 	for (i = arr->length; i < length - 1; ++i) {
 		arr->elems[i] = NIL;
 	}

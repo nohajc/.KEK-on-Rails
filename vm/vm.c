@@ -39,6 +39,8 @@ uint8_t *bc_arr_g = NULL;
 
 jmp_buf bc_loop_env_g;
 
+uint32_t ticks_g = 0; /* global ticks */
+
 //class_t *classes_g;
 /******************************************************************************/
 /* debugging/printing code */
@@ -141,6 +143,8 @@ static char *vm_debug_flag(uint32_t flag) {
 		return ("mem");
 	case DBG_OBJ_TBL:
 		return ("obj_tbl");
+	case DBG_GC_STATS:
+		return ("gc stats");
 	default:
 		return ("unknown");
 	}
@@ -195,9 +199,8 @@ static uint32_t calc_total_syms_cnt(class_t * cls) {
 
 static int calc_syms_offset(class_t * cls) {
 	if (cls->allocator != alloc_udo) {
-		cls->syms_instance_offset =
-				cls->allocator ? (ptrint_t)cls->allocator(NULL) : 0;
-		return cls->syms_instance_offset;
+		cls->syms_instance_offset = 0;
+		return cls->allocator ? (ptruint_t) cls->allocator(NULL) : 0;
 	}
 	if (cls->syms_instance_offset != -1) { // if already set
 		return cls->syms_instance_offset;
@@ -220,9 +223,17 @@ void vm_init_parent_pointers(void) {
 			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
 			assert(classes_g[i].parent != NULL);
 		}
-		(void)calc_total_syms_cnt(&classes_g[i]);
-		(void)calc_syms_offset(&classes_g[i]);
+		(void) calc_total_syms_cnt(&classes_g[i]);
+		(void) calc_syms_offset(&classes_g[i]);
 	}
+}
+
+static void add_carray_to_gc_rootset(kek_array_t * arr) {
+	// Prepend this array to the array list
+	gc_carrlist_t * cal_new = malloc(sizeof(gc_carrlist_t));
+	cal_new->arr = arr;
+	cal_new->next = gc_carrlist_root_g;
+	gc_carrlist_root_g = cal_new;
 }
 
 // Init class pointers and fix array layout
@@ -261,6 +272,7 @@ void vm_init_const_table_elems(void) {
 				elems[i] = CONST(c_arr->elems[i]);
 			}
 			obj->k_arr.elems = elems;
+			add_carray_to_gc_rootset(&obj->k_arr);
 
 			ptr += sizeof(constant_array_t)
 					+ (obj->k_arr.length - 1) * sizeof(uint32_t);
@@ -378,6 +390,8 @@ void vm_call_main(int argc, char *argv[]) {
 	class_t * entry_cls;
 	method_t * kek_main;
 	kek_array_t * kek_argv;
+
+	// TODO: add all object pointers to gc rootset
 
 	// Wrap argv in kek array
 	kek_argv = (kek_array_t*) alloc_array(vm_find_class("Array"));
@@ -562,13 +576,14 @@ static inline symbol_t * SYM_STATIC(class_t * cls, int idx) {
 
 	while (cls_ptr->parent && c_idx < 0) {
 		cls_ptr = cls_ptr->parent;
+		if (cls_ptr->syms_static_cnt == 0)
+			continue;
 		c_idx = idx - cls_ptr->syms_static[0].addr;
 	}
 
 	if (c_idx < 0) {
 		vm_error("Class member not found.\n");
 	}
-
 	return &cls_ptr->syms_static[c_idx];
 }
 
@@ -585,7 +600,7 @@ void vm_execute_bc(void) {
 
 	setjmp(bc_loop_env_g);
 
-	for (tick = 0;; tick++) {
+	for (tick = 0;; tick++, ticks_g++) {
 		call_type = -1;
 		op_c = bc_arr_g[ip_g];
 		decode_instr: // For debugging (gdb can set a breakpoint at label)
@@ -617,23 +632,27 @@ void vm_execute_bc(void) {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_ARG", arg1);
-			PUSH(MAKE_DPTR(&ARG(arg1)));
+			PUSH(STACK_HEADER(stack_g));
+			PUSH(MAKE_DPTR(STACK_HEADER(stack_g), &ARG(arg1)));
 			break;
 		}
 		case LABI_LOC: {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABI_LOC", arg1);
-			PUSH(MAKE_DPTR(&LOC(arg1)));
+			PUSH(STACK_HEADER(stack_g));
+			PUSH(MAKE_DPTR(STACK_HEADER(stack_g), &LOC(arg1)));
 			break;
 		}
 		case ST: {
+			kek_obj_t * dst_obj;
 			vm_debug(DBG_BC, "%s\n", "ST");
 			ip_g++;
 			POP(obj);
 			POP(addr);
+			POP(dst_obj);
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
-			*DPTR_VAL(addr) = obj;
+			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
 		}
 		case IDX: {
@@ -654,6 +673,9 @@ void vm_execute_bc(void) {
 			if (IS_ARR(obj)) {
 				if (idx_n < obj->k_arr.length) {
 					PUSH(obj->k_arr.elems[idx_n]);
+
+					/* FIXME: delete this */
+					//vm_debug(DBG_GC, "IDX: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
 					vm_debug(DBG_BC, " - %s\n",
 							kek_obj_print(obj->k_arr.elems[idx_n]));
 				} else {
@@ -678,7 +700,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s\n", "IDXA");
 			ip_g++;
 			POP(idx);
-			POP(obj);
+			TOP(obj);
 
 			if (obj && IS_ARR(obj) && idx && IS_INT(idx)) {
 				int idx_n = INT_VAL(idx);
@@ -687,7 +709,10 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					obj->k_arr.length = idx_n + 1;
 				}
-				PUSH(MAKE_DPTR(&obj->k_arr.elems[idx_n]));
+				TOP(obj); // Pointer could have changed after native_grow_array
+				/* FIXME: delete this */
+				//vm_debug(DBG_GC, "IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
+				PUSH(MAKE_DPTR(obj, &obj->k_arr.elems[idx_n]));
 			} else {
 				vm_error("Invalid object or index.\n");
 			}
@@ -730,16 +755,18 @@ void vm_execute_bc(void) {
 
 			break;
 		}
-		case DUP: {
+		case DUP: { // Actually duplicates a pair of top stack elements
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "DUP");
-			PUSH(stack_top());
+			PUSH(stack_g[sp_g - 2]);
+			PUSH(stack_g[sp_g - 2]);
 			break;
 		}
 		case DR: {
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "DR");
-			stack_g[sp_g - 1] = *DPTR_VAL(stack_top());
+			POP(addr);
+			stack_g[sp_g - 1] = *DPTR_VAL(stack_g[sp_g - 1], addr);
 			break;
 		}
 		case WRT: {
@@ -808,6 +835,7 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u %u, tail: %s\n", call_str[call_type], arg1,
 					arg2, (tail_call ? "true" : "false"));
 			TOP(obj);
+			assert(obj);
 
 			if (!IS_PTR(obj)) {
 				vm_error("Invalid class/object pointer.\n");
@@ -904,7 +932,8 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(MAKE_DPTR(&cls_memb->value));
+			PUSH(NULL);
+			PUSH(MAKE_DPTR(NULL, &cls_memb->value));
 			break;
 		}
 		case LABI_CVE: {
@@ -924,7 +953,8 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(MAKE_DPTR(&cls_memb->value));
+			PUSH(NULL);
+			PUSH(MAKE_DPTR(NULL, &cls_memb->value));
 			break;
 		}
 		case LVBI_CV: {
@@ -1013,7 +1043,8 @@ void vm_execute_bc(void) {
 			if (cls_memb->const_flag) {
 				vm_error("Lvalue cannot be a constant.\n");
 			}
-			PUSH(MAKE_DPTR(&cls_memb->value));
+			PUSH(NULL);
+			PUSH(MAKE_DPTR(NULL, &cls_memb->value));
 			break;
 		}
 		case NEW: {
@@ -1079,7 +1110,8 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s %u\n", "LABI_IV", arg1);
 			obj = THIS;
 			assert(IS_UDO(obj));
-			PUSH(MAKE_DPTR(&INST_VAR(obj, arg1)));
+			PUSH(obj);
+			PUSH(MAKE_DPTR(obj, &INST_VAR(obj, arg1)));
 			break;
 		}
 		case LVBI_IV: {
@@ -1123,7 +1155,7 @@ void vm_execute_bc(void) {
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			vm_debug(DBG_BC, "%s %u\n", "LABS_IVE", arg1);
-			POP(obj);
+			TOP(obj);
 			if (!IS_PTR(obj)) {
 				vm_error("Invalid object pointer.\n");
 			}
@@ -1141,7 +1173,7 @@ void vm_execute_bc(void) {
 				vm_error("Instance member %s not found in %s.\n",
 						sym->k_sym.symbol, obj->h.cls->name);
 			}
-			PUSH(MAKE_DPTR(&INST_VAR(obj, obj_memb->addr)));
+			PUSH(MAKE_DPTR(obj, &INST_VAR(obj, obj_memb->addr)));
 			break;
 		}
 		case ST_EXINFO: {
@@ -1253,10 +1285,10 @@ void vm_throw_obj_from_native_ctxt(kek_obj_t * obj) {
 bool vm_is_const(kek_obj_t *obj) {
 	vm_debug(DBG_MEM,
 			"is %lu (type=%d) const? const from=%lu to=%lu\n", //
-			(ptrint_t) obj, obj->h.t, (ptrint_t) const_table_g,
-			(ptrint_t) (const_table_g + const_table_cnt_g));
-	return ((ptrint_t) const_table_g <= (ptrint_t) obj
-			&& (ptrint_t) (const_table_g + const_table_cnt_g) > (ptrint_t) obj);
+			(ptruint_t) obj, obj->h.t, (ptruint_t) const_table_g,
+			(ptruint_t) (const_table_g + const_table_cnt_g));
+	return ((ptruint_t) const_table_g <= (ptruint_t) obj
+			&& (ptruint_t) (const_table_g + const_table_cnt_g) > (ptruint_t) obj);
 }
 
 size_t vm_obj_size(kek_obj_t *obj) {
@@ -1266,6 +1298,18 @@ size_t vm_obj_size(kek_obj_t *obj) {
 		return (sizeof(class_t));
 	case KEK_STR:
 		return (sizeof(kek_string_t) + obj->k_str.length);
+		/*case KEK_SYM: // Should be only in const. table
+		 return (sizeof(kek_symbol_t) + obj->k_sym.length);*/
+	case KEK_ARR_OBJS:
+		return (sizeof(kek_array_objs_t)
+				+ (obj->k_arr_objs.h.length - 1) * sizeof(kek_obj_t*));
+	case KEK_UDO: {
+		int var_count;
+		assert(obj->h.cls != NULL);
+		var_count = obj->h.cls->total_syms_instance_cnt
+				+ obj->h.cls->syms_instance_offset;
+		return (sizeof(kek_udo_t) + (var_count - 1) * sizeof(kek_obj_t*));
+	}
 	default:
 		return (sizeof(*obj));
 	}

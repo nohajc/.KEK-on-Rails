@@ -38,7 +38,7 @@ void free_globals() {
 	free(bc_arr_g);
 	free(const_table_g);
 	free(classes_g);
-	free(stack_g);
+	stack_destroy();
 
 #ifdef DEBUG
 	/* free the buffer inside */
@@ -66,6 +66,8 @@ static void debug_add(char *type) {
 		debug_level_g |= DBG_MEM;
 	} else if (strcmp(type, "o") == 0 || strcmp(type, "obj_tbl") == 0) {
 		debug_level_g |= DBG_OBJ_TBL;
+	} else if (strcmp(type, "s") == 0 || strcmp(type, "gc_stats") == 0) {
+		debug_level_g |= DBG_GC_STATS;
 	} else {
 		fprintf(stderr, "Unknown debug level \"%s\"\n", type);
 		exit(1);

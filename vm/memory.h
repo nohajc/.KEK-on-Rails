@@ -11,11 +11,16 @@
 
 #include "vm.h"
 
+// For NEW_SEGMENT_SIZE 1024*10
+// The array in gc_arrloop.kexe is too big.
+// We need to detect it does not fit into segment
+// and possibly allocate it in old space.
 #define ARR_INIT_SIZE 512
 
 struct _class;
 
-// Integers are primitive objects without methods - they don't need a class pointer
+// Integers are primitive objects without methods - they don't need a class
+// pointer
 union _kek_obj * alloc_integer(void);
 union _kek_obj * alloc_array(struct _class * arr_class);
 void alloc_arr_elems(struct _kek_array * arr);
@@ -30,13 +35,13 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /******************************************************************************/
 /* memory managment */
 
-/* http://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
-/* http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
+/* jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
+/* citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
 
 /* from claus */
-#define SEGMENT_SIZE (2*1024) /* FIXME TODO 2KB for now */
-#define OBJ_ALIGN sizeof(data_t)
-#define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
+#define SEGMENT_SIZE (4*1024) /* FIXME TODO 4KB for now */
+#define OBJ_ALIGN 8
+#define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)) + 8)
 
 /* Remember set */
 typedef struct _segment_slots_buffer {
@@ -75,11 +80,7 @@ typedef struct _segment {
 	void *end; /* pointer to the end of the data of this segment */
 
 	struct _segment *next;
-
-	double data[1];
-	/* data[size-1] */
 } segment_t;
-
 
 extern segment_t *segments_old_space_g;
 
@@ -137,9 +138,8 @@ typedef enum _gc_type {
 	GC_GEN // generational GC. new and old space
 } gc_type_t;
 
-#define GC_TYPE_DEFAULT GC_NONE
+#define GC_TYPE_DEFAULT GC_NEW
 extern gc_type_t gc_type_g;
-
 
 typedef struct _gc_obj {
 	kek_obj_t *obj;
@@ -147,25 +147,38 @@ typedef struct _gc_obj {
 	struct _gc_obj *next;
 } gc_obj_t;
 
+typedef struct _gc_carrlist {
+	kek_array_t *arr;
+	struct _gc_carrlist *next;
+} gc_carrlist_t;
+
 #define GC_TICKS_DEFAULT 10
 extern int gc_ticks_g; /* how often will gc run */
 extern gc_obj_t *gc_obj_g;
 extern gc_obj_t *gc_obj_root_g;
+extern gc_carrlist_t *gc_carrlist_root_g;
 
-/* this function will be called from the main loop in vm */
+/* GC API */
 void gc(void);
+void gc_lock(void);
+void gc_unlock(void);
+double gc_remaining(void);
+void *gc_obj_malloc(type_t type, class_t *cls, size_t size);
+bool gc_in_new(void *ptr, size_t size);
+bool gc_in_old(void *ptr, size_t size);
+
+
 void gc_init(void);
 void gc_free(void);
 void gc_delete_all(void);
-
 void gc_rootset(void (*fn)(kek_obj_t **));
 
 /******************************************************************************/
 /* cheney */
 
-#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
-
-#define NEW_SEGMENT_SIZE 1024*10
+/* moved to vm.h */
+//#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
+#define NEW_SEGMENT_SIZE (1024*20)
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */
