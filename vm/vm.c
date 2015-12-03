@@ -1302,7 +1302,7 @@ size_t vm_obj_size(kek_obj_t *obj) {
 	/*case KEK_SYM: // Should be only in const. table
 		return (sizeof(kek_symbol_t) + obj->k_sym.length);*/
 	case KEK_ARR_OBJS:
-		return (sizeof(kek_array_objs_t) + (obj->k_arr_objs.length - 1) * sizeof(kek_obj_t*));
+		return (sizeof(kek_array_objs_t) + (obj->k_arr_objs.h.length - 1) * sizeof(kek_obj_t*));
 	case KEK_UDO: {
 		int var_count;
 		assert(obj->h.cls != NULL);

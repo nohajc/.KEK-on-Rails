@@ -239,7 +239,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs() KEK_ARR\n");
 
 		arr_objs = (kek_obj_t *) ((uint8_t *) obj->k_arr.elems
-				- sizeof(header_t));
+				- sizeof(kek_array_objs_header_t));
 		assert(arr_objs->h.t == KEK_ARR_OBJS);
 
 		vm_debug(DBG_GC,
@@ -265,7 +265,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		break;
 	case KEK_ARR_OBJS:
 		/* We will encounter this while scanning. However, we know
-		that elems have been already copied, so we just skip this */
+		 that elems have been already copied, so we just skip this */
 		break;
 	case KEK_EXINFO:
 		assert(0 && "only in cost tbl");
@@ -376,9 +376,9 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	assert(segments_to_space_g != NULL);
 
-//	if (to_space_size_g + size >= NEW_SEGMENT_SIZE) {
-	if ((ptruint_t)((uint8_t *) to_space_free_g + size) >= //
-			(ptruint_t)((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
+	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
+			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
+					+ NEW_SEGMENT_SIZE)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -447,7 +447,7 @@ segment_t *mem_segment_init(size_t size) {
 	 * 0th data.
 	 */
 	/*assert((uint8_t *) s + sizeof(segment_t) + (size - 1) * OBJ_ALIGN == //
-			(uint8_t *) s->beginning + size * OBJ_ALIGN);*/
+	 (uint8_t *) s->beginning + size * OBJ_ALIGN);*/
 
 	return (s);
 }
@@ -826,11 +826,16 @@ void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 	return (ptr);
 }
 
+//if ((ptruint_t)((uint8_t *) to_space_free_g + size) >= //
+//		(ptruint_t)((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
+
 double gc_remaining(void) {
-	if (gc_type_g == GC_NONE) return 0;
+	if (gc_type_g == GC_NONE)
+		return 0;
+
 	return ((double) ((ptruint_t) to_space_free_g
 			- (ptruint_t) segments_to_space_g->beginning)
-			/ (double) NEW_SEGMENT_SIZE);
+			/ ((double) NEW_SEGMENT_SIZE));
 }
 
 /******************************************************************************/
@@ -842,7 +847,7 @@ kek_obj_t * alloc_array(class_t * arr_class) {
 kek_obj_t *alloc_array_objs(int items) {
 	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
-	ret->k_arr_objs.length = items;
+	ret->k_arr_objs.h.length = items;
 	return ret;
 }
 
