@@ -1299,6 +1299,17 @@ size_t vm_obj_size(kek_obj_t *obj) {
 		return (sizeof(class_t));
 	case KEK_STR:
 		return (sizeof(kek_string_t) + obj->k_str.length);
+	/*case KEK_SYM: // Should be only in const. table
+		return (sizeof(kek_symbol_t) + obj->k_sym.length);*/
+	case KEK_ARR_OBJS:
+		return (sizeof(kek_array_objs_t) + (obj->k_arr_objs.length - 1) * sizeof(kek_obj_t*));
+	case KEK_UDO: {
+		int var_count;
+		assert(obj->h.cls != NULL);
+		var_count = obj->h.cls->total_syms_instance_cnt
+				+ obj->h.cls->syms_instance_offset;
+		return (sizeof(kek_udo_t) + (var_count - 1) * sizeof(kek_obj_t*));
+	}
 	default:
 		return (sizeof(*obj));
 	}

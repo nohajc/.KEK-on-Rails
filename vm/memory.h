@@ -11,7 +11,7 @@
 
 #include "vm.h"
 
-// For NEW_SEGMENT_SIZE 1024*10 and ARR_INIT_SIZE 1024
+// For NEW_SEGMENT_SIZE 1024*10
 // The array in gc_arrloop.kexe is too big.
 // We need to detect it does not fit into segment
 // and possibly allocate it in old space.
@@ -39,8 +39,8 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /* citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
 
 /* from claus */
-#define SEGMENT_SIZE (2*1024) /* FIXME TODO 2KB for now */
-#define OBJ_ALIGN sizeof(data_t)
+#define SEGMENT_SIZE (4*1024) /* FIXME TODO 4KB for now */
+#define OBJ_ALIGN 8
 #define ALIGNED(n) (((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1))
 
 /* Remember set */
@@ -80,9 +80,6 @@ typedef struct _segment {
 	void *end; /* pointer to the end of the data of this segment */
 
 	struct _segment *next;
-
-	double data[1];
-	/* data[size-1] */
 } segment_t;
 
 extern segment_t *segments_old_space_g;
@@ -181,8 +178,8 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 
 /* moved to vm.h */
 //#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
-//#define NEW_SEGMENT_SIZE 1024*10
-#define NEW_SEGMENT_SIZE 1024*1000
+#define NEW_SEGMENT_SIZE 1024*20
+//#define NEW_SEGMENT_SIZE 1024*1000
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */

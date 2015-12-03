@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-typedef double data_t; /* data type */
-
 /******************************************************************************/
 /* objects ********************************************************************/
 
@@ -88,6 +86,7 @@ typedef struct _kek_symbol {
 /* array - mutable */
 typedef struct _kek_array_objs {
 	header_t h;
+	int length;
 	union _kek_obj *elems[1];
 } kek_array_objs_t;
 

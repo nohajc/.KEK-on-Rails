@@ -386,9 +386,6 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	ptr = to_space_free_g;
 
-	assert((void *) (((uint8_t *) to_space_free_g) + size * OBJ_ALIGN) == //
-			(void *) (((data_t *) to_space_free_g) + size));
-
 	to_space_free_g = (uint8_t *) to_space_free_g + size;
 	to_space_size_g += size;
 
@@ -431,9 +428,9 @@ segment_t *mem_segment_init(size_t size) {
 	assert(size > 0);
 
 #if FORCE_CALLOC == 1
-	s = calloc(sizeof(segment_t) + (size - 1), OBJ_ALIGN);
+	s = calloc(sizeof(segment_t) + size, 1);
 #else /* FORCE_CALLOC */
-	s = malloc(sizeof(segment_t) + (size - 1) * OBJ_ALIGN);
+	s = malloc(sizeof(segment_t) + size);
 #endif /* FORCE_CALLOC */
 
 	assert(s);
@@ -443,14 +440,14 @@ segment_t *mem_segment_init(size_t size) {
 	s->size = size;
 	s->used = 0;
 	s->next = NULL;
-	s->beginning = s->data;
+	s->beginning = s + 1; // Same as (uint8_t*) s + sizeof(segment_t)
 	s->end = s->beginning;
 
 	/* in the segment_t, there is 1 data. but the s->beginning points to the
 	 * 0th data.
 	 */
-	assert((uint8_t *) s + sizeof(segment_t) + (size - 1) * OBJ_ALIGN == //
-			(uint8_t *) s->beginning + size * OBJ_ALIGN);
+	/*assert((uint8_t *) s + sizeof(segment_t) + (size - 1) * OBJ_ALIGN == //
+			(uint8_t *) s->beginning + size * OBJ_ALIGN);*/
 
 	return (s);
 }
@@ -473,7 +470,7 @@ void *mem_segment_malloc(size_t size) {
 
 	if (gc_type_g != GC_NONE) {
 		int *x = (int *) 42;
-		*x = 666;
+		*x = 666; // WTF?
 	}
 
 	assert(segments_g != NULL);
@@ -487,8 +484,8 @@ void *mem_segment_malloc(size_t size) {
 
 	ptr = segments_g->end;
 	segments_g->used += size;
-	segments_g->end =
-			(data_t *) ((uint8_t *) segments_g->end + size * OBJ_ALIGN);
+	// I don't know why but if I don't add 8, I get segfault...
+	segments_g->end = (uint8_t *) segments_g->end + size + 8;
 
 	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);
@@ -830,7 +827,7 @@ void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 }
 
 double gc_remaining(void) {
-	if (gc_type_g == GC_NONE) return;
+	if (gc_type_g == GC_NONE) return 0;
 	return ((double) ((ptruint_t) to_space_free_g
 			- (ptruint_t) segments_to_space_g->beginning)
 			/ (double) NEW_SEGMENT_SIZE);
@@ -843,8 +840,10 @@ kek_obj_t * alloc_array(class_t * arr_class) {
 }
 
 kek_obj_t *alloc_array_objs(int items) {
-	return (gc_obj_malloc(KEK_ARR_OBJS, NULL,
+	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
+	ret->k_arr_objs.length = items;
+	return ret;
 }
 
 void alloc_arr_elems(kek_array_t * arr) {
