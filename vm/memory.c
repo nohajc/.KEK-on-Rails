@@ -392,7 +392,7 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	vm_debug(DBG_GC,
 			"gc_cheney_malloc: size=%lu from=%p to=%p (to=%p toend=%p)\n", //
 			size, ptr, to_space_free_g, segments_to_space_g,
-			(uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE * OBJ_ALIGN);
+			(uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE);
 
 	if (!gc_cheney_ptr_in_to_space(ptr, size)) {
 		vm_error("cheney_malloc: ptr=%p is not in to-space\n", ptr);
