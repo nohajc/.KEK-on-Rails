@@ -67,6 +67,21 @@ class Scheme {
 			out.writeln(e.msg())
 		}
 
+		if (args.length() == 2) {
+			// Execute given script
+			try {
+				f = new File(args[1], "r")
+				wi = new FileW(f)
+				rd = new Reader(wi)
+				parser = new Parser(rd)
+				REPL()
+			}
+			catch (e) {
+				out.writeln(e.msg())
+			}
+			return
+		}
+
 		// Launch interactive shell
 		wi = new TermW(Sys.term)
 		rd = new Reader(wi)
