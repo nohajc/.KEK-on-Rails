@@ -1,4 +1,5 @@
 #include "types.kek"
+#include "builtin.kek"
 
 class ParserError : Exception {
 	ParserError(msg) {

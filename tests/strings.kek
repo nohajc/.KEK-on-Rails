@@ -16,5 +16,10 @@ class Main {
 		if (tok[len - 1][lt_len - 1] == "e") {
 			write "Posledni pismeno nazvu programu je \"e\".\n"
 		}
+
+		var str = "ab-ab-ab"
+		Sys.out.writeln(str + "\n")
+		Sys.out.writeln(str.replace("ab", "c") + "\n")
+		Sys.out.writeln(str.replace("ab", "cde") + "\n")
 	}
 }

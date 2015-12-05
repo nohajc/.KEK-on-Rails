@@ -23,15 +23,16 @@ void init_kek_string_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 5;
+	classes_g[classes_cnt_g].methods_cnt = 6;
 
 	classes_g[classes_cnt_g].methods = malloc(
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0, false, string_length);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "split", 1, false, string_split);
-	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "toInt", 0, false, string_toInt);
-	vm_init_native_method(&classes_g[classes_cnt_g].methods[3], "fromArray", 1, true, string_fromArray);
-	vm_init_native_method(&classes_g[classes_cnt_g].methods[4], "fromInt", 1, true, string_fromInt);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "replace", 2, false, string_replace);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[3], "toInt", 0, false, string_toInt);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[4], "fromArray", 1, true, string_fromArray);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[5], "fromInt", 1, true, string_fromInt);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -123,6 +124,72 @@ void string_toInt(void) {
 	}
 	kek_n = make_integer(n);
 	PUSH(kek_n);
+	BC_RET;
+}
+
+void string_replace(void) {
+	kek_string_t * str = (kek_string_t*)THIS;
+	kek_obj_t * from = ARG(0);
+	kek_obj_t * to = ARG(1);
+	size_t from_len, to_len, dst_len, occ_count;
+	int len_diff;
+	char * ptr, * next, * dst_buf, * dst_ptr;
+
+	if (!IS_STR(from)) {
+		vm_error("Expected string as first argument.\n");
+	}
+	if (!IS_STR(to)) {
+		vm_error("Expected string as second argument.\n");
+	}
+
+	from_len = strlen(from->k_str.string);
+	to_len = strlen(to->k_str.string);
+	next = str->string;
+	occ_count = 0;
+
+	while (true) {
+		next = strstr(next, from->k_str.string);
+		if (next) {
+			occ_count++;
+			next += from_len;
+		}
+		else break;
+	}
+	len_diff = to_len - from_len;
+	dst_len = str->length;
+	if (len_diff > 0) {
+		dst_len += occ_count * len_diff;
+	}
+	dst_buf = malloc((dst_len + 1) * sizeof(char));
+	dst_ptr = dst_buf;
+	ptr = next = str->string;
+
+	while (*ptr) {
+		size_t cnt;
+		next = strstr(next, from->k_str.string);
+		if (!next) {
+			cnt = strlen(ptr);
+			strncpy(dst_ptr, ptr, cnt);
+			dst_ptr += cnt;
+			break;
+		}
+		// Copy unchanged part of string
+		cnt = next - ptr;
+		if (cnt > 0) {
+			strncpy(dst_ptr, ptr, cnt);
+			dst_ptr += cnt;
+			ptr += cnt;
+		}
+		// Copy to string
+		strncpy(dst_ptr, to->k_str.string, to_len);
+		dst_ptr += to_len;
+		ptr += from_len;
+		next = ptr;
+	}
+	*dst_ptr = '\0';
+
+	PUSH(new_string_from_cstring(dst_buf));
+	free(dst_buf);
 	BC_RET;
 }
 

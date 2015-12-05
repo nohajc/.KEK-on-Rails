@@ -64,7 +64,7 @@ const struct {
 //		{ "Integer", kwINTEGER }, //
 //		{ "Record", kwRECORD }, //
 		{ "for", kwFOR },
-		{ "to", kwTO },
+//		{ "to", kwTO },
 		{ "downto", kwDOWNTO },
 		{ "break", kwBREAK },
 		{ "class", kwCLASS },
