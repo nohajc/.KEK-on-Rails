@@ -62,6 +62,7 @@ void native_new_array(kek_array_t * arr) {
 
 void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 	if (idx >= arr->alloc_size) {
+		//gc_rootset_add((kek_obj_t **)&arr); /* FIXME TODO NESROTOM */
 		native_grow_array(arr, idx + 1);
 		// TODO: this is problematic
 		// We need to update arr pointer if it was copied by GC
