@@ -516,8 +516,7 @@ void *mem_segment_malloc(size_t size) {
 
 	ptr = segments_g->end;
 	segments_g->used += size;
-	// I don't know why but if I don't add 8, I get segfault...
-	segments_g->end = (uint8_t *) segments_g->end + size + 8;
+	segments_g->end = (uint8_t *) segments_g->end + size;
 
 	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);

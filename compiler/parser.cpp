@@ -705,7 +705,7 @@ Expr * Ident(Env env, Env rootEnv, bool rvalue) {
 			env.mthEnv = NULL;
 			t = Ident(env, rootEnv, rvalue);
 		}
-		return new Call(e, a, external, t);
+		return new Call(e, a, external, t, !rvalue);
 	}
 
 	return e;

@@ -56,11 +56,12 @@ ArgList::~ArgList() {
 	delete next;
 }
 
-Call::Call(Expr * m, ArgList * a, bool e, Expr * t) {
+Call::Call(Expr * m, ArgList * a, bool e, Expr * t, bool vc) {
 	method = m;
 	args = a;
 	external = e;
 	target = t;
+	void_call = vc;
 }
 
 Call::~Call() {
@@ -690,6 +691,9 @@ uint32_t Call::Translate() {
 
 	if (target) {
 		target->Translate();
+	}
+	else if (void_call) {
+		bco_w0(bcout_g, POP);
 	}
 
 	return 0;

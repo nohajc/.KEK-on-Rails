@@ -1200,6 +1200,12 @@ void vm_execute_bc(void) {
 			PUSH(stack_g[fp_g]->k_exi.obj_thrown);
 			break;
 		}
+		case POP: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "POP");
+			(void)stack_pop();
+			break;
+		}
 		default:
 			vm_error("Invalid instruction at %u\n", ip_g);
 			break;
