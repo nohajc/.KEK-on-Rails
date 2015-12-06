@@ -51,7 +51,11 @@ class Reader {
 			idx++
 			return last
 		}
-		line = f.readln()
+		while (1) {
+			line = f.readln()
+			if (line == nil) break
+			if (line[0] != "#") break
+		}
 		if (!line) len = 0
 		else len = line.length()
 		idx = 0

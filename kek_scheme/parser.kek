@@ -37,7 +37,7 @@ class Parser {
 	}
 
 	skipComment(firstC) {
-		while (firstC == ";" || firstC == "#") {
+		while (firstC == ";") {
 			skipLine()
 			firstC = skipWS()
 		}

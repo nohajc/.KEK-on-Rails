@@ -212,6 +212,40 @@ class scmLet : scmBSyntax {
 	}
 }
 
+class scmAnd : scmBSyntax {
+	scmAnd() {
+		super()
+	}
+
+	eval(env, args) {
+		var next = args
+		while (next.tag == Tag.CONS) {
+			if (next.car.eval(env) == G.scmFalse) {
+				return G.scmFalse
+			}
+			next = next.cdr
+		}
+		return G.scmTrue
+	}
+}
+
+class scmOr : scmBSyntax {
+	scmOr() {
+		super()
+	}
+
+	eval(env, args) {
+		var next = args
+		while (next.tag == Tag.CONS) {
+			if (next.car.eval(env) != G.scmFalse) {
+				return G.scmTrue
+			}
+			next = next.cdr
+		}
+		return G.scmFalse
+	}
+}
+
 // **********************************************************************
 
 class scmBFunction : scmObject {
@@ -226,6 +260,19 @@ class scmBFunction : scmObject {
 		if (len != numArgs) {
 			throw new ArgumentNumError(numArgs, len)
 		}
+	}
+}
+
+class scmNotF : scmBFunction {
+	scmNotF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var a = args[0]
+		if (a == G.scmFalse) return G.scmTrue
+		else return G.scmFalse
 	}
 }
 
@@ -373,6 +420,43 @@ class scmEqF : scmBFunction {
 	}
 }
 
+class scmEqualF : scmBFunction {
+	scmEqualF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var a = args[0]
+		var b = args[1]
+		var res
+		switch (a.tag) {
+		case Tag.INTEGER:
+			if (b.tag != Tag.INTEGER) {
+				res = 0
+			}
+			else {
+				res = a.val == b.val
+			}
+		case Tag.STRING:
+			if (b.tag != Tag.STRING) {
+				res = 0
+			}
+			else {
+				res = a.str == b.str
+			}
+		case Tag.SYMBOL:
+			res = a == b
+		default:
+			res = 0
+		}
+		if (res) {
+			return G.scmTrue
+		}
+		return G.scmFalse
+	}
+}
+
 class scmNumEqF : scmBFunction {
 	scmNumEqF() {
 		super(2)
@@ -477,6 +561,21 @@ class scmStringReplaceF : scmBFunction {
 	}
 }
 
+class scmStringToSymbolF : scmBFunction {
+	scmStringToSymbolF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var s = args[0]
+		if (s.tag != Tag.STRING) {
+			throw new EvalError("Expected string as argument", s)
+		}
+		return scmSymbol.getSym(s.str)
+	}
+}
+
 class scmCmdArgsF : scmBFunction {
 	var argsVector
 
@@ -578,7 +677,12 @@ class scmReadLineF : scmBFunction {
 		}
 		var ln = port.handle.readln()
 		if (ln == nil) return G.scmNil
-		return new scmString(ln)
+		var ret = []
+		var i
+		for (i = 0; i < ln.length() - 1; i++) {
+			ret[i] = ln[i]
+		}
+		return new scmString(String.fromArray(ret))
 	}
 }
 

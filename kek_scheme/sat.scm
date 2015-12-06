@@ -10,12 +10,12 @@
 
 ; Example:
 ; input: (a | b | c) & (!a | !c) & b
-; parsed: ((a b c) ((! a) (! c)) (b))
+; parsed: (lambda (a b c d) (and (or a b c) (or (not a) (not c)) (or b)))
 
 (define (read-liter tok)
   (if (string=? (car tok) "!")
-	 (cons (list '! (cadr tok)) (cddr tok))
-	 tok))
+	 (cons (list 'not (string->symbol (cadr tok))) (cddr tok))
+	 (cons (string->symbol (car tok)) (cdr tok))))
 
 (define (read-clause-rest tok)
   (if (null? tok)
@@ -40,13 +40,13 @@
   (if (string=? (car tok) "(")
 	 (let ((cl-t (read-clause (cdr tok))))
 		(let ((fr-t (read-form-rest (cddr cl-t))))
-		  (cons (cons (car cl-t) (car fr-t)) (cdr fr-t))))
+		  (cons (cons (cons 'or (car cl-t)) (car fr-t)) (cdr fr-t))))
 	 (let ((lit-t (read-liter tok)))
 		(let ((fr-t (read-form-rest (cdr lit-t))))
-        (cons (cons (list (car lit-t)) (car fr-t)) (cdr fr-t))))))
+        (cons (cons (cons 'or (list (car lit-t))) (car fr-t)) (cdr fr-t))))))
 
 (define (read-formula tok)
-  (car (read-form tok)))
+  (cons 'and (car (read-form tok))))
 
 (define (sep-kw str kw)
   (string-replace str (car kw) (string-append " " (car kw) " ")))
@@ -63,15 +63,27 @@
 	 (lambda (lst) (cdr lst))
 	 str))
 
+(define operators '("(" ")" "&" "|" "!"))
+
+(define (var? a)
+  (null? (filter (lambda (x) (string=? x a)) operators)))
+
+(define (solve form varnum)
+  (print form)
+  (newline)
+  (print varnum)
+  (newline))
+
 (define (read-input f)
   (let ((ln (read-line f)))
 	 (unless (eof-object? ln)
 		(let ((tokens
         (string-split
-          (sep-keywords ln '("(" ")" "&" "|" "!")))))
-		  (print (read-formula tokens))
-        (newline)
-        (read-input f)))))
+          (sep-keywords ln operators))))
+		  (let ((formlst (read-formula tokens))
+				  (vars (remove-duplicates (map string->symbol (filter var? tokens)))))
+			 (solve (eval (list 'lambda vars formlst)) (length vars))
+        (read-input f))))))
 
 ;------------------------------------------------------------
 (define argv (current-command-line-arguments))
