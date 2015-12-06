@@ -496,7 +496,7 @@ bool mem_free() {
 
 void *mem_segment_malloc(size_t size) {
 	void *ptr;
-	segment_t *new;
+	segment_t *new_seg;
 
 	size = ALIGNED(size);
 
@@ -509,9 +509,14 @@ void *mem_segment_malloc(size_t size) {
 
 	if (segments_g->used + size > segments_g->size) {
 		vm_debug(DBG_MEM, "We need to allocate a new segment.\n");
-		new = mem_segment_init(SEGMENT_SIZE);
-		new->next = segments_g;
-		segments_g = new;
+		if (size > SEGMENT_SIZE) {
+			new_seg = mem_segment_init(size);
+		}
+		else {
+			new_seg = mem_segment_init(SEGMENT_SIZE);
+		}
+		new_seg->next = segments_g;
+		segments_g = new_seg;
 	}
 
 	ptr = segments_g->end;
@@ -912,9 +917,7 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 	vm_debug(DBG_MEM, "realloc_arr_elems\n");
 
 	while (arr->alloc_size < length) {
-		//arr->alloc_size *= 2;
-		// FIXME TODO NESROTOM
-		arr->alloc_size += 64;
+		arr->alloc_size = (arr->alloc_size * 3) / 2;
 	}
 
 	new_elems = alloc_const_arr_elems(arr->alloc_size);
