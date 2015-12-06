@@ -688,6 +688,9 @@ uint32_t Call::Translate() {
 	else {
 		bco_ww2(bcout_g, CALL, (uint16_t)mth_idx, (uint16_t)arg_count);
 	}
+	for (int i = 0; i < 16; i++) {
+		bco_w0(bcout_g, NOP);
+	}
 
 	if (target) {
 		target->Translate();
