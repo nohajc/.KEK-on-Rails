@@ -565,7 +565,8 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 			res = make_integer(a != b);
 			break;
 		default:
-			vm_error("bc_bop: unsupported bop %d (a=%p, b=%p)\n", o, a, b);
+			vm_error("bc_bop: unsupported bop %d (a=%p (%d), b=%p (%d))\n",
+					o, a, b, a->h.t, b->h.t);
 			break;
 		}
 		return (kek_obj_t*) res;
@@ -716,7 +717,7 @@ void vm_execute_bc(void) {
 					assert(obj->k_arr.alloc_size != 0);
 					native_grow_array(&obj->k_arr, idx_n + 1);
 				} else if (idx_n >= obj->k_arr.length) {
-					obj->k_arr.length = idx_n + 1;
+					arr_set_length((kek_array_t *) obj, idx_n + 1);
 				}
 				TOP(obj); // Pointer could have changed after native_grow_array
 				/* FIXME: delete this */

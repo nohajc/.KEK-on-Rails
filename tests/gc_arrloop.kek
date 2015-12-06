@@ -1,5 +1,6 @@
-//KEK_TEST_RUNS 1
-//KEK_TEST_ARGS_0 
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 300
+//KEK_TEST_ARGS_1 1000
 
 class Main {
   static main(args) {
@@ -7,8 +8,9 @@ class Main {
     var r
     var arr
     var repeat = 10
-    var cnt = 1000 // it will realloc once
+    //var cnt = 1000 // it will realloc once
     //var cnt = 300 // no realloc
+    var cnt = args[1].toInt()
     
     var expval = 0
     var expval_from
@@ -69,15 +71,20 @@ class Main {
         //write arr[i]
         
         if (arr[i] != expval_check) {
-          write "WRITE MISMATCH\n"
+          write "JUST WRITE MISMATCH\n"
+          
           write "r = "
           write r
-          write "expval_check = "
-          write expval_check
-          write "arr[i] = "
-          write arr[i]
+          
           write "i = "
           write i
+          
+          write "arr[i] = "
+          write arr[i]
+          
+          write "expval_check = "
+          write expval_check         
+          
           return
         }
         expval_check = expval_check + 1

@@ -42,17 +42,6 @@ void gc_obj_add(kek_obj_t *obj, size_t size) {
 }
 
 void gc_obj_free(gc_obj_t *obj) {
-	switch (obj->obj->h.t) {
-	case KEK_ARR:
-		/* TODO FIXME: shouldn't we delete also the elems? */
-//		free(obj->obj->k_arr.elems);
-		break;
-	default:
-		break;
-	}
-
-	/* this object is on our heap */
-	/* free(obj->obj); */
 	free(obj);
 }
 
@@ -67,7 +56,8 @@ void gc_delete_all() {
 	vm_debug(DBG_GC, "gc_delete_all\n");
 
 	while (gcptr != NULL) {
-		vm_debug(DBG_GC, "gc_delete_all objptr=%p\n", gcptr->obj);
+		vm_debug(DBG_GC, "gc_delete_all gcptr=%p (%lu)\n", gcptr,
+				(ptruint_t) gcptr);
 		gcptr_next = gcptr->next;
 		gc_obj_free(gcptr);
 		gcptr = gcptr_next;
@@ -277,10 +267,6 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 				obj->k_arr.elems);
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: obj->k_arr.length: %d\n",
 				obj->k_arr.length);
-
-		vm_debug(DBG_GC, "== %p\n", obj->k_arr.elems[515]);
-		vm_debug(DBG_GC, "== %p\n", obj->k_arr.elems[515]);
-		vm_debug(DBG_GC, "== %p\n", obj->k_arr.elems[515]);
 
 		for (i = 0; i < obj->k_arr.length; i++) {
 			vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
@@ -942,7 +928,7 @@ kek_obj_t *alloc_array_objs(int items) {
 	vm_debug(DBG_GC, "alloc_array_objs BEGIN ++++++++++++++++++++++++++++++\n");
 	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
-	ret->k_arr_objs.h.length = items;
+	ret->k_arr_objs.h.length = 0;
 	vm_debug(DBG_GC, "alloc_array_objs END --------------------------------\n");
 	return ret;
 }
@@ -962,12 +948,14 @@ kek_obj_t **alloc_const_arr_elems(int length) {
 	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 }
 
-void realloc_arr_elems(kek_array_t *arr, int length) {
+void arr_realloc_elems(kek_array_t *arr, int length) {
 	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_obj_t **new_elems;
 	int i;
 
-	vm_debug(DBG_MEM, "realloc_arr_elems\n");
+	vm_debug(DBG_MEM, "qq realloc_arr_elems asbef=%d len=%d arr->length=%d"
+			" elemlen=%d\n", arr->alloc_size, length, arr->length,
+			KEK_ARR_OBJS(arr)->h.length);
 
 	assert(arr->elems[arr->length - 1] != NULL);
 
@@ -975,7 +963,12 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 		arr->alloc_size = (arr->alloc_size * 3) / 2;
 	}
 
+	vm_debug(DBG_MEM, "qq realloc_arr_elems then arr->alloc_size=%d \n", //
+			arr->alloc_size);
+
 	new_elems = alloc_const_arr_elems(arr->alloc_size);
+
+
 
 	for (i = 0; i < arr->length; i++) {
 		new_elems[i] = arr->elems[i];
@@ -985,6 +978,7 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 		new_elems[i] = NULL;
 	}
 
+	KEK_ARR_OBJS(arr)->h.length = arr->length;
 	arr->elems = new_elems;
 
 	gc_rootset_remove(id);

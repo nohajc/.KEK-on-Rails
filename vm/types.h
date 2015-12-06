@@ -103,6 +103,10 @@ typedef struct _kek_array {
 	union _kek_obj **elems;
 } kek_array_t;
 
+#define KEK_ARR_OBJS(obj) ((kek_array_objs_t *) ((uint8_t *) \
+		((kek_array_t *)(obj))->elems \
+		- sizeof(kek_array_objs_header_t)))
+
 typedef struct _try_range {
 	int try_addr;
 	int catch_addr;

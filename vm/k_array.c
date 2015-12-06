@@ -54,6 +54,12 @@ void init_kek_array_class(void) {
 	vm_debug(DBG_GC, "init_kek_array_class END ----------------------------\n");
 }
 
+void arr_set_length(kek_array_t *arr, int length) {
+	arr->length = length;
+	assert(KEK_ARR_OBJS(arr)->h.h.t == KEK_ARR_OBJS);
+	KEK_ARR_OBJS(arr)->h.length = length;
+}
+
 // Constructor of an empty array.
 // Can be called from bytecode, so we use our custom stack.
 void new_array(void) {
@@ -64,7 +70,7 @@ void new_array(void) {
 	size_t arr_init_size_real = sizeof(kek_array_objs_t)
 			+ (ARR_INIT_SIZE - 1) * sizeof(kek_obj_t *);
 
-	/* FIXME */
+	/* FIXME? */
 	if (gc_type_g != GC_NONE && !gc_cheney_can_malloc(arr_init_size_real)) {
 		vm_debug(DBG_GC, "new_array: not enought space, force gc! arr.as=%d\n",
 				arr->alloc_size);
@@ -103,7 +109,7 @@ void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 		// TODO: this is problematic
 		// We need to update arr pointer if it was copied by GC
 	} else if (idx >= arr->length) {
-		arr->length = idx + 1;
+		arr_set_length(arr, idx + 1);
 	}
 	arr->elems[idx] = obj;
 
@@ -161,7 +167,7 @@ void array_append(void) {
 kek_obj_t * native_array_length(kek_array_t * arr) {
 	kek_obj_t * kek_len = (kek_obj_t*) make_integer(arr->length);
 
-	vm_error("delete this error pls.\n");
+	assert(arr->length == KEK_ARR_OBJS(arr)->h.length);
 
 	return kek_len;
 }
@@ -172,7 +178,7 @@ void native_grow_array(kek_array_t * arr, int length) {
 	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_array_objs_t *arr_objs;
 	int i;
-	realloc_arr_elems(arr, length);
+	arr_realloc_elems(arr, length);
 
 	// TODO: we need arr pointer update
 	// if realloc triggered GC
@@ -184,8 +190,7 @@ void native_grow_array(kek_array_t * arr, int length) {
 			- sizeof(kek_array_objs_header_t));
 	assert(arr_objs->h.h.t == KEK_ARR_OBJS);
 
-	arr_objs->h.length = length;
-	arr->length = length;
+	arr_set_length(arr, length);
 
 	gc_rootset_remove(id);
 	vm_debug(DBG_GC, "array_grow_array END --------------------------------\n");
