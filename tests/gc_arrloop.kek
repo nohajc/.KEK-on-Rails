@@ -1,46 +1,88 @@
 //KEK_TEST_RUNS 1
 //KEK_TEST_ARGS_0 
 
-class MyArr {
-  var cnt
-  var arr
-  MyArr(c) {
-    cnt = c
-    arr = []
-  }
-  
-  fill() {
-    var i
-    for (i = 0; i < cnt; i++) {
-      arr[i] = i
-    }
-  }
-  
-  print() {
-    var i
-    for (i = 0; i < cnt; i++) {
-      write arr[i]
-    }
-  }
-}
-
 class Main {
   static main(args) {
     var i
-    var arr = []
-    var cnt = 5000
+    var r
+    var arr
+    var repeat = 10
+    var cnt = 1000 // it will realloc once
+    //var cnt = 300 // no realloc
     
-    write "save and print"
+    var expval = 0
+    var expval_from
+    var expval_check
     
-    for (i = 0; i < cnt; i++) {
-      arr[i] = i
-      write arr[i]
-    }
-    
-    //write "now just print"
-    
-    //for (i = 0; i < cnt; i++) {
-    //  write arr[i]
-    //}
-  }
-}
+    for (r = 0; r < repeat; r++) {
+      //write "beginning of repeat = "
+      //write r
+      arr = []
+      expval_from = expval
+      
+      for (i = 0; i < cnt; i++) {
+        //write "load and write\n"
+        
+        //write "l&w expval = "
+        //write expval
+        
+        arr[i] = expval
+                     
+        //write "l&w r = "
+        //write r
+        
+        //write "l&w i = "
+        //write i
+        
+        //write "l&w arr[i] = "
+        //write arr[i]
+        
+        if (arr[i] != expval) {
+          write "L&W MISMATCH\n"
+          write "r = "
+          write r
+          write "arr[i] = "
+          write arr[i]
+          write "i = "
+          write i
+          write "expval = "
+          write expval
+          return
+        }
+        
+        expval = expval + 1
+      }
+      
+      //write "now just write\n"
+      expval_check = expval_from
+      for (i = 0; i < cnt; i++) {
+        //write "write r = "
+        //write r
+        
+        //write "write i = "
+        //write i
+        
+        //write "write expval_check = "
+        //write expval_check
+        
+        //write "write arr[i] = "
+        //write arr[i]
+        
+        if (arr[i] != expval_check) {
+          write "WRITE MISMATCH\n"
+          write "r = "
+          write r
+          write "expval_check = "
+          write expval_check
+          write "arr[i] = "
+          write arr[i]
+          write "i = "
+          write i
+          return
+        }
+        expval_check = expval_check + 1
+      }
+    } // for repeat
+    write "ok\n"
+  } // main
+} // Main

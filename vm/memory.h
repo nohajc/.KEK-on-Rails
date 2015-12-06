@@ -201,6 +201,7 @@ bool gc_cheney_ptr_in_to_space(void *, size_t);
 
 void gc_cheney_init(void);
 void gc_cheney_free(void);
+bool gc_cheney_can_malloc(size_t size);
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size);
 void *gc_cheney_calloc(type_t type, class_t *cls, size_t size);
 void gc_cheney_scavenge();

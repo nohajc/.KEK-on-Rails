@@ -134,19 +134,26 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 	kek_obj_t *copy;
 
-	vm_debug(DBG_MEM, "gc_cheney_copy_roots: objptr=%p obj=%p t=%d\n", objptr,
-			obj, obj->h.t);
+	vm_debug(DBG_GC, "gc_cheney_copy_roots: objptr=%p obj=%p t=%d\n^^^\n\n",
+			objptr, obj, obj->h.t);
+
+	if (obj->h.t == KEK_ARR) {
+		vm_debug(DBG_GC, "yes, this is an array. alloc_size=%d\n\n",
+				obj->k_arr.alloc_size);
+	}
 
 	assert(IS_PTR(obj));
 	assert(!vm_is_const(obj));
 
 	if (obj->h.t == KEK_COPIED) {
-		vm_debug(DBG_MEM, "gc_cheney_copy_roots: it's a copy, skip\n");
+		vm_debug(DBG_GC, "gc_cheney_copy_roots: it's a copy, skip\n");
 		*objptr = (kek_obj_t *) obj->h.cls;
 		return;
 	}
 
 	copy = gc_cheney_copy_obj_to_space_free(obj);
+	assert(copy->h.t == obj->h.t);
+
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) copy;
 	obj = copy;
@@ -234,8 +241,21 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		kek_obj_t *arr_objs;
 		int i;
 
+		vm_debug(DBG_GC, "+++++ KEK_ARR +++++\n");
+		vm_debug(DBG_GC, "KA obj=%p\n", obj);
+		vm_debug(DBG_GC, "KA obj->k_arr.elems=%p\n", obj->k_arr.elems);
+
+		/* try to not copy elems if there are none yet */
+		if (obj->k_arr.elems == NULL) {
+			vm_debug(DBG_GC, "\n\nobjs are NULL, skip\n\n");
+			return;
+		}
+
+		assert(obj->k_arr.elems != NULL);
 		arr_objs = (kek_obj_t *) ((uint8_t *) obj->k_arr.elems
 				- sizeof(kek_array_objs_header_t));
+		assert(arr_objs != NULL);
+		vm_debug(DBG_GC, "arr_objs->h.t=%d\n", arr_objs->h.t);
 		assert(arr_objs->h.t == KEK_ARR_OBJS);
 
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs() KEK_ARR "
@@ -243,7 +263,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 				obj->k_arr.length, obj->k_arr.alloc_size,
 				arr_objs->k_arr_objs.h.length);
 
-		assert(obj->k_arr.length == arr_objs->k_arr_objs.h.length);
+		//assert(obj->k_arr.length == arr_objs->k_arr_objs.h.length);
 
 		vm_debug(DBG_GC,
 				"gc_cheney_copy_inner_objs: before copy: obj->k_arr.elems: %p\n",
@@ -258,7 +278,13 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: obj->k_arr.length: %d\n",
 				obj->k_arr.length);
 
+		vm_debug(DBG_GC, "== %p\n", obj->k_arr.elems[515]);
+		vm_debug(DBG_GC, "== %p\n", obj->k_arr.elems[515]);
+		vm_debug(DBG_GC, "== %p\n", obj->k_arr.elems[515]);
+
 		for (i = 0; i < obj->k_arr.length; i++) {
+			vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
+					obj->k_arr.length, i);
 			kek_obj_t * el = obj->k_arr.elems[i];
 			if (el != NULL && IS_PTR(el)) {
 				gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
@@ -366,6 +392,11 @@ void gc_cheney_free() {
 	free(segments_to_space_g);
 }
 
+bool gc_cheney_can_malloc(size_t size) {
+	return ((ptruint_t) ((uint8_t *) to_space_free_g + size) < //
+			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
+					+ NEW_SEGMENT_SIZE));
+}
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	void *ptr;
 	segment_t *new;
@@ -378,9 +409,7 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	assert(segments_to_space_g != NULL);
 
-	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
-			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
-					+ NEW_SEGMENT_SIZE)) {
+	if (!gc_cheney_can_malloc(size)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -910,26 +939,32 @@ kek_obj_t * alloc_array(class_t * arr_class) {
 }
 
 kek_obj_t *alloc_array_objs(int items) {
+	vm_debug(DBG_GC, "alloc_array_objs BEGIN ++++++++++++++++++++++++++++++\n");
 	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
 	ret->k_arr_objs.h.length = items;
+	vm_debug(DBG_GC, "alloc_array_objs END --------------------------------\n");
 	return ret;
 }
 
 void alloc_arr_elems(kek_array_t * arr) {
+	vm_debug(DBG_GC, "alloc_arr_elems BEGIN +++++++++++++++++++++++++++++++\n");
+	arr->alloc_size = ARR_INIT_SIZE;
 	arr->elems = alloc_const_arr_elems(ARR_INIT_SIZE);
 	assert(arr->elems);
-	arr->alloc_size = ARR_INIT_SIZE;
+	vm_debug(DBG_GC, "alloc_arr_elems END ---------------------------------\n");
 }
 
 kek_obj_t **alloc_const_arr_elems(int length) {
+	vm_debug(DBG_GC, "alloc_const_arr_elems BEGIN +++++++++++++++++++++++++\n");
 	kek_obj_t *array_objs = alloc_array_objs(length);
+	vm_debug(DBG_GC, "alloc_const_arr_elems END ---------------------------\n");
 	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 }
 
 void realloc_arr_elems(kek_array_t *arr, int length) {
+	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_obj_t **new_elems;
-
 	int i;
 
 	vm_debug(DBG_MEM, "realloc_arr_elems\n");
@@ -941,22 +976,18 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 	}
 
 	new_elems = alloc_const_arr_elems(arr->alloc_size);
-	// TODO: we need arr pointer update
-	// if realloc triggered GC.
-	// This means we copy the argument arr
-	// to local variable and pass its address to GC rootset
 
 	for (i = 0; i < arr->length; i++) {
 		new_elems[i] = arr->elems[i];
 	}
 
-//#if FORCE_CALLOC == 1
 	for (; i < arr->alloc_size; i++) {
 		new_elems[i] = NULL;
 	}
-//#endif /* FORCE_CALLOC == 1 */
 
 	arr->elems = new_elems;
+
+	gc_rootset_remove(id);
 
 	/* NOTE: the old elems will cleanup GC */
 }

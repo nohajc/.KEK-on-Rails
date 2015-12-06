@@ -15,6 +15,10 @@
 #include "stack.h"
 
 void init_kek_array_class(void) {
+
+	vm_debug(DBG_GC,
+			"init_kek_array_class BEGIN +++++++++++++++++++++++++++\n");
+
 	char name[] = "Array";
 	assert(classes_g);
 	classes_g[classes_cnt_g].t = KEK_CLASS;
@@ -27,15 +31,15 @@ void init_kek_array_class(void) {
 	classes_g[classes_cnt_g].methods = malloc(
 			classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0,
-			false, array_length);
+	false, array_length);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "append", 1,
-			false, array_append);
+	false, array_append);
 
 	classes_g[classes_cnt_g].allocator = alloc_array;
 
 	classes_g[classes_cnt_g].constructor = malloc(sizeof(method_t));
 	vm_init_native_method(classes_g[classes_cnt_g].constructor, "Array", 0,
-			false, new_array);
+	false, new_array);
 
 	classes_g[classes_cnt_g].static_init = NULL;
 
@@ -47,23 +51,51 @@ void init_kek_array_class(void) {
 
 	classes_g[classes_cnt_g].parent_name = NULL;
 	classes_cnt_g++;
+	vm_debug(DBG_GC, "init_kek_array_class END ----------------------------\n");
 }
 
 // Constructor of an empty array.
 // Can be called from bytecode, so we use our custom stack.
 void new_array(void) {
+	vm_debug(DBG_GC, "new array BEGIN +++++++++++++++++++++++++++++++++++++\n");
+
 	kek_array_t * arr = (kek_array_t*) THIS;
+
+	size_t arr_init_size_real = sizeof(kek_array_objs_t)
+			+ (ARR_INIT_SIZE - 1) * sizeof(kek_obj_t *);
+
+	/* FIXME */
+	if (gc_type_g != GC_NONE && !gc_cheney_can_malloc(arr_init_size_real)) {
+		vm_debug(DBG_GC, "new_array: not enought space, force gc! arr.as=%d\n",
+				arr->alloc_size);
+
+		gc_cheney_scavenge();
+
+		if (!gc_cheney_can_malloc(arr_init_size_real)) {
+			vm_error("not enough space even after gc.\n");
+		}
+	}
+
+	/* gc could changed this ptr. */
+	arr = (kek_array_t*) THIS;
+
 	native_new_array(arr);
 
-	BC_RET_SELF;
+	BC_RET_SELF
+	; /* sorry, I don't know how to format this */
+	vm_debug(DBG_GC, "new array END ---------------------------------------\n");
 }
 
 void native_new_array(kek_array_t * arr) {
+	vm_debug(DBG_GC, "native_new_array BEGIN ++++++++++++++++++++++++++++++\n");
 	arr->length = 0;
 	alloc_arr_elems(arr);
+	vm_debug(DBG_GC, "native_new_array END --------------------------------\n");
 }
 
 void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
+	vm_debug(DBG_GC, "native_arr_elem_set BEGIN +++++++++++++++++++++++++++\n");
+
 	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 
 	if (idx >= arr->alloc_size) {
@@ -76,19 +108,26 @@ void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 	arr->elems[idx] = obj;
 
 	gc_rootset_remove(id);
+
+	vm_debug(DBG_GC, "native_arr_elem_set END -----------------------------\n");
 }
 
 void array_length(void) {
+	vm_debug(DBG_GC, "array_length BEGIN ++++++++++++++++++++++++++++++++++\n");
 	kek_array_t * arr = (kek_array_t*) THIS;
 	kek_obj_t * kek_len = native_array_length(arr);
 
 	PUSH(kek_len);
-	BC_RET;
+	BC_RET
+	; /* sorry, I don't know how to format this */
+
+	vm_debug(DBG_GC, "array_length END ------------------------------------\n");
 }
 
 void array_append(void) {
+	vm_debug(DBG_GC, "array_append BEGIN ++++++++++++++++++++++++++++++++++\n");
 	kek_array_t * arr = (kek_array_t*) THIS;
-	uint32_t id = gc_rootset_add((kek_obj_t **)&arr);
+	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_obj_t * obj = ARG(0);
 	int new_len, old_len;
 	int i, j;
@@ -102,10 +141,9 @@ void array_append(void) {
 	if (new_len > arr->alloc_size) {
 		native_grow_array(arr, new_len);
 		// GC phase could have occured, we need to update pointers
-		arr = (kek_array_t*)THIS;
+		arr = (kek_array_t*) THIS;
 		obj = ARG(0);
-	}
-	else {
+	} else {
 		arr->length = new_len;
 
 	}
@@ -114,17 +152,23 @@ void array_append(void) {
 		arr->elems[i] = obj->k_arr.elems[j];
 	}
 	PUSH(NIL);
-	BC_RET;
+	BC_RET
+	; /* sorry, I don't know how to format this */
 	gc_rootset_remove(id);
+	vm_debug(DBG_GC, "array_append END ------------------------------------\n");
 }
 
 kek_obj_t * native_array_length(kek_array_t * arr) {
 	kek_obj_t * kek_len = (kek_obj_t*) make_integer(arr->length);
 
+	vm_error("delete this error pls.\n");
+
 	return kek_len;
 }
 
 void native_grow_array(kek_array_t * arr, int length) {
+	vm_debug(DBG_GC, "array_grow_array BEGIN ++++++++++++++++++++++++++++++\n");
+
 	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_array_objs_t *arr_objs;
 	int i;
@@ -144,4 +188,5 @@ void native_grow_array(kek_array_t * arr, int length) {
 	arr->length = length;
 
 	gc_rootset_remove(id);
+	vm_debug(DBG_GC, "array_grow_array END --------------------------------\n");
 }

@@ -25,7 +25,7 @@ typedef enum _type {
 	KEK_INT, //
 	KEK_STR, //
 	KEK_SYM, //
-	KEK_ARR, //
+	KEK_ARR, //4
 	KEK_ARR_OBJS, //
 	KEK_EXINFO, //
 	KEK_EXPT, //
