@@ -158,7 +158,7 @@ typedef struct _gc_rootset {
 extern gc_rootset_t *gc_rootset_g;
 extern uint32_t gc_rootset_len_g;
 extern uint32_t gc_rootset_size_g;
-int gc_rootset_add(kek_obj_t **obj);
+uint32_t gc_rootset_add(kek_obj_t **obj);
 void gc_rootset_remove(uint32_t id);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
@@ -194,7 +194,6 @@ extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */
 extern size_t to_space_size_g;
-extern void *alloc_ptr_g;
 extern void *scan_ptr_g;
 
 bool gc_cheney_ptr_in_from_space(void *, size_t);

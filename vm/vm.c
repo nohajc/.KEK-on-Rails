@@ -652,6 +652,11 @@ void vm_execute_bc(void) {
 			POP(obj);
 			POP(addr);
 			POP(dst_obj);
+
+			assert(obj != NULL);
+			assert(addr != NULL);
+			assert(dst_obj != NULL);
+
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
 			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
@@ -1333,5 +1338,6 @@ size_t vm_obj_size(kek_obj_t *obj) {
 }
 
 size_t vm_type_size(type_t type) {
+	type = type + 0; /* FIXME: this is probably not needet at all */
 	return (sizeof(kek_obj_t));
 }
