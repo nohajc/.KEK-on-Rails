@@ -259,6 +259,7 @@ void vm_init_const_table_elems(void) {
 			ptr += sizeof(kek_string_t) + obj->k_str.length;
 			break;
 		case KEK_SYM:
+			obj->h.cls = vm_find_class(obj->k_sym.symbol);
 			ptr += sizeof(kek_symbol_t) + obj->k_sym.length;
 			break;
 		case KEK_ARR:
@@ -826,11 +827,14 @@ void vm_execute_bc(void) {
 		case CALLE: {
 			bool static_call;
 			bool tail_call;
-			calle: call_type++;
+			inline_cache_t * ilc;
+			call_type++;
 			arg1 = BC_OP16(++ip_g);
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
 			ip_g += 2;
+			ilc = (void*)&bc_arr_g[ip_g];
+			ip_g += 16;
 			tail_call = bc_arr_g[ip_g] == RET;
 			vm_debug(DBG_BC, "%s %u %u, tail: %s\n", call_str[call_type], arg1,
 					arg2, (tail_call ? "true" : "false"));
@@ -863,15 +867,22 @@ void vm_execute_bc(void) {
 			}
 
 			assert(cls);
-			mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
-			if (mth == NULL) {
-				vm_error("%s \"%s\" has no method %s.\n",
-						(static_call ? "Class" : "Object"), cls->name,
-						sym->k_sym.symbol);
+			if (ilc->cls != cls) { // Inline cache miss
+				mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
+				if (mth == NULL) {
+					vm_error("%s \"%s\" has no method %s.\n",
+							(static_call ? "Class" : "Object"), cls->name,
+							sym->k_sym.symbol);
+				}
+				if (mth->args_cnt != arg2) {
+					vm_error("Method expects %d arguments, %d given.\n",
+							mth->args_cnt, arg2);
+				}
+				ilc->cls = cls;
+				ilc->mth = mth;
 			}
-			if (mth->args_cnt != arg2) {
-				vm_error("Method expects %d arguments, %d given.\n",
-						mth->args_cnt, arg2);
+			else { // Inline cache hit
+				mth = ilc->mth;
 			}
 			if (mth->is_native) {
 				if (tail_call) {
@@ -1056,7 +1067,7 @@ void vm_execute_bc(void) {
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of NEW.\n");
 			}
-			cls = vm_find_class(sym->k_sym.symbol);
+			cls = sym->h.cls;
 			if (!cls) {
 				vm_error("Cannot find class %s.\n", sym->k_sym.symbol);
 			}
@@ -1096,7 +1107,7 @@ void vm_execute_bc(void) {
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the argument of LD_CLASS.\n");
 			}
-			cls = vm_find_class(sym->k_sym.symbol);
+			cls = sym->h.cls;
 			if (!cls) {
 				vm_error("Cannot find class %s.\n", sym->k_sym.symbol);
 			}
@@ -1197,6 +1208,12 @@ void vm_execute_bc(void) {
 			vm_debug(DBG_BC, "%s\n", "LD_EXOBJ");
 			assert(stack_g[fp_g]->h.t == KEK_EXINFO);
 			PUSH(stack_g[fp_g]->k_exi.obj_thrown);
+			break;
+		}
+		case POP: {
+			ip_g++;
+			vm_debug(DBG_BC, "%s\n", "POP");
+			(void)stack_pop();
 			break;
 		}
 		default:

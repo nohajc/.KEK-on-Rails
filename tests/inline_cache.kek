@@ -1,0 +1,22 @@
+class A {
+	foo() {
+		return 0
+	}
+}
+
+class B {
+	foo() {
+		return 1
+	}
+}
+
+class Main {
+	static main(args) {
+		var o = new A()
+		var i, n
+		for (i = 0; i < 1000000; i++) {
+			n = o.foo()
+			Sys.out.writeln(String.fromInt(n) + "\n")
+		}
+	}
+}

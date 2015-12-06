@@ -395,7 +395,8 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 			(uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE);
 
 	if (!gc_cheney_ptr_in_to_space(ptr, size)) {
-		vm_error("cheney_malloc: ptr=%p is not in to-space\n", ptr);
+		vm_error("cheney_malloc: ptr=%p size=%lu is not in to-space\n", ptr,
+				size);
 	}
 
 #ifdef FORCE_CALLOC
@@ -415,6 +416,37 @@ void *gc_cheney_calloc(type_t type, class_t *cls, size_t size) {
 	memset(ptr, 0, size);
 
 	return (ptr);
+}
+
+/* gc_rootset. FIXME: this could be done much smarter */
+gc_rootset_t *gc_rootset_g;
+uint32_t gc_rootset_len_g;
+uint32_t gc_rootset_size_g;
+
+int gc_rootset_add(kek_obj_t **obj) {
+	if (gc_rootset_len_g + 1 >= gc_rootset_size_g) {
+		gc_rootset_size_g *= 2;
+		gc_rootset_g = realloc(gc_rootset_g, gc_rootset_size_g);
+		assert(gc_rootset_g);
+	}
+	gc_rootset_g[gc_rootset_len_g++].obj = obj;
+	return (gc_rootset_len_g - 1);
+}
+
+void gc_rootset_remove(uint32_t id) {
+	assert(id < gc_rootset_len_g);
+	gc_rootset_g[id].obj = NULL;
+}
+
+void gc_rootset_init(void) {
+	gc_rootset_size_g = 1024;
+	gc_rootset_len_g = 0;
+	gc_rootset_g = malloc(gc_rootset_size_g * sizeof(gc_rootset_t));
+	assert(gc_rootset_g);
+}
+
+void gc_rootset_free(void) {
+	free(gc_rootset_g);
 }
 
 /******************************************************************************/
@@ -464,7 +496,7 @@ bool mem_free() {
 
 void *mem_segment_malloc(size_t size) {
 	void *ptr;
-	segment_t *new;
+	segment_t *new_seg;
 
 	size = ALIGNED(size);
 
@@ -477,14 +509,18 @@ void *mem_segment_malloc(size_t size) {
 
 	if (segments_g->used + size > segments_g->size) {
 		vm_debug(DBG_MEM, "We need to allocate a new segment.\n");
-		new = mem_segment_init(SEGMENT_SIZE);
-		new->next = segments_g;
-		segments_g = new;
+		if (size > SEGMENT_SIZE) {
+			new_seg = mem_segment_init(size);
+		}
+		else {
+			new_seg = mem_segment_init(SEGMENT_SIZE);
+		}
+		new_seg->next = segments_g;
+		segments_g = new_seg;
 	}
 
 	ptr = segments_g->end;
 	segments_g->used += size;
-	// I don't know why but if I don't add 8, I get segfault...
 	segments_g->end = (uint8_t *) segments_g->end + size;
 
 	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
@@ -719,6 +755,16 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 		}
 	}
 
+	/* gc_rootset */
+	vm_debug(DBG_GC, "rootset: gc_rootset\n");
+	for (j = 0; j < gc_rootset_len_g; j++) {
+		if (gc_rootset_g[j].obj != NULL) {
+			vm_debug(DBG_GC, "rootset: gc_rootset: yes objptr=%p obj=%p\n",
+					gc_rootset_g[j].obj, *(gc_rootset_g[j].obj));
+			(*fn)(gc_rootset_g[j].obj);
+		}
+	}
+
 	/* arrays from const table */
 	for (carr = gc_carrlist_root_g; carr; carr = carr->next) {
 		(*fn)((kek_obj_t **) &(carr->arr));
@@ -767,6 +813,7 @@ void gc_init() {
 		break;
 	case GC_NEW:
 	case GC_GEN:
+		gc_rootset_init();
 		gc_cheney_init();
 		break;
 	default:
@@ -791,6 +838,7 @@ void gc_free() {
 		break;
 	case GC_NEW:
 	case GC_GEN:
+		gc_rootset_free();
 		gc_cheney_free();
 		break;
 	default:
@@ -869,7 +917,7 @@ void realloc_arr_elems(kek_array_t *arr, int length) {
 	vm_debug(DBG_MEM, "realloc_arr_elems\n");
 
 	while (arr->alloc_size < length) {
-		arr->alloc_size *= 2;
+		arr->alloc_size = (arr->alloc_size * 3) / 2;
 	}
 
 	new_elems = alloc_const_arr_elems(arr->alloc_size);

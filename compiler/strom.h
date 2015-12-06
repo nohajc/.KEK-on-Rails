@@ -63,8 +63,9 @@ class Call: public Statm {
 	bool external;
 	ArgList * args;
 	Expr * target;
+	bool void_call;
 public:
-	Call(Expr *, ArgList *, bool, Expr * = NULL);
+	Call(Expr *, ArgList *, bool, Expr *, bool);
 	virtual ~Call();
 	virtual uint32_t Translate();
 	virtual Node *Optimize();

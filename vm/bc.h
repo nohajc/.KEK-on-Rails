@@ -90,7 +90,8 @@ typedef enum _bc {
 	RET_SELF,
 	LD_EXOBJ,
 	ST_EXINFO,
-	THROW
+	THROW,
+	POP
 } bc_t;
 
 #endif /* BC_H_ */

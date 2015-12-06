@@ -56,11 +56,12 @@ ArgList::~ArgList() {
 	delete next;
 }
 
-Call::Call(Expr * m, ArgList * a, bool e, Expr * t) {
+Call::Call(Expr * m, ArgList * a, bool e, Expr * t, bool vc) {
 	method = m;
 	args = a;
 	external = e;
 	target = t;
+	void_call = vc;
 }
 
 Call::~Call() {
@@ -687,9 +688,15 @@ uint32_t Call::Translate() {
 	else {
 		bco_ww2(bcout_g, CALL, (uint16_t)mth_idx, (uint16_t)arg_count);
 	}
+	for (int i = 0; i < 16; i++) {
+		bco_w0(bcout_g, NOP);
+	}
 
 	if (target) {
 		target->Translate();
+	}
+	else if (void_call) {
+		bco_w0(bcout_g, POP);
 	}
 
 	return 0;

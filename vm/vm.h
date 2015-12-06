@@ -141,6 +141,11 @@ typedef struct _class {
 	char *parent_name;
 } class_t;
 
+typedef struct _inline_cache {
+	class_t * cls;
+	method_t * mth;
+} inline_cache_t;
+
 #define BUILTIN_CLASSES_CNT 16 // Maybe less but we reserve it for the future
 
 /******************************************************************************/

@@ -28,14 +28,19 @@ class Main {
   static main(args) {
     var i
     var arr = []
-    var cnt = 1000
+    var cnt = 5000
+    
+    write "save and print"
     
     for (i = 0; i < cnt; i++) {
       arr[i] = i
-    }
-    
-    for (i = 0; i < cnt; i++) {
       write arr[i]
     }
+    
+    //write "now just print"
+    
+    //for (i = 0; i < cnt; i++) {
+    //  write arr[i]
+    //}
   }
 }
