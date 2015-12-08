@@ -658,7 +658,6 @@ void vm_execute_bc(void) {
 
 			assert(obj != NULL);
 			assert(addr != NULL);
-			assert(dst_obj != NULL);
 
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
 			*DPTR_VAL(dst_obj, addr) = obj;
@@ -1314,7 +1313,7 @@ bool vm_is_const(kek_obj_t *obj) {
 			(ptruint_t) obj, obj->h.t, (ptruint_t) const_table_g,
 			(ptruint_t) (const_table_g + const_table_cnt_g));
 	return ((ptruint_t) const_table_g <= (ptruint_t) obj
-			&& (ptruint_t) (const_table_g + const_table_cnt_g) > (ptruint_t) obj);
+			&& (ptruint_t) obj < (ptruint_t) (const_table_g + const_table_cnt_g));
 }
 
 size_t vm_obj_size(kek_obj_t *obj) {

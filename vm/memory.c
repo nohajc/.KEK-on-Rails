@@ -133,7 +133,11 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	}
 
 	assert(IS_PTR(obj));
-	assert(!vm_is_const(obj));
+	//assert(!vm_is_const(obj));
+	if (vm_is_const(obj)) {
+		assert_failed:
+		return;
+	}
 
 	if (obj->h.t == KEK_COPIED) {
 		vm_debug(DBG_GC, "gc_cheney_copy_roots: it's a copy, skip\n");
@@ -268,20 +272,29 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: obj->k_arr.length: %d\n",
 				obj->k_arr.length);
 
-		for (i = 0; i < obj->k_arr.length; i++) {
+		// We need to move this to case KEK_ARR_OBJS
+		/*for (i = 0; i < obj->k_arr.length; i++) {
 			vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
 					obj->k_arr.length, i);
 			kek_obj_t * el = obj->k_arr.elems[i];
 			if (el != NULL && IS_PTR(el)) {
 				gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
 			}
-		}
+		}*/
 	}
 		break;
-	case KEK_ARR_OBJS:
-		/* We will encounter this while scanning. However, we know
-		 that elems have been already copied, so we just skip this */
+	case KEK_ARR_OBJS: {
+		int i;
+		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
+			vm_debug(DBG_GC, "==: obj->k_arr_objs.h.length: %d, i=%d\n",
+					obj->k_arr_objs.h.length, i);
+			kek_obj_t * el = obj->k_arr_objs.elems[i];
+			if (el != NULL && IS_PTR(el)) {
+				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
+			}
+		}
 		break;
+	}
 	case KEK_EXINFO:
 		assert(0 && "only in cost tbl");
 		break;
@@ -801,7 +814,9 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	/* arrays from const table */
 	for (carr = gc_carrlist_root_g; carr; carr = carr->next) {
 		vm_debug(DBG_GC, "rootset: carr, obj=%p\n", carr->arr);
-		(*fn)((kek_obj_t **) &(carr->arr));
+		kek_array_objs_t * arr_objs = KEK_ARR_OBJS(carr->arr);
+		(*fn)((kek_obj_t **) &arr_objs);
+		carr->arr->elems = &(arr_objs->elems[0]);
 	}
 
 	/* stack objects */

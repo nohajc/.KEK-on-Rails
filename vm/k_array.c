@@ -106,8 +106,6 @@ void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 
 	if (idx >= arr->alloc_size) {
 		native_grow_array(arr, idx + 1);
-		// TODO: this is problematic
-		// We need to update arr pointer if it was copied by GC
 	} else if (idx >= arr->length) {
 		arr_set_length(arr, idx + 1);
 	}
@@ -133,7 +131,7 @@ void array_length(void) {
 void array_append(void) {
 	vm_debug(DBG_GC, "array_append BEGIN ++++++++++++++++++++++++++++++++++\n");
 	kek_array_t * arr = (kek_array_t*) THIS;
-	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
+	//uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_obj_t * obj = ARG(0);
 	int new_len, old_len;
 	int i, j;
@@ -160,7 +158,7 @@ void array_append(void) {
 	PUSH(NIL);
 	BC_RET
 	; /* sorry, I don't know how to format this */
-	gc_rootset_remove(id);
+	//gc_rootset_remove(id);
 	vm_debug(DBG_GC, "array_append END ------------------------------------\n");
 }
 
@@ -180,8 +178,6 @@ void native_grow_array(kek_array_t * arr, int length) {
 	int i;
 	arr_realloc_elems(arr, length);
 
-	// TODO: we need arr pointer update
-	// if realloc triggered GC
 //	for (i = arr->length; i < length - 1; ++i) {
 //		arr->elems[i] = NIL;
 //	}
