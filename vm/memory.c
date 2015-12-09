@@ -298,10 +298,14 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	case KEK_EXINFO:
 		assert(0 && "only in cost tbl");
 		break;
-	case KEK_EXPT:
+	case KEK_EXPT: {
 		/* copy union _kek_obj * msg; */
-		gc_cheney_copy_neighbor_inner(&(obj->k_expt.msg));
+		kek_obj_t * msg = obj->k_expt.msg;
+		if (msg != NULL && IS_PTR(msg)) {
+			gc_cheney_copy_neighbor_inner(&(obj->k_expt.msg));
+		}
 		break;
+	}
 	case KEK_FILE:
 		break;
 	case KEK_TERM:
@@ -309,9 +313,14 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		/* todo: bude v oldspace (vsechno  co je v sys) */
 		break;
 	case KEK_UDO: {
-		uint32_t i;
-		for (i = 0; i < obj->h.cls->syms_instance_cnt; i++) {
-			gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
+		int i;
+		int total_size = obj->h.cls->total_syms_instance_cnt
+				+ obj->h.cls->syms_instance_offset;
+		for (i = 0; i < total_size; i++) {
+			kek_obj_t * var = obj->k_udo.inst_var[i];
+			if (var != NULL && IS_PTR(var)) {
+				gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
+			}
 		}
 	}
 		break;

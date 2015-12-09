@@ -58,10 +58,12 @@ void native_new_exception(kek_except_t * expt, kek_obj_t * msg) {
 }
 
 kek_except_t * make_exception(kek_obj_t * msg) {
+	uint32_t id = gc_rootset_add((kek_obj_t **) &msg);
 	class_t * expt_class = vm_find_class("Exception");
 	kek_except_t * expt = (kek_except_t*) alloc_exception(expt_class);
 	native_new_exception(expt, msg);
 
+	gc_rootset_remove(id);
 	return expt;
 }
 

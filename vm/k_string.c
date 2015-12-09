@@ -89,6 +89,7 @@ void string_split(void) {
 	char * token;
 	kek_obj_t * tok_str;
 	int i = 0;
+	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 
 	if (!IS_STR(delims)) {
 		vm_error("Expected string as argument.\n");
@@ -97,16 +98,22 @@ void string_split(void) {
 	arr_class = vm_find_class("Array");
 	arr = (kek_array_t*) alloc_array(arr_class);
 	native_new_array(arr);
+	str = (kek_string_t*)THIS; // Update pointer if necessary
+	delims = ARG(0);
 
+	// TODO: FIXME, we cannot use strtok safely
+	// when str->string pointer can change
 	token = strtok(str->string, delims->k_str.string);
 	while (token) {
 		tok_str = new_string_from_cstring(token);
 		native_arr_elem_set(arr, i++, tok_str);
+		delims = ARG(0);
 		token = strtok(NULL, delims->k_str.string);
 	}
 
 	PUSH(arr);
 	BC_RET;
+	gc_rootset_remove(id);
 }
 
 void string_toInt(void) {
