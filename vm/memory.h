@@ -23,7 +23,8 @@ struct _class;
 // pointer
 union _kek_obj * alloc_integer(void);
 union _kek_obj * alloc_array(struct _class * arr_class);
-void alloc_arr_elems(struct _kek_array * arr);
+// size = allocated, length = number of items
+union _kek_obj ** alloc_arr_elems(int size, int length);
 union _kek_obj ** alloc_const_arr_elems(int length);
 void arr_realloc_elems(struct _kek_array * arr, int length);
 union _kek_obj * alloc_string(struct _class * str_class, int length);

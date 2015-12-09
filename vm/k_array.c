@@ -95,7 +95,8 @@ void new_array(void) {
 void native_new_array(kek_array_t * arr) {
 	vm_debug(DBG_GC, "native_new_array BEGIN ++++++++++++++++++++++++++++++\n");
 	arr->length = 0;
-	alloc_arr_elems(arr);
+	arr->alloc_size = ARR_INIT_SIZE;
+	arr->elems = alloc_arr_elems(ARR_INIT_SIZE, 0);
 	vm_debug(DBG_GC, "native_new_array END --------------------------------\n");
 }
 

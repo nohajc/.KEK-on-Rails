@@ -952,22 +952,22 @@ kek_obj_t *alloc_array_objs(int items) {
 	vm_debug(DBG_GC, "alloc_array_objs BEGIN ++++++++++++++++++++++++++++++\n");
 	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
-	ret->k_arr_objs.h.length = 0;
 	vm_debug(DBG_GC, "alloc_array_objs END --------------------------------\n");
 	return ret;
 }
 
-void alloc_arr_elems(kek_array_t * arr) {
+kek_obj_t **alloc_arr_elems(int size, int length) {
 	vm_debug(DBG_GC, "alloc_arr_elems BEGIN +++++++++++++++++++++++++++++++\n");
-	arr->alloc_size = ARR_INIT_SIZE;
-	arr->elems = alloc_const_arr_elems(ARR_INIT_SIZE);
-	assert(arr->elems);
+	kek_obj_t *array_objs = alloc_array_objs(size);
+	array_objs->k_arr_objs.h.length = length;
+	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 	vm_debug(DBG_GC, "alloc_arr_elems END ---------------------------------\n");
 }
 
 kek_obj_t **alloc_const_arr_elems(int length) {
 	vm_debug(DBG_GC, "alloc_const_arr_elems BEGIN +++++++++++++++++++++++++\n");
 	kek_obj_t *array_objs = alloc_array_objs(length);
+	array_objs->k_arr_objs.h.length = length;
 	vm_debug(DBG_GC, "alloc_const_arr_elems END ---------------------------\n");
 	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 }
@@ -990,9 +990,7 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 	vm_debug(DBG_MEM, "qq realloc_arr_elems then arr->alloc_size=%d \n", //
 			arr->alloc_size);
 
-	new_elems = alloc_const_arr_elems(arr->alloc_size);
-
-
+	new_elems = alloc_arr_elems(arr->alloc_size, arr->length);
 
 	for (i = 0; i < arr->length; i++) {
 		new_elems[i] = arr->elems[i];
