@@ -314,12 +314,22 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		break;
 	case KEK_UDO: {
 		int i;
+		bool verbose = false;
 		int total_size = obj->h.cls->total_syms_instance_cnt
 				+ obj->h.cls->syms_instance_offset;
+		if (!strcmp(obj->h.cls->name, "Reader")) {
+			verbose = true;
+		}
 		for (i = 0; i < total_size; i++) {
 			kek_obj_t * var = obj->k_udo.inst_var[i];
 			if (var != NULL && IS_PTR(var)) {
+				if (verbose) {
+					vm_debug(DBG_BC, "Copying inst_var[%d], type = %d, ptr = %p, ", i, var->h.t, var);
+				}
 				gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
+				if (verbose) {
+					vm_debug(DBG_BC, "new_ptr = %p.\n", obj->k_udo.inst_var[i]);
+				}
 			}
 		}
 	}
