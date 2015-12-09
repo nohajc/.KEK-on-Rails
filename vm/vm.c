@@ -114,7 +114,7 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 			(void) snprintf(str, 1024, "udo");
 			break;
 		default:
-			(void) snprintf(str, 1024, "unknown type %d", kek_obj->h.t);
+			(void) snprintf(str, 1024, "unknown type %x", kek_obj->h.t);
 			/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
 			 assert(0 && "unhandled kek_obj->type"); */
 			break;
@@ -268,6 +268,8 @@ void vm_init_const_table_elems(void) {
 			c_arr = (constant_array_t*) obj;
 			elems = alloc_const_arr_elems(obj->k_arr.length);
 			obj->k_arr.alloc_size = obj->k_arr.length;
+
+			assert(obj->k_arr.alloc_size > 0);
 
 			for (i = 0; i < c_arr->length; ++i) {
 				elems[i] = CONST(c_arr->elems[i]);
@@ -563,7 +565,8 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 			res = make_integer(a != b);
 			break;
 		default:
-			vm_error("bc_bop: unsupported bop %d (a=%p, b=%p)\n", o, a, b);
+			vm_error("bc_bop: unsupported bop %d (a=%p (%d), b=%p (%d))\n",
+					o, a, b, a->h.t, b->h.t);
 			break;
 		}
 		return (kek_obj_t*) res;
@@ -652,6 +655,10 @@ void vm_execute_bc(void) {
 			POP(obj);
 			POP(addr);
 			POP(dst_obj);
+
+			assert(obj != NULL);
+			assert(addr != NULL);
+
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
 			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
@@ -706,9 +713,10 @@ void vm_execute_bc(void) {
 			if (obj && IS_ARR(obj) && idx && IS_INT(idx)) {
 				int idx_n = INT_VAL(idx);
 				if (idx_n >= obj->k_arr.alloc_size) {
+					assert(obj->k_arr.alloc_size != 0);
 					native_grow_array(&obj->k_arr, idx_n + 1);
 				} else if (idx_n >= obj->k_arr.length) {
-					obj->k_arr.length = idx_n + 1;
+					arr_set_length((kek_array_t *) obj, idx_n + 1);
 				}
 				TOP(obj); // Pointer could have changed after native_grow_array
 				/* FIXME: delete this */
@@ -833,7 +841,7 @@ void vm_execute_bc(void) {
 			ip_g += 2;
 			arg2 = BC_OP16(ip_g);
 			ip_g += 2;
-			ilc = (void*)&bc_arr_g[ip_g];
+			ilc = (void*) &bc_arr_g[ip_g];
 			ip_g += 16;
 			tail_call = bc_arr_g[ip_g] == RET;
 			vm_debug(DBG_BC, "%s %u %u, tail: %s\n", call_str[call_type], arg1,
@@ -868,7 +876,8 @@ void vm_execute_bc(void) {
 
 			assert(cls);
 			if (ilc->cls != cls) { // Inline cache miss
-				mth = vm_find_method_in_class(cls, sym->k_sym.symbol, static_call);
+				mth = vm_find_method_in_class(cls, sym->k_sym.symbol,
+						static_call);
 				if (mth == NULL) {
 					vm_error("%s \"%s\" has no method %s.\n",
 							(static_call ? "Class" : "Object"), cls->name,
@@ -880,8 +889,7 @@ void vm_execute_bc(void) {
 				}
 				ilc->cls = cls;
 				ilc->mth = mth;
-			}
-			else { // Inline cache hit
+			} else { // Inline cache hit
 				mth = ilc->mth;
 			}
 			if (mth->is_native) {
@@ -1213,7 +1221,7 @@ void vm_execute_bc(void) {
 		case POP: {
 			ip_g++;
 			vm_debug(DBG_BC, "%s\n", "POP");
-			(void)stack_pop();
+			(void) stack_pop();
 			break;
 		}
 		default:
@@ -1304,7 +1312,7 @@ bool vm_is_const(kek_obj_t *obj) {
 			(ptruint_t) obj, obj->h.t, (ptruint_t) const_table_g,
 			(ptruint_t) (const_table_g + const_table_cnt_g));
 	return ((ptruint_t) const_table_g <= (ptruint_t) obj
-			&& (ptruint_t) (const_table_g + const_table_cnt_g) > (ptruint_t) obj);
+			&& (ptruint_t) obj < (ptruint_t) (const_table_g + const_table_cnt_g));
 }
 
 size_t vm_obj_size(kek_obj_t *obj) {
@@ -1332,5 +1340,6 @@ size_t vm_obj_size(kek_obj_t *obj) {
 }
 
 size_t vm_type_size(type_t type) {
+	type = type + 0; /* FIXME: this is probably not needet at all */
 	return (sizeof(kek_obj_t));
 }

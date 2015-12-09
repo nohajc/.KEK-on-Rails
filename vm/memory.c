@@ -42,17 +42,6 @@ void gc_obj_add(kek_obj_t *obj, size_t size) {
 }
 
 void gc_obj_free(gc_obj_t *obj) {
-	switch (obj->obj->h.t) {
-	case KEK_ARR:
-		/* TODO FIXME: shouldn't we delete also the elems? */
-//		free(obj->obj->k_arr.elems);
-		break;
-	default:
-		break;
-	}
-
-	/* this object is on our heap */
-	/* free(obj->obj); */
 	free(obj);
 }
 
@@ -67,7 +56,8 @@ void gc_delete_all() {
 	vm_debug(DBG_GC, "gc_delete_all\n");
 
 	while (gcptr != NULL) {
-		vm_debug(DBG_GC, "gc_delete_all objptr=%p\n", gcptr->obj);
+		vm_debug(DBG_GC, "gc_delete_all gcptr=%p (%lu)\n", gcptr,
+				(ptruint_t) gcptr);
 		gcptr_next = gcptr->next;
 		gc_obj_free(gcptr);
 		gcptr = gcptr_next;
@@ -84,7 +74,6 @@ segment_t *segments_from_space_g = NULL;
 segment_t *segments_to_space_g = NULL;
 void *to_space_free_g;
 size_t to_space_size_g;
-void *alloc_ptr_g;
 void *scan_ptr_g;
 
 bool gc_cheney_ptr_in_space(void *segment_data, void *ptr, size_t size) {
@@ -127,7 +116,6 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 
 	ret = memcpy(to_space_free_g, obj, size);
 	to_space_free_g = ((uint8_t *) to_space_free_g + size);
-	alloc_ptr_g = ((uint8_t *) alloc_ptr_g + size);
 
 	return (ret);
 }
@@ -136,19 +124,30 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 	kek_obj_t *copy;
 
-	vm_debug(DBG_MEM, "gc_cheney_copy_roots: objptr=%p obj=%p t=%d\n", objptr,
-			obj, obj->h.t);
+	vm_debug(DBG_GC, "gc_cheney_copy_roots: objptr=%p obj=%p t=%d\n^^^\n\n",
+			objptr, obj, obj->h.t);
+
+	if (obj->h.t == KEK_ARR) {
+		vm_debug(DBG_GC, "yes, this is an array. alloc_size=%d\n\n",
+				obj->k_arr.alloc_size);
+	}
 
 	assert(IS_PTR(obj));
-	assert(!vm_is_const(obj));
+	//assert(!vm_is_const(obj));
+	if (vm_is_const(obj)) {
+		assert_failed: //
+		return;
+	}
 
 	if (obj->h.t == KEK_COPIED) {
-		vm_debug(DBG_MEM, "gc_cheney_copy_roots: it's a copy, skip\n");
+		vm_debug(DBG_GC, "gc_cheney_copy_roots: it's a copy, skip\n");
 		*objptr = (kek_obj_t *) obj->h.cls;
 		return;
 	}
 
 	copy = gc_cheney_copy_obj_to_space_free(obj);
+	assert(copy->h.t == obj->h.t);
+
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) copy;
 	obj = copy;
@@ -236,11 +235,29 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		kek_obj_t *arr_objs;
 		int i;
 
-		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs() KEK_ARR\n");
+		vm_debug(DBG_GC, "+++++ KEK_ARR +++++\n");
+		vm_debug(DBG_GC, "KA obj=%p\n", obj);
+		vm_debug(DBG_GC, "KA obj->k_arr.elems=%p\n", obj->k_arr.elems);
 
+		/* try to not copy elems if there are none yet */
+		if (obj->k_arr.elems == NULL) {
+			vm_debug(DBG_GC, "\n\nobjs are NULL, skip\n\n");
+			return;
+		}
+
+		assert(obj->k_arr.elems != NULL);
 		arr_objs = (kek_obj_t *) ((uint8_t *) obj->k_arr.elems
 				- sizeof(kek_array_objs_header_t));
+		assert(arr_objs != NULL);
+		vm_debug(DBG_GC, "arr_objs->h.t=%d\n", arr_objs->h.t);
 		assert(arr_objs->h.t == KEK_ARR_OBJS);
+
+		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs() KEK_ARR "
+				"(len=%d alloc_size=%d, elemslen=%d) -----------------------\n",
+				obj->k_arr.length, obj->k_arr.alloc_size,
+				arr_objs->k_arr_objs.h.length);
+
+		//assert(obj->k_arr.length == arr_objs->k_arr_objs.h.length);
 
 		vm_debug(DBG_GC,
 				"gc_cheney_copy_inner_objs: before copy: obj->k_arr.elems: %p\n",
@@ -255,25 +272,40 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: obj->k_arr.length: %d\n",
 				obj->k_arr.length);
 
-		for (i = 0; i < obj->k_arr.length; i++) {
-			kek_obj_t * el = obj->k_arr.elems[i];
-			if (el != NULL && IS_PTR(el)) {
-				gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
-			}
-		}
+		// We need to move this to case KEK_ARR_OBJS
+		/*for (i = 0; i < obj->k_arr.length; i++) {
+		 vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
+		 obj->k_arr.length, i);
+		 kek_obj_t * el = obj->k_arr.elems[i];
+		 if (el != NULL && IS_PTR(el)) {
+		 gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
+		 }
+		 }*/
 	}
 		break;
-	case KEK_ARR_OBJS:
-		/* We will encounter this while scanning. However, we know
-		 that elems have been already copied, so we just skip this */
+	case KEK_ARR_OBJS: {
+		int i;
+		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
+			vm_debug(DBG_GC, "==: obj->k_arr_objs.h.length: %d, i=%d\n",
+					obj->k_arr_objs.h.length, i);
+			kek_obj_t * el = obj->k_arr_objs.elems[i];
+			if (el != NULL && IS_PTR(el)) {
+				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
+			}
+		}
 		break;
+	}
 	case KEK_EXINFO:
 		assert(0 && "only in cost tbl");
 		break;
-	case KEK_EXPT:
+	case KEK_EXPT: {
 		/* copy union _kek_obj * msg; */
-		gc_cheney_copy_neighbor_inner(&(obj->k_expt.msg));
+		kek_obj_t * msg = obj->k_expt.msg;
+		if (msg != NULL && IS_PTR(msg)) {
+			gc_cheney_copy_neighbor_inner(&(obj->k_expt.msg));
+		}
 		break;
+	}
 	case KEK_FILE:
 		break;
 	case KEK_TERM:
@@ -281,9 +313,24 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		/* todo: bude v oldspace (vsechno  co je v sys) */
 		break;
 	case KEK_UDO: {
-		uint32_t i;
-		for (i = 0; i < obj->h.cls->syms_instance_cnt; i++) {
-			gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
+		int i;
+		bool verbose = false;
+		int total_size = obj->h.cls->total_syms_instance_cnt
+				+ obj->h.cls->syms_instance_offset;
+		if (!strcmp(obj->h.cls->name, "Reader")) {
+			verbose = true;
+		}
+		for (i = 0; i < total_size; i++) {
+			kek_obj_t * var = obj->k_udo.inst_var[i];
+			if (var != NULL && IS_PTR(var)) {
+				if (verbose) {
+					vm_debug(DBG_BC, "Copying inst_var[%d], type = %d, ptr = %p, ", i, var->h.t, var);
+				}
+				gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
+				if (verbose) {
+					vm_debug(DBG_BC, "new_ptr = %p.\n", obj->k_udo.inst_var[i]);
+				}
+			}
 		}
 	}
 		break;
@@ -319,7 +366,6 @@ void gc_cheney_scavenge() {
 
 	/* set free and alloc ptr to the beginning of the to-space segment */
 	to_space_free_g = segments_to_space_g->beginning;
-	alloc_ptr_g = to_space_free_g;
 	scan_ptr_g = to_space_free_g;
 
 	/* clear space */
@@ -332,7 +378,7 @@ void gc_cheney_scavenge() {
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots END\n");
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs BEGIN\n");
-	while ((ptruint_t) scan_ptr_g < (ptruint_t) alloc_ptr_g) {
+	while ((ptruint_t) scan_ptr_g < (ptruint_t) to_space_free_g) {
 		obj = (kek_obj_t *) scan_ptr_g;
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
@@ -364,6 +410,11 @@ void gc_cheney_free() {
 	free(segments_to_space_g);
 }
 
+bool gc_cheney_can_malloc(size_t size) {
+	return ((ptruint_t) ((uint8_t *) to_space_free_g + size) < //
+			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
+					+ NEW_SEGMENT_SIZE));
+}
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	void *ptr;
 	segment_t *new;
@@ -376,9 +427,7 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	assert(segments_to_space_g != NULL);
 
-	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
-			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
-					+ NEW_SEGMENT_SIZE)) {
+	if (!gc_cheney_can_malloc(size)) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -418,35 +467,101 @@ void *gc_cheney_calloc(type_t type, class_t *cls, size_t size) {
 	return (ptr);
 }
 
-/* gc_rootset. FIXME: this could be done much smarter */
-gc_rootset_t *gc_rootset_g;
-uint32_t gc_rootset_len_g;
-uint32_t gc_rootset_size_g;
+/******************************************************************************/
+/* gc_rootset */
 
-int gc_rootset_add(kek_obj_t **obj) {
-	if (gc_rootset_len_g + 1 >= gc_rootset_size_g) {
-		gc_rootset_size_g *= 2;
-		gc_rootset_g = realloc(gc_rootset_g, gc_rootset_size_g);
-		assert(gc_rootset_g);
+gc_rootset_t *gc_rootset_g;
+uint32_t gc_rootset_last_uid_g;
+
+uint32_t gc_rootset_add(kek_obj_t **obj) {
+	gc_rootset_t *grnew;
+
+	if (gc_type_g == GC_NONE) {
+		return (0);
 	}
-	gc_rootset_g[gc_rootset_len_g++].obj = obj;
-	return (gc_rootset_len_g - 1);
+
+	assert(obj != NULL);
+
+	grnew = malloc(sizeof(gc_rootset_t));
+	assert(grnew);
+
+	grnew->next = NULL;
+	grnew->obj = obj;
+	grnew->uid = ++gc_rootset_last_uid_g;
+
+	if (gc_rootset_g == NULL) {
+		gc_rootset_g = grnew;
+	} else {
+		grnew->next = gc_rootset_g;
+		gc_rootset_g = grnew;
+	}
+
+	return (gc_rootset_last_uid_g);
 }
 
-void gc_rootset_remove(uint32_t id) {
-	assert(id < gc_rootset_len_g);
-	gc_rootset_g[id].obj = NULL;
+void gc_rootset_remove_id(uint32_t id) {
+	if (gc_type_g == GC_NONE) {
+		return;
+	}
+
+	gc_rootset_t *gr;
+	gc_rootset_t *grptr;
+
+	assert(gc_rootset_g != NULL);
+	vm_debug(DBG_GC, "gc_rootset next %p\n", gc_rootset_g->next);
+
+	for (gr = gc_rootset_g; gr; gr = gr->next) {
+		vm_debug(DBG_GC, "gr= %p\n", gr);
+		vm_debug(DBG_GC, "grnext= %p\n", gr->next);
+
+		if (gr->uid == id) {
+			if ((grptr = gr->next) != NULL) {
+				gr->next = grptr->next;
+				gr->obj = grptr->obj;
+				gr->uid = grptr->uid;
+				free(grptr);
+				grptr = NULL;
+			} else {
+				free(gr);
+
+				if (gc_rootset_g == gr) {
+					gc_rootset_g = NULL;
+				}
+
+				gr = NULL;
+				break;
+			}
+		}
+	}
+}
+
+void gc_rootset_remove_ptr(kek_obj_t **obj) {
+	if (gc_type_g == GC_NONE) {
+		return;
+	}
+
+	assert(0 && "implement me");
 }
 
 void gc_rootset_init(void) {
-	gc_rootset_size_g = 1024;
-	gc_rootset_len_g = 0;
-	gc_rootset_g = malloc(gc_rootset_size_g * sizeof(gc_rootset_t));
-	assert(gc_rootset_g);
+	if (gc_type_g == GC_NONE) {
+		return;
+	}
+
+	gc_rootset_g = NULL;
+	gc_rootset_last_uid_g = 0;
 }
 
 void gc_rootset_free(void) {
-	free(gc_rootset_g);
+	if (gc_type_g == GC_NONE) {
+		return;
+	}
+
+	gc_rootset_t *gr;
+	gc_rootset_t *grptr;
+
+	for (gr = gc_rootset_g; gr; grptr = gr, gr = gr->next, free(grptr))
+		;
 }
 
 /******************************************************************************/
@@ -511,8 +626,7 @@ void *mem_segment_malloc(size_t size) {
 		vm_debug(DBG_MEM, "We need to allocate a new segment.\n");
 		if (size > SEGMENT_SIZE) {
 			new_seg = mem_segment_init(size);
-		}
-		else {
+		} else {
 			new_seg = mem_segment_init(SEGMENT_SIZE);
 		}
 		new_seg->next = segments_g;
@@ -741,48 +855,54 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	gc_carrlist_t *carr;
 
 	/* static variables of objects */
-	vm_debug(DBG_GC, "rootset: static vars of objs --\n");
 	for (j = 0; j < classes_cnt_g; j++) {
 		for (k = 0; k < classes_g[j].syms_static_cnt; k++) {
-
-			vm_debug(DBG_GC, "rootset: static vars[%d] has ptr=%p --\n", k,
-					&classes_g[j].syms_static[k].value);
-
 			if (classes_g[j].syms_static[k].value != NULL
 					&& IS_PTR(classes_g[j].syms_static[k].value)) {
+
+				vm_debug(DBG_GC,
+						"rootset: static vars[%d], ptr=%p, name=\"%s\"\n", k,
+						&classes_g[j].syms_static[k].value,
+						classes_g[j].syms_static[k].name);
+
 				(*fn)(&classes_g[j].syms_static[k].value);
 			}
 		}
 	}
 
 	/* gc_rootset */
-	vm_debug(DBG_GC, "rootset: gc_rootset\n");
-	for (j = 0; j < gc_rootset_len_g; j++) {
-		if (gc_rootset_g[j].obj != NULL) {
-			vm_debug(DBG_GC, "rootset: gc_rootset: yes objptr=%p obj=%p\n",
-					gc_rootset_g[j].obj, *(gc_rootset_g[j].obj));
-			(*fn)(gc_rootset_g[j].obj);
-		}
+	gc_rootset_t *gr;
+	for (gr = gc_rootset_g; gr; gr = gr->next) {
+
+		vm_debug(DBG_GC, "rootset: gr=%p obj=%p\n", gr, gr->obj);
+
+		assert(gr->obj != NULL);
+
+		vm_debug(DBG_GC, "rootset: (LL)gc_rootset[%d], objptr=%p obj=%p, "
+				"type=%d\n", j, gr->obj, *(gr->obj),
+				((kek_obj_t *) *(gr->obj))->h.t);
+
+		(*fn)(gr->obj);
 	}
 
 	/* arrays from const table */
 	for (carr = gc_carrlist_root_g; carr; carr = carr->next) {
-		(*fn)((kek_obj_t **) &(carr->arr));
+		vm_debug(DBG_GC, "rootset: carr, obj=%p\n", carr->arr);
+		kek_array_objs_t * arr_objs = KEK_ARR_OBJS(carr->arr);
+		(*fn)((kek_obj_t **) &arr_objs);
+		carr->arr->elems = &(arr_objs->elems[0]);
 	}
 
 	/* stack objects */
-	vm_debug(DBG_GC, "rootset: objs on the stack --\n");
 	for (i = sp_g - 1; i >= 0; i--) {
-		vm_debug(DBG_GC, "rootset stack[%d]\n", i);
 		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
-
 			if (((kek_obj_t *) stack_g[i])->h.t == KEK_CLASS) {
-				vm_debug(DBG_GC, "rootset: ignoring class\n");
+//				vm_debug(DBG_GC, "rootset: ignoring class\n");
 				continue;
 			}
 
 			if (((kek_obj_t *) stack_g[i])->h.t == KEK_STACK) {
-				vm_debug(DBG_GC, "rootset: ignoring stack reference\n");
+//				vm_debug(DBG_GC, "rootset: ignoring stack reference\n");
 				continue;
 			}
 
@@ -791,11 +911,12 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 			}
 
 			if (vm_is_const(((kek_obj_t *) stack_g[i]))) {
-				vm_debug(DBG_GC, "rootset: ignoring const\n");
+//				vm_debug(DBG_GC, "rootset: ignoring const\n");
 				continue;
 			}
-			gc_rootset_print(&stack_g[i]);
 
+			vm_debug(DBG_GC, "rootset stack[%d]\n", i);
+			gc_rootset_print(&stack_g[i]);
 			(*fn)(&stack_g[i]);
 		}
 	}
@@ -893,51 +1014,61 @@ kek_obj_t * alloc_array(class_t * arr_class) {
 }
 
 kek_obj_t *alloc_array_objs(int items) {
+	vm_debug(DBG_GC, "alloc_array_objs BEGIN ++++++++++++++++++++++++++++++\n");
 	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
-	ret->k_arr_objs.h.length = items;
+	vm_debug(DBG_GC, "alloc_array_objs END --------------------------------\n");
 	return ret;
 }
 
-void alloc_arr_elems(kek_array_t * arr) {
-	arr->elems = alloc_const_arr_elems(ARR_INIT_SIZE);
-	assert(arr->elems);
-	arr->alloc_size = ARR_INIT_SIZE;
+kek_obj_t **alloc_arr_elems(int size, int length) {
+	vm_debug(DBG_GC, "alloc_arr_elems BEGIN +++++++++++++++++++++++++++++++\n");
+	kek_obj_t *array_objs = alloc_array_objs(size);
+	array_objs->k_arr_objs.h.length = length;
+	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
+	vm_debug(DBG_GC, "alloc_arr_elems END ---------------------------------\n");
 }
 
 kek_obj_t **alloc_const_arr_elems(int length) {
+	vm_debug(DBG_GC, "alloc_const_arr_elems BEGIN +++++++++++++++++++++++++\n");
 	kek_obj_t *array_objs = alloc_array_objs(length);
+	array_objs->k_arr_objs.h.length = length;
+	vm_debug(DBG_GC, "alloc_const_arr_elems END ---------------------------\n");
 	return ((kek_obj_t **) &(array_objs->k_arr_objs.elems[0]));
 }
 
-void realloc_arr_elems(kek_array_t *arr, int length) {
+void arr_realloc_elems(kek_array_t *arr, int length) {
+	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_obj_t **new_elems;
 	int i;
 
-	vm_debug(DBG_MEM, "realloc_arr_elems\n");
+	vm_debug(DBG_MEM, "qq realloc_arr_elems asbef=%d len=%d arr->length=%d"
+			" elemlen=%d\n", arr->alloc_size, length, arr->length,
+	KEK_ARR_OBJS(arr)->h.length);
+
+	assert(arr->elems[arr->length - 1] != NULL);
 
 	while (arr->alloc_size < length) {
 		arr->alloc_size = (arr->alloc_size * 3) / 2;
 	}
 
-	new_elems = alloc_const_arr_elems(arr->alloc_size);
-	// TODO: we need arr pointer update
-	// if realloc triggered GC.
-	// This means we copy the argument arr
-	// to local variable and pass its address to GC rootset
+	vm_debug(DBG_MEM, "qq realloc_arr_elems then arr->alloc_size=%d \n", //
+			arr->alloc_size);
+
+	new_elems = alloc_arr_elems(arr->alloc_size, arr->length);
 
 	for (i = 0; i < arr->length; i++) {
 		new_elems[i] = arr->elems[i];
 	}
 
-#if FORCE_CALLOC == 1
 	for (; i < arr->alloc_size; i++) {
 		new_elems[i] = NULL;
 	}
-#endif /* FORCE_CALLOC == 1 */
 
+	KEK_ARR_OBJS(arr)->h.length = arr->length;
 	arr->elems = new_elems;
-	//arr->length = length;
+
+	gc_rootset_remove_id(id);
 
 	/* NOTE: the old elems will cleanup GC */
 }

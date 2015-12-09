@@ -25,7 +25,7 @@ typedef enum _type {
 	KEK_INT, //
 	KEK_STR, //
 	KEK_SYM, //
-	KEK_ARR, //
+	KEK_ARR, //4
 	KEK_ARR_OBJS, //
 	KEK_EXINFO, //
 	KEK_EXPT, //
@@ -102,6 +102,10 @@ typedef struct _kek_array {
 	/* Loader will need to transform each constant_array_t to this format */
 	union _kek_obj **elems;
 } kek_array_t;
+
+#define KEK_ARR_OBJS(obj) ((kek_array_objs_t *) ((uint8_t *) \
+		((kek_array_t *)(obj))->elems \
+		- sizeof(kek_array_objs_header_t)))
 
 typedef struct _try_range {
 	int try_addr;

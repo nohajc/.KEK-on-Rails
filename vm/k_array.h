@@ -18,5 +18,6 @@ void array_length(void);
 void array_append(void);
 kek_obj_t * native_array_length(kek_array_t * arr);
 void native_grow_array(kek_array_t * arr, int length);
+void arr_set_length(kek_array_t *arr, int length);
 
 #endif

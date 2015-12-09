@@ -23,9 +23,10 @@ struct _class;
 // pointer
 union _kek_obj * alloc_integer(void);
 union _kek_obj * alloc_array(struct _class * arr_class);
-void alloc_arr_elems(struct _kek_array * arr);
+// size = allocated, length = number of items
+union _kek_obj ** alloc_arr_elems(int size, int length);
 union _kek_obj ** alloc_const_arr_elems(int length);
-void realloc_arr_elems(struct _kek_array * arr, int length);
+void arr_realloc_elems(struct _kek_array * arr, int length);
 union _kek_obj * alloc_string(struct _class * str_class, int length);
 union _kek_obj * alloc_exception(struct _class * expt_class);
 union _kek_obj * alloc_udo(struct _class * arr_class);
@@ -153,15 +154,18 @@ typedef struct _gc_carrlist {
 } gc_carrlist_t;
 
 typedef struct _gc_rootset {
+	struct _gc_rootset *next;
 	kek_obj_t **obj;
+	uint32_t uid;
 } gc_rootset_t;
 extern gc_rootset_t *gc_rootset_g;
-extern uint32_t gc_rootset_len_g;
-extern uint32_t gc_rootset_size_g;
-int gc_rootset_add(kek_obj_t **obj);
-void gc_rootset_remove(uint32_t id);
+extern uint32_t gc_rootset_last_uid_g;
+uint32_t gc_rootset_add(kek_obj_t **obj);
+void gc_rootset_remove_id(uint32_t id);
+void gc_rootset_remove_ptr(kek_obj_t **obj);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
+
 
 #define GC_TICKS_DEFAULT 10
 extern int gc_ticks_g; /* how often will gc run */
@@ -194,7 +198,6 @@ extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */
 extern size_t to_space_size_g;
-extern void *alloc_ptr_g;
 extern void *scan_ptr_g;
 
 bool gc_cheney_ptr_in_from_space(void *, size_t);
@@ -202,6 +205,7 @@ bool gc_cheney_ptr_in_to_space(void *, size_t);
 
 void gc_cheney_init(void);
 void gc_cheney_free(void);
+bool gc_cheney_can_malloc(size_t size);
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size);
 void *gc_cheney_calloc(type_t type, class_t *cls, size_t size);
 void gc_cheney_scavenge();
