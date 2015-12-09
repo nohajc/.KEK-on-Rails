@@ -190,7 +190,7 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 
 /* moved to vm.h */
 //#define FORCE_CALLOC 1 /* always set memory to 0 when mallocing */
-#define NEW_SEGMENT_SIZE (1024*50)
+#define NEW_SEGMENT_SIZE (1024*20)
 extern segment_t *segments_from_space_g;
 extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */

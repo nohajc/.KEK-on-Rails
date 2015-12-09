@@ -114,7 +114,7 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 			(void) snprintf(str, 1024, "udo");
 			break;
 		default:
-			(void) snprintf(str, 1024, "unknown type %d", kek_obj->h.t);
+			(void) snprintf(str, 1024, "unknown type %x", kek_obj->h.t);
 			/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
 			 assert(0 && "unhandled kek_obj->type"); */
 			break;
