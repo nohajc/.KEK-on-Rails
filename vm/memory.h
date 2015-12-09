@@ -154,15 +154,18 @@ typedef struct _gc_carrlist {
 } gc_carrlist_t;
 
 typedef struct _gc_rootset {
+	struct _gc_rootset *next;
 	kek_obj_t **obj;
+	uint32_t uid;
 } gc_rootset_t;
 extern gc_rootset_t *gc_rootset_g;
-extern uint32_t gc_rootset_len_g;
-extern uint32_t gc_rootset_size_g;
+extern uint32_t gc_rootset_last_uid_g;
 uint32_t gc_rootset_add(kek_obj_t **obj);
-void gc_rootset_remove(uint32_t id);
+void gc_rootset_remove_id(uint32_t id);
+void gc_rootset_remove_ptr(kek_obj_t **obj);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
+
 
 #define GC_TICKS_DEFAULT 10
 extern int gc_ticks_g; /* how often will gc run */

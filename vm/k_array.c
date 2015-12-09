@@ -112,7 +112,7 @@ void native_arr_elem_set(kek_array_t * arr, int idx, kek_obj_t * obj) {
 	}
 	arr->elems[idx] = obj;
 
-	gc_rootset_remove(id);
+	gc_rootset_remove_id(id);
 
 	vm_debug(DBG_GC, "native_arr_elem_set END -----------------------------\n");
 }
@@ -189,6 +189,6 @@ void native_grow_array(kek_array_t * arr, int length) {
 
 	arr_set_length(arr, length);
 
-	gc_rootset_remove(id);
+	gc_rootset_remove_id(id);
 	vm_debug(DBG_GC, "array_grow_array END --------------------------------\n");
 }

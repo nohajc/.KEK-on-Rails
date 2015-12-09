@@ -63,7 +63,7 @@ kek_except_t * make_exception(kek_obj_t * msg) {
 	kek_except_t * expt = (kek_except_t*) alloc_exception(expt_class);
 	native_new_exception(expt, msg);
 
-	gc_rootset_remove(id);
+	gc_rootset_remove_id(id);
 	return expt;
 }
 

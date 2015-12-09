@@ -1,0 +1,53 @@
+//KEK_TEST_RUNS 1
+//KEK_TEST_ARGS_0 
+
+// ./compiler/kekc ./tests/gc_loop.kek ./tests/kexes/gc_loop.kexe 
+// make -C vm
+// valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d mem ./tests/kexes/gc_loop.kexe
+
+class MyInt {
+  var value1
+  static var value2
+
+  MyInt(v) {
+    value1 = v
+    value2 = v
+  }
+
+  add(x) {
+    value2 = value2 + x
+    value1 = value1 + value2
+  }
+  
+  val() {
+    return (value1 + value2)
+  }
+}
+
+class Main {
+  static main(args) {
+    var it
+    var i = new MyInt(1)
+    var i2
+    var i3
+    var j
+    var j2
+    var j3
+    var k = 0
+    for (it = 0; it < 1000; it++) {
+      i2 = i
+      i3 = i2
+    
+      j = new MyInt(1)
+      j2 = j
+      j3 = j2
+      
+      i2.add(1)
+      j2.add(1)
+      
+      k = k + i3.val() + j3.val()
+    }
+    write k
+  }
+}
+

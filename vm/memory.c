@@ -135,7 +135,7 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	assert(IS_PTR(obj));
 	//assert(!vm_is_const(obj));
 	if (vm_is_const(obj)) {
-		assert_failed:
+		assert_failed: //
 		return;
 	}
 
@@ -274,13 +274,13 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 
 		// We need to move this to case KEK_ARR_OBJS
 		/*for (i = 0; i < obj->k_arr.length; i++) {
-			vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
-					obj->k_arr.length, i);
-			kek_obj_t * el = obj->k_arr.elems[i];
-			if (el != NULL && IS_PTR(el)) {
-				gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
-			}
-		}*/
+		 vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
+		 obj->k_arr.length, i);
+		 kek_obj_t * el = obj->k_arr.elems[i];
+		 if (el != NULL && IS_PTR(el)) {
+		 gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
+		 }
+		 }*/
 	}
 		break;
 	case KEK_ARR_OBJS: {
@@ -457,32 +457,80 @@ void *gc_cheney_calloc(type_t type, class_t *cls, size_t size) {
 	return (ptr);
 }
 
-/* gc_rootset. FIXME: this could be done much smarter */
+/******************************************************************************/
+/* gc_rootset */
+
 gc_rootset_t *gc_rootset_g;
-uint32_t gc_rootset_len_g;
-uint32_t gc_rootset_size_g;
+uint32_t gc_rootset_last_uid_g;
 
 uint32_t gc_rootset_add(kek_obj_t **obj) {
+	gc_rootset_t *grnew;
+
 	if (gc_type_g == GC_NONE) {
 		return (0);
 	}
 
-	if (gc_rootset_len_g + 1 >= gc_rootset_size_g) {
-		gc_rootset_size_g *= 2;
-		gc_rootset_g = realloc(gc_rootset_g, gc_rootset_size_g);
-		assert(gc_rootset_g);
+	assert(obj != NULL);
+
+	grnew = malloc(sizeof(gc_rootset_t));
+	assert(grnew);
+
+	grnew->next = NULL;
+	grnew->obj = obj;
+	grnew->uid = ++gc_rootset_last_uid_g;
+
+	if (gc_rootset_g == NULL) {
+		gc_rootset_g = grnew;
+	} else {
+		grnew->next = gc_rootset_g;
+		gc_rootset_g = grnew;
 	}
-	gc_rootset_g[gc_rootset_len_g++].obj = obj;
-	return (gc_rootset_len_g - 1);
+
+	return (gc_rootset_last_uid_g);
 }
 
-void gc_rootset_remove(uint32_t id) {
+void gc_rootset_remove_id(uint32_t id) {
 	if (gc_type_g == GC_NONE) {
 		return;
 	}
 
-	assert(id < gc_rootset_len_g);
-	gc_rootset_g[id].obj = NULL;
+	gc_rootset_t *gr;
+	gc_rootset_t *grptr;
+
+	assert(gc_rootset_g != NULL);
+	vm_debug(DBG_GC, "gc_rootset next %p\n", gc_rootset_g->next);
+
+	for (gr = gc_rootset_g; gr; gr = gr->next) {
+		vm_debug(DBG_GC, "gr= %p\n", gr);
+		vm_debug(DBG_GC, "grnext= %p\n", gr->next);
+
+		if (gr->uid == id) {
+			if ((grptr = gr->next) != NULL) {
+				gr->next = grptr->next;
+				gr->obj = grptr->obj;
+				gr->uid = grptr->uid;
+				free(grptr);
+				grptr = NULL;
+			} else {
+				free(gr);
+
+				if (gc_rootset_g == gr) {
+					gc_rootset_g = NULL;
+				}
+
+				gr = NULL;
+				break;
+			}
+		}
+	}
+}
+
+void gc_rootset_remove_ptr(kek_obj_t **obj) {
+	if (gc_type_g == GC_NONE) {
+		return;
+	}
+
+	assert(0 && "implement me");
 }
 
 void gc_rootset_init(void) {
@@ -490,10 +538,8 @@ void gc_rootset_init(void) {
 		return;
 	}
 
-	gc_rootset_size_g = 1024;
-	gc_rootset_len_g = 0;
-	gc_rootset_g = malloc(gc_rootset_size_g * sizeof(gc_rootset_t));
-	assert(gc_rootset_g);
+	gc_rootset_g = NULL;
+	gc_rootset_last_uid_g = 0;
 }
 
 void gc_rootset_free(void) {
@@ -501,7 +547,11 @@ void gc_rootset_free(void) {
 		return;
 	}
 
-	free(gc_rootset_g);
+	gc_rootset_t *gr;
+	gc_rootset_t *grptr;
+
+	for (gr = gc_rootset_g; gr; grptr = gr, gr = gr->next, free(grptr))
+		;
 }
 
 /******************************************************************************/
@@ -811,13 +861,18 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	}
 
 	/* gc_rootset */
-	for (j = 0; j < gc_rootset_len_g; j++) {
-		if (gc_rootset_g[j].obj != NULL) {
-			vm_debug(DBG_GC, "rootset: gc_rootset[%d], objptr=%p obj=%p, "
-					"type=%d\n", j, gc_rootset_g[j].obj, *(gc_rootset_g[j].obj),
-					((kek_obj_t *) *(gc_rootset_g[j].obj))->h.t);
-			(*fn)(gc_rootset_g[j].obj);
-		}
+	gc_rootset_t *gr;
+	for (gr = gc_rootset_g; gr; gr = gr->next) {
+
+		vm_debug(DBG_GC, "rootset: gr=%p obj=%p\n", gr, gr->obj);
+
+		assert(gr->obj != NULL);
+
+		vm_debug(DBG_GC, "rootset: (LL)gc_rootset[%d], objptr=%p obj=%p, "
+				"type=%d\n", j, gr->obj, *(gr->obj),
+				((kek_obj_t *) *(gr->obj))->h.t);
+
+		(*fn)(gr->obj);
 	}
 
 	/* arrays from const table */
@@ -979,7 +1034,7 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 
 	vm_debug(DBG_MEM, "qq realloc_arr_elems asbef=%d len=%d arr->length=%d"
 			" elemlen=%d\n", arr->alloc_size, length, arr->length,
-			KEK_ARR_OBJS(arr)->h.length);
+	KEK_ARR_OBJS(arr)->h.length);
 
 	assert(arr->elems[arr->length - 1] != NULL);
 
@@ -1003,7 +1058,7 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 	KEK_ARR_OBJS(arr)->h.length = arr->length;
 	arr->elems = new_elems;
 
-	gc_rootset_remove(id);
+	gc_rootset_remove_id(id);
 
 	/* NOTE: the old elems will cleanup GC */
 }

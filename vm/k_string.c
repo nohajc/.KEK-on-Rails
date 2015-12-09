@@ -113,7 +113,7 @@ void string_split(void) {
 
 	PUSH(arr);
 	BC_RET;
-	gc_rootset_remove(id);
+	gc_rootset_remove_id(id);
 }
 
 void string_toInt(void) {
