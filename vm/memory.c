@@ -318,6 +318,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		int total_size = obj->h.cls->total_syms_instance_cnt
 				+ obj->h.cls->syms_instance_offset;
 		if (!strcmp(obj->h.cls->name, "Reader")) {
+			cp_reader:
 			verbose = true;
 		}
 		for (i = 0; i < total_size; i++) {
