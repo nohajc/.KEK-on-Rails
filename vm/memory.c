@@ -396,9 +396,14 @@ void gc_cheney_scavenge() {
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs BEGIN\n");
 	while ((ptruint_t) scan_ptr_g < (ptruint_t) to_space_free_g) {
 		obj = (kek_obj_t *) scan_ptr_g;
+
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
-		//
+		assert(OBJ_TYPE_CHECK(obj));
+		if (obj->h.t == KEK_ARR) {
+			assert(KEK_ARR_OBJS(obj)->h.h.t == KEK_ARR_OBJS);
+		}
+
 		scan_ptr_g = ((uint8_t *) scan_ptr_g) + ALIGNED(vm_obj_size(obj));
 		gc_cheney_copy_neighbor(&obj);
 	}

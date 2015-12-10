@@ -65,6 +65,14 @@ void vm_debug(uint32_t level, const char *format, ...);
 void vm_error(const char *format, ...);
 char *kek_obj_print(kek_obj_t *kek_obj);
 
+/* there always needs to be some args to msg */
+#define vm_assert(cond, msg, ...) do { \
+	if (!(cond)) { \
+		vm_error("vm_assert(%s) failed at %s:%d (%s) with msg:\n> " msg, \
+			#cond, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__); \
+	} \
+} while (0)
+
 /******************************************************************************/
 /*
  github.com/nohajc/.KEK-on-Rails/wiki/Class-hierarchy-representation-in-the-VM
@@ -181,7 +189,7 @@ void vm_init_native_method(method_t * mth, const char * name, uint32_t args_cnt,
 		uint8_t is_static, method_ptr func);
 class_t * vm_find_class(const char * name);
 method_t * vm_find_method_in_class(class_t * cls, const char * name,
-		bool is_static); // searches in a given class
+bool is_static); // searches in a given class
 symbol_t * vm_find_static_sym_in_class(class_t * cls, const char * name);
 symbol_t * vm_find_instance_sym_in_class(class_t * cls, const char * name);
 method_t * vm_find_method(const char * name, bool is_static, class_t ** cls); // returns class where the method was found

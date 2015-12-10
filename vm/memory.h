@@ -40,7 +40,7 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /* citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
 
 /* from claus */
-#define SEGMENT_SIZE (1024*1024) /* FIXME TODO creating new segments is disabled
+#define SEGMENT_SIZE (4096*4096*2) /* FIXME TODO creating new segments is disabled
  just make sure that this is big enough when using -gx */
 #define OBJ_ALIGN 64
 #define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)))
@@ -168,7 +168,7 @@ void gc_rootset_init(void);
 void gc_rootset_free(void);
 
 
-#define GC_TICKS_DEFAULT 10
+#define GC_TICKS_DEFAULT 100
 extern int gc_ticks_g; /* how often will gc run */
 extern gc_obj_t *gc_obj_g;
 extern gc_obj_t *gc_obj_root_g;

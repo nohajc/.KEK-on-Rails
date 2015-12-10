@@ -56,7 +56,13 @@ void init_kek_array_class(void) {
 
 void arr_set_length(kek_array_t *arr, int length) {
 	arr->length = length;
-	assert(KEK_ARR_OBJS(arr)->h.h.t == KEK_ARR_OBJS);
+//	assert(arr != NULL);
+
+	vm_assert(KEK_ARR_OBJS(arr)->h.h.t == KEK_ARR_OBJS,
+			"arr=%p, arr_elems=%p, arr_objs=%p, arr_objs.type=%d\n", //
+			(void* ) arr, (void* ) arr->elems, KEK_ARR_OBJS(arr),
+			KEK_ARR_OBJS(arr)->h.h.t);
+
 	KEK_ARR_OBJS(arr)->h.length = length;
 }
 
@@ -70,7 +76,7 @@ void new_array(void) {
 	size_t arr_init_size_real = sizeof(kek_array_objs_t)
 			+ (ARR_INIT_SIZE - 1) * sizeof(kek_obj_t *);
 
-	arr_init_size_real = ALIGNED(arr_init_size_real);
+//	arr_init_size_real = ALIGNED(arr_init_size_real);
 
 	/* FIXME? */
 	if (gc_type_g != GC_NONE && !gc_cheney_can_malloc(arr_init_size_real)) {
