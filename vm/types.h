@@ -185,7 +185,7 @@ typedef uint32_t ptruint_t;
 #define IS_INT(obj) \
 		(((ptruint_t)(obj) & 1) || (IS_PTR(obj) && ((obj)->h.t == KEK_INT)))
 #define INT_VAL(obj) (((ptruint_t)(obj) & 1) ? \
-		((int32_t)(ptruint_t)(obj) >> 1) : ((obj)->k_int.value))
+		(int32_t)((ptruint_t)(obj) >> 1) : ((obj)->k_int.value))
 
 #define IS_DPTR(obj) (((ptruint_t)(obj) & 3) == 3)
 #define MAKE_DPTR(obj, addr) (((ptruint_t)(addr) - (ptruint_t)(obj)) | 3)

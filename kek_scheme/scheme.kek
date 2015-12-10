@@ -6,6 +6,8 @@ class Scheme {
 	static var out
 	static var wi
 	static var env
+	static var cmdArgs
+	static var cmdArgPtr
 
 	static Scheme() {
 		out = Sys.out
@@ -17,10 +19,9 @@ class Scheme {
 			try {
 				wi.prompt = "> "
 				expr = parser.read()
-				if (!expr) {
-					break
-				}
+				if (!expr) break
 				expr = expr.eval(env)
+				if (!expr) break
 				expr.print(out)
 				if (expr.toString().length() != 0) {
 					out.writeln("\n");
@@ -33,7 +34,7 @@ class Scheme {
 				case EnvironmentError:
 					out.writeln(e.msg() + e.sym.toString() + "\n")
 				case EvalError: {
-					out.writeln(e.msg() + ",\"")
+					out.writeln(e.msg() + ", \"")
 					e.obj.print(out)
 					out.writeln("\" given.\n")
 				}
@@ -51,8 +52,16 @@ class Scheme {
 
 	static main(args) {
 		var rd, f
+		cmdArgs = args
+		if (args.length() >= 2) {
+			cmdArgPtr = 2
+		}
+		else {
+			cmdArgPtr = 1
+		}
 		env = new Environment()
 		Environment.initBuiltinFunctions(env)
+		Sys.srand(Sys.time())
 
 		// Load init.scm
 		try {
@@ -65,6 +74,23 @@ class Scheme {
 		}
 		catch (e) {
 			out.writeln(e.msg())
+			out.writeln("\n")
+		}
+
+		if (args.length() >= 2) {
+			// Execute given script
+			try {
+				f = new File(args[1], "r")
+				wi = new FileW(f)
+				rd = new Reader(wi)
+				parser = new Parser(rd)
+				REPL()
+				return
+			}
+			catch (e) {
+				out.writeln(e.msg())
+				out.writeln("\n")
+			}
 		}
 
 		// Launch interactive shell

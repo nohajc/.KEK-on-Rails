@@ -1,7 +1,7 @@
 #include "environment.kek"
 
 enum Tag {
-	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL, VOID, B_SYNTAX, B_FUNCTION, U_FUNCTION
+	INTEGER, STRING, SYMBOL, CONS, TRUE, FALSE, NIL, VOID, B_SYNTAX, B_FUNCTION, U_FUNCTION, VECTOR, PORT
 }
 
 class EvalError : Exception {
@@ -194,6 +194,41 @@ class scmCons : scmObject {
 	}
 }
 
+class scmVector : scmObject {
+	var elems
+	scmVector(elems) {
+		super(Tag.VECTOR)
+		this.elems = elems
+	}
+
+	print(out) {
+		var i
+		out.writeln("#(")
+		for (i = 0; i < elems.length(); i++) {
+			if (i > 0) out.writeln(" ")
+			elems[i].print(out)
+		}
+		out.writeln(")")
+	}
+}
+
+class scmFilePort : scmObject {
+	var name
+	var handle
+	var portType
+	scmFilePort(fname, mode) {
+		super(Tag.PORT)
+		name = fname
+		handle = new File(fname, mode)
+		if (mode[0] == "r") portType = "#<input-port:"
+		else portType = "#<output-port:"
+	}
+
+	toString() {
+		return portType + name + ">"
+	}
+}
+
 class scmUserFunction : scmObject {
 	var argList, bodyList, defEnv
 
@@ -205,305 +240,13 @@ class scmUserFunction : scmObject {
 	}
 }
 
-/********************************
- * Builtin syntax and functions *
- ********************************/
-
-class scmBSyntax : scmObject {
-	scmBSyntax() {
-		super(Tag.B_SYNTAX)
-	}
-}
-
-class scmDefine : scmBSyntax {
-	scmDefine() {
-		super()
-	}
-
-	defSym(env, name, rest) {
-		var restrest, value
-		if (rest.tag != Tag.CONS) {
-			throw new EvalError("define expects 2 arguments ", args)
-		}
-		restrest = rest.cdr
-		if (restrest != G.scmNil) {
-			throw new EvalError("define expects 2 arguments ", args)
-		}
-
-		value = rest.car.eval(env)
-		env.set(name, value)
-	}
-
-	defFun(env, nameArgs, rest) {
-		env.set(nameArgs.car, new scmUserFunction(nameArgs.cdr, rest, env))
-	}
-
-	eval(env, args) {
-		var name, rest
-		if (args.tag != Tag.CONS) {
-			throw new EvalError("define expects at least 2 arguments ", args)
-		}
-		name = args.car
-		rest = args.cdr
-		if (name.tag != Tag.CONS) {
-			defSym(env, name, rest)
-		}
-		else {
-			defFun(env, name, rest)
-		}
-		return G.scmVoid
-	}
-}
-
-class scmLambda : scmBSyntax {
-	scmLambda() {
-		super()
-	}
-
-	eval(env, args) {
-		if (args.cdr == G.scmNil) {
-			throw new EvalError("lambda expects at least one body expression ", args.cdr)
-		}
-		return new scmUserFunction(args.car, args.cdr, env)
-	}
-}
-
-class scmIf : scmBSyntax {
-	scmIf() {
-		super()
-	}
-
-	eval(env, args) {
-		// TODO: check number of arguments
-		var eTest = args.car.eval(env)
-		var eThen = args.cdr.car
-		var eElse = args.cdr.cdr.car
-
-		if (eTest != G.scmFalse) {
-			return eThen.eval(env)
-		}
-		return eElse.eval(env)
-	}
-}
-
-class scmQuote : scmBSyntax {
-	scmQuote() {
-		super()
-	}
-
-	eval(env, args) {
-		if (args.cdr != G.scmNil) {
-			throw new EvalError("quote expects 1 argument ", args)
-		}
-		return args.car
-	}
-}
-
-class scmLet : scmBSyntax {
-	scmLet() {
-		super()
-	}
-
-	envFromBindings(bindings, env) {
-		var newEnv = new Environment()
-		newEnv.parentEnv = env
-		var b
-		for (b = bindings; b != G.scmNil; b = b.cdr) {
-			var kv = b.car
-			if (kv.tag != Tag.CONS) {
-				throw new EvalError("Symbol binding must be a list with symbol and value", kv)
-			}
-			newEnv.set(kv.car, kv.cdr.car.eval(env))
-		}
-		return newEnv
-	}
-
-	eval(env, args) {
-		if (args.tag != Tag.CONS) {
-			throw new EvalError("let expects a list of symbol bindings", args)
-		}
-		var bindings = args.car
-		var bl
-		if (bindings.tag != Tag.CONS) {
-			throw new EvalError("let expects a list of symbol bindings", bindings)
-		}
-		var newEnv = envFromBindings(bindings, env)
-		if (args.cdr == G.scmNil) {
-			throw new EvalError("let expects at least one body expression", G.scmNil)
-		}
-		for (bl = args.cdr; bl.cdr != G.scmNil; bl = bl.cdr) {
-			bl.car.eval(newEnv)
-		}
-		return bl.car.eval(newEnv) // Tail call optimization
-	}
-}
-
-class scmBFunction : scmObject {
-	var numArgs
-	scmBFunction(numArgs) {
-		super(Tag.B_FUNCTION)
-		this.numArgs = numArgs
-	}
-
-	eval(args) {
-		var len = args.length()
-		if (len != numArgs) {
-			throw new ArgumentNumError(numArgs, len)
-		}
-	}
-}
-
-class scmConsF : scmBFunction {
-	scmConsF() {
-		super(2)
-	}
-
-	eval(args) {
-		super.eval(args)
-		return new scmCons(args[0], args[1])
-	}
-}
-
-class scmCarF : scmBFunction {
-	scmCarF() {
-		super(1)
-	}
-
-	eval(args) {
-		super.eval(args)
-		if (args[0].tag != Tag.CONS) {
-			throw new EvalError("car expects cons cell ", args[0])
-		}
-		return args[0].car
-	}
-}
-
-class scmCdrF : scmBFunction {
-	scmCdrF() {
-		super(1)
-	}
-
-	eval(args) {
-		super.eval(args)
-		if (args[0].tag != Tag.CONS) {
-			throw new EvalError("cdr expects cons cell ", args[0])
-		}
-		return args[0].cdr
-	}
-}
-
-class scmEvalF : scmBFunction {
-	scmEvalF() {
-		super(1)
-	}
-
-	eval(args) {
-		super.eval(args)
-		return args[0].eval(Scheme.env)
-	}
-}
-
-class scmPlusF : scmBFunction {
-	scmPlusF() {
-		super(-1)
-	}
-
-	eval(args) {
-		var sum = 0
-		var i
-		for (i = 0; i < args.length(); i++) {
-			if (args[i].tag != Tag.INTEGER) {
-				throw new EvalError("Argument expected to be an integer ", args[i])
-			}
-			sum += args[i].val
-		}
-		return new scmInteger(sum)
-	}
-}
-
-class scmTimesF : scmBFunction {
-	scmTimesF() {
-		super(-1)
-	}
-
-	eval(args) {
-		var prod = 1
-		var i
-		for (i = 0; i < args.length(); i++) {
-			if (args[i].tag != Tag.INTEGER) {
-				throw new EvalError("Argument expected to be an integer ", args[i])
-			}
-			prod *= args[i].val
-		}
-		return new scmInteger(prod)
-	}
-}
-
-class scmMinusF : scmBFunction {
-	scmMinusF() {
-		super(-1)
-	}
-
-	eval(args) {
-		var len = args.length()
-		if (!len) return new scmInteger(0)
-		if (args[0].tag != Tag.INTEGER) {
-			throw new EvalError("Argument expected to be an integer ", args[0])
-		}
-		var diff = args[0].val
-		if (len == 1) return new scmInteger(-diff)
-		var i
-		for (i = 1; i < len; i++) {
-			if (args[i].tag != Tag.INTEGER) {
-				throw new EvalError("Argument expected to be an integer ", args[i])
-			}
-			diff -= args[i].val
-		}
-		return new scmInteger(diff)
-	}
-}
-
-class scmEqF : scmBFunction {
-	scmEqF() {
-		super(2)
-	}
-
-	eval(args) {
-		super.eval(args)
-		if (args[0] == args[1]) {
-			return G.scmTrue
-		}
-		return G.scmFalse
-	}
-}
-
-class scmNumEqF : scmBFunction {
-	scmNumEqF() {
-		super(2)
-	}
-
-	eval(args) {
-		super.eval(args)
-		if (args[0].tag != Tag.INTEGER) {
-			throw new EvalError("Expected integer as first argument ", args[0])
-		}
-		if (args[1].tag != Tag.INTEGER) {
-			throw new EvalError("Expected integer as second argument ", args[1])
-		}
-		if (args[0].val == args[1].val) {
-			return G.scmTrue
-		}
-		return G.scmFalse
-	}
-}
-
 class G {
 	static var scmTrue, scmFalse, scmNil, scmVoid
 	static var tagName
 	
 	static G() {
-		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "#nil",	"",
-				"#<syntax>", "#<function>", "#<function>"]
+		tagName = ["INT", "STR", "SYM", "CONS", "#t", "#f", "()", "",
+				"#<syntax>", "#<function>", "#<function>", "VECTOR", "PORT"]
 		scmTrue = new scmObject(Tag.TRUE)
 		scmFalse = new scmObject(Tag.FALSE)
 		scmNil = new scmObject(Tag.NIL)

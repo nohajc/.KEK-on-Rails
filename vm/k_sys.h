@@ -10,5 +10,8 @@
 #include "types.h"
 
 void init_kek_sys_class(void);
+void sys_rand(void);
+void sys_srand(void);
+void sys_time(void);
 
 #endif

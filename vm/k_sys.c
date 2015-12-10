@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -30,9 +31,16 @@ void init_kek_sys_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 0;
+	classes_g[classes_cnt_g].methods_cnt = 3;
 
-	classes_g[classes_cnt_g].methods = NULL;
+	classes_g[classes_cnt_g].methods = malloc(
+			classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "rand", 0,
+	true, sys_rand);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[1], "srand", 1,
+	true, sys_srand);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[2], "time", 0,
+	true, sys_time);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -84,4 +92,24 @@ void init_kek_sys_class(void) {
 	classes_g[classes_cnt_g].parent_name = NULL;
 
 	classes_cnt_g++;
+}
+
+void sys_rand(void) {
+	PUSH(make_integer(rand()));
+	BC_RET;
+}
+
+void sys_srand(void) {
+	kek_obj_t * seed = ARG(0);
+	if (!IS_INT(seed)) {
+		vm_error("Expected integer as argument.\n");
+	}
+	srand(INT_VAL(seed));
+	PUSH(NIL);
+	BC_RET;
+}
+
+void sys_time(void) {
+	PUSH(make_integer(time(NULL)));
+	BC_RET;
 }

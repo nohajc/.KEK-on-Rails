@@ -17,6 +17,7 @@ union _kek_obj * new_string_from_concat(const char *, const char *);
 void string_length(void);
 void string_split(void);
 void string_toInt(void);
+void string_replace(void);
 
 // Static methods
 void string_fromInt(void);
