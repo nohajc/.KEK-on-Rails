@@ -42,7 +42,7 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /* from claus */
 #define SEGMENT_SIZE (4*1024) /* FIXME TODO 4KB for now */
 #define OBJ_ALIGN 8
-#define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)) + 32)
+#define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)))
 
 /* Remember set */
 typedef struct _segment_slots_buffer {
