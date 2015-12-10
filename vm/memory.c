@@ -19,11 +19,17 @@ gc_carrlist_t *gc_carrlist_root_g = NULL;
 void gc_obj_add(kek_obj_t *obj, size_t size) {
 	gc_obj_t *go;
 
+	size = ALIGNED(size);
+
 	if (gc_type_g != GC_NONE) {
 		return;
 	}
 
-	vm_debug(DBG_GC, "gc_obj_add objptr=%p\n");
+	vm_debug(DBG_GC, "gc_obj_add objptr=%p\n", (void*) obj);
+
+	if (obj == NULL) {
+		vm_error("gc_obj_add obj is null\n");
+	}
 
 	go = malloc(sizeof(gc_obj_t));
 	assert(go);
@@ -75,8 +81,10 @@ segment_t *segments_to_space_g = NULL;
 void *to_space_free_g;
 size_t to_space_size_g;
 void *scan_ptr_g;
+uint32_t gc_cheney_iteration_t;
 
 bool gc_cheney_ptr_in_space(void *segment_data, void *ptr, size_t size) {
+	size = ALIGNED(size);
 	vm_debug(DBG_MEM, "gc_cheney_ptr_in_from_space:\n"
 			" (segment_data start) %lu\n"
 			" (          ptr from) %lu\n"
@@ -93,10 +101,12 @@ bool gc_cheney_ptr_in_space(void *segment_data, void *ptr, size_t size) {
 }
 
 bool gc_cheney_ptr_in_from_space(void *ptr, size_t size) {
+	size = ALIGNED(size);
 	return (gc_cheney_ptr_in_space(segments_from_space_g->beginning, ptr, size));
 }
 
 bool gc_cheney_ptr_in_to_space(void *ptr, size_t size) {
+	size = ALIGNED(size);
 	return (gc_cheney_ptr_in_space(segments_to_space_g->beginning, ptr, size));
 }
 
@@ -107,6 +117,7 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 	size = ALIGNED(vm_obj_size(obj));
 
 	vm_debug(DBG_MEM, "gc_cheney_copy_obj_to_space_free: ptr=%p\n", obj);
+	assert(TYPE_CHECK(obj->h.t));
 
 	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
 			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
@@ -146,6 +157,7 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	}
 
 	copy = gc_cheney_copy_obj_to_space_free(obj);
+	assert(TYPE_CHECK(copy->h.t));
 	assert(copy->h.t == obj->h.t);
 
 	obj->h.t = KEK_COPIED;
@@ -324,7 +336,9 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 			kek_obj_t * var = obj->k_udo.inst_var[i];
 			if (var != NULL && IS_PTR(var)) {
 				if (verbose) {
-					vm_debug(DBG_BC, "Copying inst_var[%d], type = %d, ptr = %p, ", i, var->h.t, var);
+					vm_debug(DBG_BC,
+							"Copying inst_var[%d], type = %d, ptr = %p, ", i,
+							var->h.t, var);
 				}
 				gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
 				if (verbose) {
@@ -354,6 +368,7 @@ void gc_cheney_scavenge() {
 
 	uint8_t i;
 
+	gc_cheney_iteration_t++;
 	vm_debug(DBG_GC_STATS, "new space scavenge\n");
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge()\n");
@@ -382,6 +397,7 @@ void gc_cheney_scavenge() {
 		obj = (kek_obj_t *) scan_ptr_g;
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
+		//
 		scan_ptr_g = ((uint8_t *) scan_ptr_g) + ALIGNED(vm_obj_size(obj));
 		gc_cheney_copy_neighbor(&obj);
 	}
@@ -403,14 +419,20 @@ void gc_cheney_init() {
 
 	to_space_free_g = segments_to_space_g->end;
 	to_space_size_g = 0;
+	gc_cheney_iteration_t = 0;
 }
 
 void gc_cheney_free() {
+
+	vm_debug(DBG_GC_STATS, "gc_cheney_iteration_t = %d\n",
+			gc_cheney_iteration_t);
+
 	free(segments_from_space_g);
 	free(segments_to_space_g);
 }
 
 bool gc_cheney_can_malloc(size_t size) {
+	size = ALIGNED(size);
 	return ((ptruint_t) ((uint8_t *) to_space_free_g + size) < //
 			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
 					+ NEW_SEGMENT_SIZE));
@@ -431,6 +453,10 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
+
+		if (!gc_cheney_can_malloc(size)) {
+			vm_error("No space in NEW_SPACE. Increase it please.\n");
+		}
 	}
 
 	ptr = to_space_free_g;
@@ -460,7 +486,7 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 void *gc_cheney_calloc(type_t type, class_t *cls, size_t size) {
 	void *ptr;
-
+	size = ALIGNED(size);
 	ptr = gc_cheney_malloc(type, cls, size);
 	memset(ptr, 0, size);
 
@@ -572,6 +598,8 @@ segment_t *segments_g = NULL;
 segment_t *mem_segment_init(size_t size) {
 	segment_t *s;
 
+	size = ALIGNED(size);
+
 	assert(size > 0);
 
 #if FORCE_CALLOC == 1
@@ -616,13 +644,14 @@ void *mem_segment_malloc(size_t size) {
 	size = ALIGNED(size);
 
 	if (gc_type_g != GC_NONE) {
-		int *x = (int *) 42;
-		*x = 666; // WTF?
+		vm_error("mem_segment when gc is not none\n");
 	}
 
 	assert(segments_g != NULL);
 
 	if (segments_g->used + size > segments_g->size) {
+		vm_error("no segment realloc pls. make it bigger\n");
+
 		vm_debug(DBG_MEM, "We need to allocate a new segment.\n");
 		if (size > SEGMENT_SIZE) {
 			new_seg = mem_segment_init(size);
@@ -635,7 +664,7 @@ void *mem_segment_malloc(size_t size) {
 
 	ptr = segments_g->end;
 	segments_g->used += size;
-	segments_g->end = (uint8_t *) segments_g->end + size;
+	segments_g->end = ((uint8_t *) segments_g->end) + size;
 
 	vm_debug(DBG_MEM, "after: end=\t%p (%lu)\n", segments_g->end,
 			segments_g->end);
@@ -646,6 +675,7 @@ void *mem_segment_malloc(size_t size) {
 void *mem_segment_calloc(size_t size) {
 	void *ptr;
 
+	size = ALIGNED(size);
 	ptr = mem_segment_malloc(size);
 	memset(ptr, 0, size);
 
@@ -656,13 +686,18 @@ void *mem_segment_calloc(size_t size) {
 inline void *mem_obj_malloc(type_t type, class_t *cls, size_t size) {
 	kek_obj_t *obj;
 
+	size = ALIGNED(size);
+#if 1
 	obj = mem_segment_malloc(size);
+#else
+	obj = malloc(size);
+#endif
 	assert(obj);
 
 	obj->h.t = type;
 	obj->h.cls = cls;
 
-	gc_obj_add(obj, size);
+//	gc_obj_add(obj, size);
 
 	return (obj);
 }
@@ -670,6 +705,7 @@ inline void *mem_obj_malloc(type_t type, class_t *cls, size_t size) {
 inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) {
 	kek_obj_t *obj;
 
+	size = ALIGNED(size);
 	obj = mem_segment_calloc(num * size);
 	assert(obj);
 
@@ -978,6 +1014,8 @@ void gc_free() {
 
 void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 	void *ptr;
+
+	size = ALIGNED(size);
 
 	switch (gc_type_g) {
 	case GC_NONE:

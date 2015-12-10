@@ -20,6 +20,7 @@ union _kek_obj;
 /******************************************************************************/
 /* object type */
 
+/* WARNING: after adding some type, edit TYPE_CHECK() macro */
 typedef enum _type {
 	KEK_NIL, //
 	KEK_INT, //
@@ -37,7 +38,7 @@ typedef enum _type {
 	KEK_COPIED // when gc copies and obj, this will be the type of the old one
 } type_t;
 
-#define TYPE_CHECK(type) (((type) >= 0) && ((type) <= 10))
+#define TYPE_CHECK(type) (((type) >= 0) && ((type) <= 13))
 #define OBJ_TYPE_CHECK(obj) (TYPE_CHECK((obj)->h.t))
 
 static const char *type_str_g[] = { "NIL", "INT", "STR", "SYM", "ARR", "EXINFO",

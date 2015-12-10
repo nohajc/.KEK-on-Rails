@@ -39,12 +39,6 @@ void free_globals() {
 	free(const_table_g);
 	free(classes_g);
 	stack_destroy();
-
-#ifdef DEBUG
-	/* free the buffer inside */
-	(void) kek_obj_print(NULL);
-#endif
-
 }
 
 static void debug_add(char *type) {

@@ -1,0 +1,48 @@
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 300
+//KEK_TEST_ARGS_1 1000
+
+class MyArr {
+  var i_m
+  var a_m
+  
+  MyArr(i) {
+    var j
+    a_m = []
+    i_m = i
+    
+    for (j = 0; j < i_m; j++) {
+      a_m[j] = j
+    }
+  }
+  
+  print() {
+    var j
+    write "MyArr print i_m = "
+    write i_m
+    for (j = 0; j < i_m; j++) {
+      write i_m
+    }
+  }
+} // MyArr
+
+class Main {
+  static main(args) {
+    var i
+    var r
+    var arr
+    var repeat = 1
+    var cnt = 2
+    
+    var myarr
+    
+    for (r = 0; r < repeat; r++) {
+      for (i = 0; i < cnt; i++) {
+        myarr = new MyArr(i)
+        myarr.print()      
+      }
+    } // for repeat
+    
+    write "ok\n"
+  } // main
+} // Main

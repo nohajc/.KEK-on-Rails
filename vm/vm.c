@@ -74,6 +74,10 @@ void vm_error(const char *format, ...) {
 char *kek_obj_print(kek_obj_t *kek_obj) {
 	static char str[1024];
 
+	if (kek_obj != NULL && IS_PTR(kek_obj) && !TYPE_CHECK(kek_obj->h.t)) {
+		vm_error("kek_obj_print typecheck failed. type=\"%d\"\n", kek_obj->h.t);
+	}
+
 	if (kek_obj == (kek_obj_t *) 0xffffffffffffffff) {
 		(void) snprintf(str, 1024, "kek_obj == 0xffffffffffffffff");
 		goto out;
@@ -114,7 +118,8 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 			(void) snprintf(str, 1024, "udo");
 			break;
 		default:
-			(void) snprintf(str, 1024, "unknown type %x", kek_obj->h.t);
+			(void) snprintf(str, 1024, "unknown type %x (obj=%p, typeptr=%p)",
+					kek_obj->h.t, (void *) kek_obj, (void *) &(kek_obj->h.t));
 			/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
 			 assert(0 && "unhandled kek_obj->type"); */
 			break;
@@ -453,7 +458,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 	if (IS_INT(a) && IS_INT(b)) {
 		kek_int_t *res = NULL;
 
-		vm_debug(DBG_BC, " - %d, %d", INT_VAL(a), INT_VAL(b));
+		vm_debug(DBG_BC, " - %d, %d\n", INT_VAL(a), INT_VAL(b));
 
 		switch (o) {
 		case Plus:
@@ -565,8 +570,8 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 			res = make_integer(a != b);
 			break;
 		default:
-			vm_error("bc_bop: unsupported bop %d (a=%p (%d), b=%p (%d))\n",
-					o, a, b, a->h.t, b->h.t);
+			vm_error("bc_bop: unsupported bop %d (a=%p (%d), b=%p (%d))\n", o,
+					a, b, a->h.t, b->h.t);
 			break;
 		}
 		return (kek_obj_t*) res;

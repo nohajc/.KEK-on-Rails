@@ -40,9 +40,10 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /* citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.6386&rep=rep1&type=pdf */
 
 /* from claus */
-#define SEGMENT_SIZE (4*1024) /* FIXME TODO 4KB for now */
-#define OBJ_ALIGN 8
-#define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)) + 8)
+#define SEGMENT_SIZE (1024*1024) /* FIXME TODO creating new segments is disabled
+ just make sure that this is big enough when using -gx */
+#define OBJ_ALIGN 64
+#define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)))
 
 /* Remember set */
 typedef struct _segment_slots_buffer {
@@ -199,6 +200,7 @@ extern segment_t *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */
 extern size_t to_space_size_g;
 extern void *scan_ptr_g;
+extern uint32_t gc_cheney_iteration_t;
 
 bool gc_cheney_ptr_in_from_space(void *, size_t);
 bool gc_cheney_ptr_in_to_space(void *, size_t);

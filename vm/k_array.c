@@ -70,6 +70,8 @@ void new_array(void) {
 	size_t arr_init_size_real = sizeof(kek_array_objs_t)
 			+ (ARR_INIT_SIZE - 1) * sizeof(kek_obj_t *);
 
+	arr_init_size_real = ALIGNED(arr_init_size_real);
+
 	/* FIXME? */
 	if (gc_type_g != GC_NONE && !gc_cheney_can_malloc(arr_init_size_real)) {
 		vm_debug(DBG_GC, "new_array: not enought space, force gc! arr.as=%d\n",
