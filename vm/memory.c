@@ -330,7 +330,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		int total_size = obj->h.cls->total_syms_instance_cnt
 				+ obj->h.cls->syms_instance_offset;
 		if (!strcmp(obj->h.cls->name, "Reader")) {
-			cp_reader:
+			cp_reader: //
 			verbose = true;
 		}
 		for (i = 0; i < total_size; i++) {
@@ -401,7 +401,12 @@ void gc_cheney_scavenge() {
 		assert(IS_PTR(obj));
 		assert(OBJ_TYPE_CHECK(obj));
 		if (obj->h.t == KEK_ARR) {
-			assert(KEK_ARR_OBJS(obj)->h.h.t == KEK_ARR_OBJS);
+			assert(KEK_ARR_OBJS(obj));
+			vm_debug(DBG_GC, "kek_arr_objs are at %p\n", KEK_ARR_OBJS(obj));
+			vm_assert(KEK_ARR_OBJS(obj)->h.h.t == KEK_ARR_OBJS,
+					"arr=%p, arr_elems=%p, arr_objs=%p, arr_objs.type=%d\n", //
+					(void* ) obj, (void* ) obj->k_arr.elems, KEK_ARR_OBJS(obj),
+					KEK_ARR_OBJS(obj)->h.h.t);
 		}
 
 		scan_ptr_g = ((uint8_t *) scan_ptr_g) + ALIGNED(vm_obj_size(obj));
