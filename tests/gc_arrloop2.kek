@@ -5,13 +5,19 @@
 class Main {
   static main(args) {
     var i
+    var j
     var r
     var arr
-    var repeat = 100
+    var repeat = 10
     //var cnt = 1000 // it will realloc once
     //var cnt = 300 // no realloc
     var cnt = args[1].toInt()
     
+    var another = []
+    for (j = 0; j < cnt; j++) {
+      another[j] = j;
+    }
+
     var expval = 0
     var expval_from
     var expval_check
@@ -53,6 +59,13 @@ class Main {
         }
         
         expval = expval + 1
+      }
+     
+      for (j = 0; j < cnt; j++) {
+        if (another[j] != j) {
+          write "ANOTHER CHECK FAILED"
+          return
+        }
       }
       
       //write "now just write\n"

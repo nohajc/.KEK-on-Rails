@@ -2,16 +2,35 @@
 //KEK_TEST_ARGS_0 300
 //KEK_TEST_ARGS_1 1000
 
+class MyObj {
+  var v
+  var str
+  
+  MyObj(av) {
+    v = av;
+    //str = "123 this is a sample string 456"
+    str = "12345 abcdefghijklmnopqrstuvwxyz 67890"
+  }
+  
+  val() {
+    return v
+  }
+}
+
 class Main {
   static main(args) {
     var i
+    var j
     var r
     var arr
-    var repeat = 100
-    //var cnt = 1000 // it will realloc once
-    //var cnt = 300 // no realloc
+    var repeat = 10
     var cnt = args[1].toInt()
     
+    var another = []
+    for (j = 0; j < cnt; j++) {
+      another[j] = new MyObj(j);
+    }
+
     var expval = 0
     var expval_from
     var expval_check
@@ -28,7 +47,7 @@ class Main {
         //write "l&w expval = "
         //write expval
         
-        arr[i] = expval
+        arr[i] = new MyObj(expval)
                      
         //write "l&w r = "
         //write r
@@ -39,12 +58,12 @@ class Main {
         //write "l&w arr[i] = "
         //write arr[i]
         
-        if (arr[i] != expval) {
+        if (arr[i].val() != expval) {
           write "L&W MISMATCH\n"
           write "r = "
           write r
           write "arr[i] = "
-          write arr[i]
+          write arr[i].val()
           write "i = "
           write i
           write "expval = "
@@ -53,6 +72,13 @@ class Main {
         }
         
         expval = expval + 1
+      }
+     
+      for (j = 0; j < cnt; j++) {
+        if (another[j].val() != j) {
+          write "ANOTHER CHECK FAILED"
+          return
+        }
       }
       
       //write "now just write\n"
@@ -70,7 +96,7 @@ class Main {
         //write "write arr[i] = "
         //write arr[i]
         
-        if (arr[i] != expval_check) {
+        if (arr[i].val() != expval_check) {
           write "JUST WRITE MISMATCH\n"
           
           write "r = "
@@ -80,7 +106,7 @@ class Main {
           write i
           
           write "arr[i] = "
-          write arr[i]
+          write arr[i].val()
           
           write "expval_check = "
           write expval_check         

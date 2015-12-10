@@ -168,7 +168,7 @@ void gc_rootset_init(void);
 void gc_rootset_free(void);
 
 
-#define GC_TICKS_DEFAULT 100
+#define GC_TICKS_DEFAULT 100000
 extern int gc_ticks_g; /* how often will gc run */
 extern gc_obj_t *gc_obj_g;
 extern gc_obj_t *gc_obj_root_g;

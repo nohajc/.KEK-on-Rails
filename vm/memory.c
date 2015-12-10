@@ -126,7 +126,7 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 	}
 
 	ret = memcpy(to_space_free_g, obj, size);
-	to_space_free_g = ((uint8_t *) to_space_free_g + size);
+	to_space_free_g = ((uint8_t *) to_space_free_g) + size;
 
 	return (ret);
 }
@@ -157,8 +157,17 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	}
 
 	copy = gc_cheney_copy_obj_to_space_free(obj);
-	assert(TYPE_CHECK(copy->h.t));
+	assert(IS_PTR(copy));
+	assert(OBJ_TYPE_CHECK(copy));
 	assert(copy->h.t == obj->h.t);
+	if (copy->h.t == KEK_ARR) {
+		assert(KEK_ARR_OBJS(copy));
+		vm_debug(DBG_GC, "root: kek_arr_objs are at %p\n", KEK_ARR_OBJS(copy));
+		vm_assert(KEK_ARR_OBJS(copy)->h.h.t == KEK_ARR_OBJS,
+				"arr=%p, arr_elems=%p, arr_objs=%p, arr_objs.type=%d\n", //
+				(void* ) copy, (void* ) copy->k_arr.elems, KEK_ARR_OBJS(copy),
+				KEK_ARR_OBJS(copy)->h.h.t);
+	}
 
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) copy;
@@ -206,6 +215,7 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 
 	assert(obj != NULL);
 	assert(IS_PTR(obj));
+	assert(OBJ_TYPE_CHECK(obj));
 
 	if (vm_is_const(obj)) {
 		return;
@@ -244,7 +254,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		assert(0 && "only in cost tbl");
 		break;
 	case KEK_ARR: {
-		kek_obj_t *arr_objs;
+		kek_array_objs_t *arr_objs;
 		int i;
 
 		vm_debug(DBG_GC, "+++++ KEK_ARR +++++\n");
@@ -252,31 +262,22 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		vm_debug(DBG_GC, "KA obj->k_arr.elems=%p\n", obj->k_arr.elems);
 
 		/* try to not copy elems if there are none yet */
-		if (obj->k_arr.elems == NULL) {
-			vm_debug(DBG_GC, "\n\nobjs are NULL, skip\n\n");
-			return;
-		}
+		/* well, no. */
+		/*if (obj->k_arr.elems == NULL) {
+		 vm_debug(DBG_GC, "\n\nobjs are NULL, skip\n\n");
+		 return;
+		 }*/
 
 		assert(obj->k_arr.elems != NULL);
-		arr_objs = (kek_obj_t *) ((uint8_t *) obj->k_arr.elems
-				- sizeof(kek_array_objs_header_t));
+		arr_objs = KEK_ARR_OBJS(obj);
 		assert(arr_objs != NULL);
-		vm_debug(DBG_GC, "arr_objs->h.t=%d\n", arr_objs->h.t);
-		assert(arr_objs->h.t == KEK_ARR_OBJS);
+		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
+		assert(arr_objs->h.length == obj->k_arr.length);
 
-		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs() KEK_ARR "
-				"(len=%d alloc_size=%d, elemslen=%d) -----------------------\n",
-				obj->k_arr.length, obj->k_arr.alloc_size,
-				arr_objs->k_arr_objs.h.length);
+		/* this will copy the structure with the pointers to the objs */
+		gc_cheney_copy_neighbor_inner((kek_obj_t **)&arr_objs);
 
-		//assert(obj->k_arr.length == arr_objs->k_arr_objs.h.length);
-
-		vm_debug(DBG_GC,
-				"gc_cheney_copy_inner_objs: before copy: obj->k_arr.elems: %p\n",
-				obj->k_arr.elems);
-
-		gc_cheney_copy_neighbor_inner(&arr_objs);
-		obj->k_arr.elems = &(arr_objs->k_arr_objs.elems[0]);
+		obj->k_arr.elems = &(arr_objs->elems[0]);
 
 		vm_debug(DBG_GC,
 				"gc_cheney_copy_inner_objs: after copy: obj->k_arr.elems: %p\n",
@@ -297,18 +298,23 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		break;
 	case KEK_ARR_OBJS: {
 		int i;
+
 		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
 			vm_debug(DBG_GC, "==: obj->k_arr_objs.h.length: %d, i=%d\n",
 					obj->k_arr_objs.h.length, i);
+
 			kek_obj_t * el = obj->k_arr_objs.elems[i];
-			if (el != NULL && IS_PTR(el)) {
-				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
-			}
+
+			vm_assert(el != NULL, "el %d is NULL\n", i);
+			vm_assert(IS_PTR(el), "el %d is not ptr\n", i);
+			vm_assert(OBJ_TYPE_CHECK(el), "el %d has not valid type\n", i);
+
+			gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
 		}
 		break;
 	}
 	case KEK_EXINFO:
-		assert(0 && "only in cost tbl");
+		assert(0 && "only in const tbl");
 		break;
 	case KEK_EXPT: {
 		/* copy union _kek_obj * msg; */
@@ -410,9 +416,9 @@ void gc_cheney_scavenge() {
 		}
 
 		scan_ptr_g = ((uint8_t *) scan_ptr_g) + ALIGNED(vm_obj_size(obj));
+
 		gc_cheney_copy_neighbor(&obj);
 	}
-	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs END\n");
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() end "
 			"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");

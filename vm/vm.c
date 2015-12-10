@@ -853,9 +853,15 @@ void vm_execute_bc(void) {
 					arg2, (tail_call ? "true" : "false"));
 			TOP(obj);
 
-			if (obj == NULL || !IS_PTR(obj)) {
-				vm_error("Invalid class/object pointer.\n");
+			if (obj == NULL) {
+				vm_error("CALLE: Invalid class/object pointer on top:"
+						" == NULL\n");
 			}
+			if (!IS_PTR(obj)) {
+				vm_error("CALLE: Invalid class/object pointer on top:"
+						" !IS_PTR()\n");
+			}
+
 			sym = CONST(arg1); // name of the method
 			if (!IS_SYM(sym)) {
 				vm_error("Expected symbol as the first argument of CALL.\n");
