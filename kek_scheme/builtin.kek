@@ -445,7 +445,7 @@ class scmEqualF : scmBFunction {
 			else {
 				res = a.str == b.str
 			}
-		case Tag.SYMBOL:
+		case Tag.SYMBOL, Tag.TRUE, Tag.FALSE:
 			res = a == b
 		default:
 			res = 0
@@ -718,5 +718,32 @@ class scmExitF : scmBFunction {
 	eval(args) {
 		super.eval(args)
 		return nil
+	}
+}
+
+class scmApplyF : scmBFunction {
+	scmApplyF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var funcall = new scmCons(args[0], args[1])
+		return funcall.eval(Scheme.env)
+	}
+}
+
+class scmRandomF : scmBFunction {
+	scmRandomF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var rmax = args[0]
+		if (rmax.tag != Tag.INTEGER) {
+			throw new EvalError("Argument expected to be an integer", rmax)
+		}
+		return new scmInteger(Sys.rand() % rmax.val)
 	}
 }

@@ -10,7 +10,7 @@
 
 ; Example:
 ; input: (a | b | c) & (!a | !c) & b
-; parsed: (lambda (a b c d) (and (or a b c) (or (not a) (not c)) (or b)))
+; parsed: (lambda (a b c) (list (or a b c) (or (not a) (not c)) (or b)))
 
 (define (read-liter tok)
   (if (string=? (car tok) "!")
@@ -46,7 +46,7 @@
         (cons (cons (cons 'or (list (car lit-t))) (car fr-t)) (cdr fr-t))))))
 
 (define (read-formula tok)
-  (cons 'and (car (read-form tok))))
+  (cons 'list (car (read-form tok))))
 
 (define (sep-kw str kw)
   (string-replace str (car kw) (string-append " " (car kw) " ")))
@@ -68,11 +68,20 @@
 (define (var? a)
   (null? (filter (lambda (x) (string=? x a)) operators)))
 
+(define (randvals len)
+  (if (zero? len)
+    null
+   (cons (zero? (random 2)) (randvals (- len 1)))))
+
+(define (satisfied-clauses-num fn vals)
+  (length (filter (lambda (x) (equal? x #t)) (apply fn vals))))
+
 (define (solve form varnum)
-  (print form)
-  (newline)
-  (print varnum)
-  (newline))
+  (let ((fn (eval form)))
+	 (print form)
+    (newline)
+    (print (satisfied-clauses-num fn (randvals varnum)))
+    (newline)))
 
 (define (read-input f)
   (let ((ln (read-line f)))
@@ -82,7 +91,7 @@
           (sep-keywords ln operators))))
 		  (let ((formlst (read-formula tokens))
 				  (vars (remove-duplicates (map string->symbol (filter var? tokens)))))
-			 (solve (eval (list 'lambda vars formlst)) (length vars))
+			 (solve (list 'lambda vars formlst) (length vars))
         (read-input f))))))
 
 ;------------------------------------------------------------

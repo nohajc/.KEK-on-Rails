@@ -48,6 +48,8 @@ class Environment {
 		env.set(scmSymbol.getSym("print"), new scmPrintF())
 		env.set(scmSymbol.getSym("newline"), new scmNewlineF())
 		env.set(scmSymbol.getSym("exit"), new scmExitF())
+		env.set(scmSymbol.getSym("apply"), new scmApplyF())
+		env.set(scmSymbol.getSym("random"), new scmRandomF())
 	}
 
 	Environment() {
