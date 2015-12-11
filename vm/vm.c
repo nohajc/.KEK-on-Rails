@@ -861,6 +861,10 @@ void vm_execute_bc(void) {
 				vm_error("CALLE: Invalid class/object pointer on top:"
 						" !IS_PTR()\n");
 			}
+			if (IS_NIL(obj)) {
+				vm_error("CALLE: Invalid class/object pointer on top:"
+						" IS_NIL()\n");
+			}
 
 			sym = CONST(arg1); // name of the method
 			if (!IS_SYM(sym)) {
