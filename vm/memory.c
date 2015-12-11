@@ -265,9 +265,13 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		assert(arr_objs->h.length == obj->k_arr.length);
 
 		for (i = 0; i < arr_objs->h.length; i++) {
-			vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d\n^^^^\n",i,
-					arr_objs->elems[i], //
-					INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
+			if (IS_UDO(arr_objs->elems[i])) {
+				if (IS_INT(arr_objs->elems[i]->k_udo.inst_var[0])) {
+					vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d\n^^^^\n",i,
+							arr_objs->elems[i], //
+							INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
+				}
+			}
 		}
 
 		/* this will copy the structure with the pointers to the objs */
