@@ -1,0 +1,38 @@
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 300
+//KEK_TEST_ARGS_1 1000
+
+class MyObj {
+  var v
+  var str
+  
+  MyObj(av) {
+    v = av;
+    //str = "123 this is a sample string 456"
+    str = "12345 abcdefghijklmnopqrstuvwxyz 67890"
+  }
+  
+  val() {
+    return v
+  }
+}
+
+class Main {
+  static main(args) {
+    var i
+    var cnt = 10000
+    var tmp
+    var arr = []
+    arr[42] = new MyObj(42)
+    
+    for (i = 0; i < cnt; i++) {
+      tmp = new MyObj(666)
+    }
+    
+    if (arr[42].val() == 42) {
+      write "ok\n"
+    } else {
+      write "fail\n"
+    }
+  } // main
+} // Main

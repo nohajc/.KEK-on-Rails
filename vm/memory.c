@@ -117,7 +117,7 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 	size = ALIGNED(vm_obj_size(obj));
 
 	vm_debug(DBG_MEM, "gc_cheney_copy_obj_to_space_free: ptr=%p\n", obj);
-	assert(TYPE_CHECK(obj->h.t));
+	assert(OBJ_TYPE_CHECK(obj));
 
 	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
 			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
@@ -210,6 +210,8 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 	assert(OBJ_TYPE_CHECK(obj));
 
 	if (vm_is_const(obj)) {
+		vm_debug(DBG_GC, "gc_cheney_copy_neighbor_inner: obj=%p is const!\n",
+				(void *) obj);
 		return;
 	}
 
@@ -261,8 +263,14 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
 		assert(arr_objs->h.length == obj->k_arr.length);
 
+		for (i = 0; i < arr_objs->h.length; i++) {
+			vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d\n^^^^\n",i,
+					arr_objs->elems[i], //
+					INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
+		}
+
 		/* this will copy the structure with the pointers to the objs */
-		gc_cheney_copy_neighbor_inner((kek_obj_t **)&arr_objs);
+		gc_cheney_copy_neighbor_inner((kek_obj_t **) &arr_objs);
 
 		obj->k_arr.elems = &(arr_objs->elems[0]);
 
@@ -271,29 +279,48 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 				obj->k_arr.elems);
 		vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: obj->k_arr.length: %d\n",
 				obj->k_arr.length);
-
-		// We need to move this to case KEK_ARR_OBJS
-		/*for (i = 0; i < obj->k_arr.length; i++) {
-		 vm_debug(DBG_GC, "==: obj->k_arr.length: %d, i=%d\n",
-		 obj->k_arr.length, i);
-		 kek_obj_t * el = obj->k_arr.elems[i];
-		 if (el != NULL && IS_PTR(el)) {
-		 gc_cheney_copy_neighbor_inner(&(obj->k_arr.elems[i]));
-		 }
-		 }*/
 	}
 		break;
 	case KEK_ARR_OBJS: {
 		int i;
 
 		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
-			vm_debug(DBG_GC, "==: obj->k_arr_objs.h.length: %d, i=%d\n",
-					obj->k_arr_objs.h.length, i);
-
 			kek_obj_t * el = obj->k_arr_objs.elems[i];
+
+			vm_debug(DBG_GC, "==: obj->k_arr_objs.h.length: %d, i=%d, el=%p\n",
+					obj->k_arr_objs.h.length, i, el);
+
+			if (IS_NIL(el)) {
+				vm_debug(DBG_GC, "el is nil %d\n");
+			}
+
+			if (IS_INT(el)) {
+				vm_debug(DBG_GC, "el is int %d\n", INT_VAL(el));
+			}
 
 			vm_assert(el != NULL, "el %d is NULL\n", i);
 			if (IS_PTR(el)) {
+
+				if (obj->k_arr_objs.elems[i]->h.t == KEK_UDO) {
+					vm_debug(DBG_GC, "XXX\narr obj is udo of %s\n",
+							obj->k_arr_objs.elems[i]->k_udo.h.cls->name);
+
+					uint32_t x;
+					for (x = 0;
+							x < //
+									obj->k_arr_objs.elems[i]->k_udo.h.cls->syms_instance_cnt;
+							x++) {
+						if (IS_INT(
+								obj->k_arr_objs.elems[i]->k_udo.inst_var[x])) {
+							vm_debug(DBG_GC, "inst val=%d\n",
+									obj->k_arr_objs.elems[i]->k_udo.inst_var[x]);
+						} else {
+							vm_debug(DBG_GC, "inst val=?\n");
+						}
+					}
+
+				}
+
 				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
 			}
 		}
@@ -388,6 +415,8 @@ void gc_cheney_scavenge() {
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy inner objs BEGIN\n");
 	while ((ptruint_t) scan_ptr_g < (ptruint_t) to_space_free_g) {
 		obj = (kek_obj_t *) scan_ptr_g;
+
+		vm_debug(DBG_GC, "gc_cheney_scavenge() scaned obj=%p\n", obj);
 
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
