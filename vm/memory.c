@@ -253,13 +253,6 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		vm_debug(DBG_GC, "KA obj=%p\n", obj);
 		vm_debug(DBG_GC, "KA obj->k_arr.elems=%p\n", obj->k_arr.elems);
 
-		/* try to not copy elems if there are none yet */
-		/* well, no. */
-		/*if (obj->k_arr.elems == NULL) {
-		 vm_debug(DBG_GC, "\n\nobjs are NULL, skip\n\n");
-		 return;
-		 }*/
-
 		if (obj->k_arr.elems == NULL) {
 			break;
 		}
@@ -300,10 +293,9 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 			kek_obj_t * el = obj->k_arr_objs.elems[i];
 
 			vm_assert(el != NULL, "el %d is NULL\n", i);
-			vm_assert(IS_PTR(el), "el %d is not ptr\n", i);
-			vm_assert(OBJ_TYPE_CHECK(el), "el %d has not valid type\n", i);
-
-			gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
+			if (IS_PTR(el)) {
+				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
+			}
 		}
 		break;
 	}
