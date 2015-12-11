@@ -1,0 +1,74 @@
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 300
+//KEK_TEST_ARGS_1 1000
+
+class MyObj {
+  var v
+  var str
+  
+  MyObj(av) {
+    v = av;
+    //str = "123 this is a sample string 456"
+    str = "12345 abcdefghijklmnopqrstuvwxyz 67890"
+  }
+  
+  val() {
+    return v
+  }
+}
+
+class Main {
+  static main(args) {
+    var i
+    var j
+    var r
+    var arr
+
+    var cnt = 23
+    var repeat = 8
+    
+    //var cnt = args[1].toInt()
+    //var repeat = args[2].toInt()    
+        
+        
+    write "cnt = "
+    write cnt
+    
+    write "repeat = "
+    write repeat
+    
+    var tmp
+    
+    var another = []
+    another[1] = new MyObj(1);
+
+
+    for (r = 0; r < repeat; r++) {
+      write "r = "; write r
+        
+      tmp = []
+      
+      for (i = 0; i < cnt; i++) {
+        write "writing tmp[i] where i = "; write i
+        tmp[i] = new MyObj(i)
+      }
+      
+      if (another[1].val() != 1) {
+        write "fail: another[1].val() should be 1 but is "
+        write another[1].val()
+        write "eom\n"
+        return
+      }
+            
+      for (i = 0; i < cnt; i++) {
+        write "checking tmp[i] where i = "; write i
+        if (tmp[i].val() != i) {
+          write "fail loop\n"
+          return
+        }
+      }
+    } // for repeat
+    
+    write "=== OK ===\n"
+  } // main
+} // Main
