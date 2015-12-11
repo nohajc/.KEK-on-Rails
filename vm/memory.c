@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include "memory.h"
+#include "k_array.h"
 
 gc_obj_t *gc_obj_g = NULL;
 gc_obj_t *gc_obj_root_g = NULL;
@@ -1109,6 +1110,7 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 	uint32_t id = gc_rootset_add((kek_obj_t **) &arr);
 	kek_obj_t **new_elems;
 	int i;
+	int new_size;
 
 	vm_debug(DBG_MEM, "qq realloc_arr_elems asbef=%d len=%d arr->length=%d"
 			" elemlen=%d\n", arr->alloc_size, length, arr->length,
@@ -1116,14 +1118,16 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 
 	assert(arr->elems[arr->length - 1] != NULL);
 
-	while (arr->alloc_size < length) {
-		arr->alloc_size = (arr->alloc_size * 3) / 2;
+	new_size = arr->alloc_size;
+	while (new_size < length) {
+		//arr->alloc_size = (arr->alloc_size * 3) / 2;
+		new_size = (new_size * 3) / 2;
 	}
 
 	vm_debug(DBG_MEM, "qq realloc_arr_elems then arr->alloc_size=%d \n", //
-			arr->alloc_size);
+			new_size);
 
-	new_elems = alloc_arr_elems(arr->alloc_size, arr->length);
+	new_elems = alloc_arr_elems(new_size, arr->length);
 
 	for (i = 0; i < arr->length; i++) {
 		new_elems[i] = arr->elems[i];
@@ -1131,6 +1135,7 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 
 	KEK_ARR_OBJS(arr)->h.length = arr->length;
 	arr->elems = new_elems;
+	arr_set_alloc_size(arr, new_size);
 
 	gc_rootset_remove_id(id);
 

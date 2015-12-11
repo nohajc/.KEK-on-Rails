@@ -88,6 +88,7 @@ typedef struct _kek_symbol {
 typedef struct _kek_array_objs_header {
 	header_t h;
 	int length;
+	int alloc_size;
 } kek_array_objs_header_t;
 
 typedef struct _kek_array_objs {

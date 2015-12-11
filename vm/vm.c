@@ -272,14 +272,14 @@ void vm_init_const_table_elems(void) {
 
 			c_arr = (constant_array_t*) obj;
 			elems = alloc_const_arr_elems(obj->k_arr.length);
-			obj->k_arr.alloc_size = obj->k_arr.length;
-
-			assert(obj->k_arr.alloc_size > 0);
+			//obj->k_arr.alloc_size = obj->k_arr.length;
 
 			for (i = 0; i < c_arr->length; ++i) {
 				elems[i] = CONST(c_arr->elems[i]);
 			}
 			obj->k_arr.elems = elems;
+			arr_set_alloc_size(&obj->k_arr, obj->k_arr.length);
+			assert(obj->k_arr.alloc_size > 0);
 			add_carray_to_gc_rootset(&obj->k_arr);
 
 			ptr += sizeof(constant_array_t)
@@ -1342,7 +1342,7 @@ size_t vm_obj_size(kek_obj_t *obj) {
 		return (0);
 	case KEK_ARR_OBJS:
 		return (sizeof(kek_array_objs_t)
-				+ (obj->k_arr_objs.h.length - 1) * sizeof(kek_obj_t*));
+				+ (obj->k_arr_objs.h.alloc_size - 1) * sizeof(kek_obj_t*));
 	case KEK_UDO: {
 		int var_count;
 		assert(obj->h.cls != NULL);

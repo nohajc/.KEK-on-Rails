@@ -66,6 +66,11 @@ void arr_set_length(kek_array_t *arr, int length) {
 	KEK_ARR_OBJS(arr)->h.length = length;
 }
 
+void arr_set_alloc_size(kek_array_t *arr, int size) {
+	arr->alloc_size = size;
+	KEK_ARR_OBJS(arr)->h.alloc_size = size;
+}
+
 // Constructor of an empty array.
 // Can be called from bytecode, so we use our custom stack.
 void new_array(void) {
@@ -103,8 +108,9 @@ void new_array(void) {
 void native_new_array(kek_array_t * arr) {
 	vm_debug(DBG_GC, "native_new_array BEGIN ++++++++++++++++++++++++++++++\n");
 	arr->length = 0;
-	arr->alloc_size = ARR_INIT_SIZE;
+	//arr->alloc_size = ARR_INIT_SIZE;
 	arr->elems = alloc_arr_elems(ARR_INIT_SIZE, 0);
+	arr_set_alloc_size(arr, ARR_INIT_SIZE);
 	vm_debug(DBG_GC, "native_new_array END --------------------------------\n");
 }
 
