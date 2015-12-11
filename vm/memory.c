@@ -160,14 +160,6 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	assert(IS_PTR(copy));
 	assert(OBJ_TYPE_CHECK(copy));
 	assert(copy->h.t == obj->h.t);
-	if (copy->h.t == KEK_ARR) {
-		assert(KEK_ARR_OBJS(copy));
-		vm_debug(DBG_GC, "root: kek_arr_objs are at %p\n", KEK_ARR_OBJS(copy));
-		vm_assert(KEK_ARR_OBJS(copy)->h.h.t == KEK_ARR_OBJS,
-				"arr=%p, arr_elems=%p, arr_objs=%p, arr_objs.type=%d\n", //
-				(void* ) copy, (void* ) copy->k_arr.elems, KEK_ARR_OBJS(copy),
-				KEK_ARR_OBJS(copy)->h.h.t);
-	}
 
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) copy;
@@ -268,7 +260,9 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		 return;
 		 }*/
 
-		assert(obj->k_arr.elems != NULL);
+		if (obj->k_arr.elems == NULL) {
+			break;
+		}
 		arr_objs = KEK_ARR_OBJS(obj);
 		assert(arr_objs != NULL);
 		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
@@ -406,14 +400,6 @@ void gc_cheney_scavenge() {
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
 		assert(OBJ_TYPE_CHECK(obj));
-		if (obj->h.t == KEK_ARR) {
-			assert(KEK_ARR_OBJS(obj));
-			vm_debug(DBG_GC, "kek_arr_objs are at %p\n", KEK_ARR_OBJS(obj));
-			vm_assert(KEK_ARR_OBJS(obj)->h.h.t == KEK_ARR_OBJS,
-					"arr=%p, arr_elems=%p, arr_objs=%p, arr_objs.type=%d\n", //
-					(void* ) obj, (void* ) obj->k_arr.elems, KEK_ARR_OBJS(obj),
-					KEK_ARR_OBJS(obj)->h.h.t);
-		}
 
 		scan_ptr_g = ((uint8_t *) scan_ptr_g) + ALIGNED(vm_obj_size(obj));
 
@@ -1065,7 +1051,9 @@ double gc_remaining(void) {
 /******************************************************************************/
 
 kek_obj_t * alloc_array(class_t * arr_class) {
-	return (gc_obj_malloc(KEK_ARR, arr_class, sizeof(kek_array_t)));
+	kek_obj_t * ret = gc_obj_malloc(KEK_ARR, arr_class, sizeof(kek_array_t));
+	ret->k_arr.elems = NULL;
+	return (ret);
 }
 
 kek_obj_t *alloc_array_objs(int items) {
@@ -1073,7 +1061,7 @@ kek_obj_t *alloc_array_objs(int items) {
 	kek_obj_t * ret = (gc_obj_malloc(KEK_ARR_OBJS, NULL,
 			sizeof(kek_array_objs_t) + (items - 1) * sizeof(kek_obj_t *)));
 	vm_debug(DBG_GC, "alloc_array_objs END --------------------------------\n");
-	return ret;
+	return (ret);
 }
 
 kek_obj_t **alloc_arr_elems(int size, int length) {
