@@ -30,11 +30,9 @@ class Main {
     var cnt = args[1].toInt()
     var repeat = args[2].toInt()
         
-    //write "cnt = "
-    write cnt
+    //write "cnt = "; write cnt
     
-    //write "repeat = "
-    write repeat
+    //write "repeat = "; write repeat
     
     var tmp
     
@@ -43,7 +41,7 @@ class Main {
 
 
     for (r = 0; r < repeat; r++) {
-      write "r = "; write r
+      //write "r = "; write r
         
       tmp = []
       
