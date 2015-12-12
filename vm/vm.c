@@ -174,6 +174,8 @@ static char *vm_debug_flag(uint32_t flag) {
 		return ("obj_tbl");
 	case DBG_GC_STATS:
 		return ("gc stats");
+	case DBG_FC:
+		return ("fc");
 	default:
 		return ("unknown");
 	}
@@ -688,7 +690,8 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
-			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj), ((ptruint_t)addr & ~0x3), kek_obj_print(obj));
+			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj),
+					((ptruint_t) addr & ~0x3), kek_obj_print(obj));
 			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
 		}
@@ -916,6 +919,9 @@ void vm_execute_bc(void) {
 			if (call_type == S) {
 				cls = cls->parent;
 			}
+
+			vm_debug(DBG_FC, "fp=%d obj=%s method=%s\n", //
+					fp_g, kek_obj_print(obj), sym->k_sym.symbol);
 
 			assert(cls);
 			if (ilc->cls != cls) { // Inline cache miss
