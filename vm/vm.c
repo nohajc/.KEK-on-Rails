@@ -117,8 +117,32 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 		case KEK_UDO:
 			(void) snprintf(str, 1024, "udo");
 			break;
+		case KEK_ARR_OBJS:
+			(void) snprintf(str, 1024, "arr_objs");
+			break;
+		case KEK_EXINFO:
+			(void) snprintf(str, 1024, "exinfo");
+			break;
+		case KEK_EXPT:
+			(void) snprintf(str, 1024, "expt");
+			break;
+		case KEK_FILE:
+			(void) snprintf(str, 1024, "file");
+			break;
+		case KEK_TERM:
+			(void) snprintf(str, 1024, "term");
+			break;
+		case KEK_CLASS:
+			(void) snprintf(str, 1024, "class");
+			break;
+		case KEK_STACK:
+			(void) snprintf(str, 1024, "stack");
+			break;
+		case KEK_COPIED:
+			(void) snprintf(str, 1024, "COPIED!");
+			break;
 		default:
-			(void) snprintf(str, 1024, "unknown type %x (obj=%p, typeptr=%p)",
+			(void) snprintf(str, 1024, "unknown type %d (obj=%p, typeptr=%p)",
 					kek_obj->h.t, (void *) kek_obj, (void *) &(kek_obj->h.t));
 			/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
 			 assert(0 && "unhandled kek_obj->type"); */
@@ -664,7 +688,7 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
-			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
+			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj), ((ptruint_t)addr & ~0x3), kek_obj_print(obj));
 			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
 		}
@@ -710,6 +734,7 @@ void vm_execute_bc(void) {
 			break;
 		}
 		case IDXA: {
+			kek_array_objs_t * arr_objs;
 			vm_debug(DBG_BC, "%s\n", "IDXA");
 			ip_g++;
 			POP(idx);
@@ -723,10 +748,13 @@ void vm_execute_bc(void) {
 				} else if (idx_n >= obj->k_arr.length) {
 					arr_set_length((kek_array_t *) obj, idx_n + 1);
 				}
-				TOP(obj); // Pointer could have changed after native_grow_array
+				POP(obj); // Pointer could have changed after native_grow_array
+				arr_objs = KEK_ARR_OBJS(obj);
+				PUSH(arr_objs);
+
 				/* FIXME: delete this */
 				//vm_debug(DBG_GC, "IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
-				PUSH(MAKE_DPTR(obj, &obj->k_arr.elems[idx_n]));
+				PUSH(MAKE_DPTR(arr_objs, &arr_objs->elems[idx_n]));
 			} else {
 				vm_error("Invalid object or index.\n");
 			}
