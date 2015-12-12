@@ -961,21 +961,22 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	/* stack objects */
 	for (i = sp_g - 1; i >= 0; i--) {
 		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
-			if (((kek_obj_t *) stack_g[i])->h.t == KEK_CLASS) {
+			assert(stack_g[i]->h.t != KEK_COPIED);
+			if (stack_g[i]->h.t == KEK_CLASS) {
 //				vm_debug(DBG_GC, "rootset: ignoring class\n");
 				continue;
 			}
 
-			if (((kek_obj_t *) stack_g[i])->h.t == KEK_STACK) {
+			if (stack_g[i]->h.t == KEK_STACK) {
 //				vm_debug(DBG_GC, "rootset: ignoring stack reference\n");
 				continue;
 			}
 
-			if (((kek_obj_t *) stack_g[i])->h.t == KEK_NIL) {
+			if (stack_g[i]->h.t == KEK_NIL) {
 				assert(vm_is_const((kek_obj_t * ) stack_g[i]));
 			}
 
-			if (vm_is_const(((kek_obj_t *) stack_g[i]))) {
+			if (vm_is_const(stack_g[i])) {
 //				vm_debug(DBG_GC, "rootset: ignoring const\n");
 				continue;
 			}
