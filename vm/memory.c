@@ -962,10 +962,10 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 	for (i = sp_g - 1; i >= 0; i--) {
 		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
 			// Temporary debug msg
-			if (stack_g[i]->h.t == KEK_COPIED) {
+			/*if (stack_g[i]->h.t == KEK_COPIED) {
 				vm_error("rootset: ERROR: KEK_COPIED at stack_g[%d], obj ptr = %p.\n", i, stack_g[i]);
 			}
-			assert(stack_g[i]->h.t != KEK_COPIED);
+			assert(stack_g[i]->h.t != KEK_COPIED);*/
 			if (stack_g[i]->h.t == KEK_CLASS) {
 //				vm_debug(DBG_GC, "rootset: ignoring class\n");
 				continue;
