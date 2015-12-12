@@ -260,10 +260,10 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 			break;
 		}
 		arr_objs = KEK_ARR_OBJS(obj);
-		assert(arr_objs != NULL);
-		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
-		assert(arr_objs->h.length == obj->k_arr.length);
 
+		/*
+		// arr_objs may already be copied!
+		// This debug message could access invalid memory.
 		for (i = 0; i < arr_objs->h.length; i++) {
 			if (IS_UDO(arr_objs->elems[i])) {
 				if (IS_INT(arr_objs->elems[i]->k_udo.inst_var[0])) {
@@ -272,7 +272,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 							INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
 				}
 			}
-		}
+		}*/
 
 		/* this will copy the structure with the pointers to the objs */
 		gc_cheney_copy_neighbor_inner((kek_obj_t **) &arr_objs);
