@@ -22,19 +22,19 @@ union _kek_obj;
 
 /* WARNING: after adding some type, edit TYPE_CHECK() macro */
 typedef enum _type {
-	KEK_NIL, //
-	KEK_INT, //
-	KEK_STR, //
-	KEK_SYM, //
+	KEK_NIL, //0
+	KEK_INT, //1
+	KEK_STR, //2
+	KEK_SYM, //3
 	KEK_ARR, //4
-	KEK_ARR_OBJS, //
-	KEK_EXINFO, //
-	KEK_EXPT, //
-	KEK_FILE, //
-	KEK_TERM, //
-	KEK_UDO, //
-	KEK_CLASS, //
-	KEK_STACK, //
+	KEK_ARR_OBJS, //5
+	KEK_EXINFO, //6
+	KEK_EXPT, //7
+	KEK_FILE, //8
+	KEK_TERM, //9
+	KEK_UDO, //10
+	KEK_CLASS, //11
+	KEK_STACK, //12
 	KEK_COPIED // when gc copies and obj, this will be the type of the old one
 } type_t;
 

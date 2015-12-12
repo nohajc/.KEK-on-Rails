@@ -34,6 +34,21 @@ union _kek_obj * alloc_file(struct _class * file_class);
 union _kek_obj * alloc_term(struct _class * term_class);
 
 /******************************************************************************/
+/* memory debug */
+
+#define MEMORY_DEBUG 1
+
+#if MEMORY_DEBUG
+
+void *vm_memset(void *ptr, int value, size_t num);
+
+#else /* MEMORY_DEBUG */
+
+#define vm_memset(ptr, value, num) memset((ptr), (value), (num))
+
+#endif /* MEMORY_DEBUG */
+
+/******************************************************************************/
 /* memory managment */
 
 /* jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
@@ -167,7 +182,6 @@ void gc_rootset_remove_ptr(kek_obj_t **obj);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
 
-
 #define GC_TICKS_DEFAULT 1000
 extern int gc_ticks_g; /* how often will gc run */
 extern gc_obj_t *gc_obj_g;
@@ -182,7 +196,6 @@ double gc_remaining(void);
 void *gc_obj_malloc(type_t type, class_t *cls, size_t size);
 bool gc_in_new(void *ptr, size_t size);
 bool gc_in_old(void *ptr, size_t size);
-
 
 void gc_init(void);
 void gc_free(void);

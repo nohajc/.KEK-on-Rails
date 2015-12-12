@@ -13,6 +13,30 @@
 #include "memory.h"
 #include "k_array.h"
 
+/******************************************************************************/
+/* memory debug */
+
+void *vm_memset(void *ptr, int value, size_t num) {
+	return (memset(ptr, value, num));
+}
+
+void *vm_memcpy(void *destination, const void * source, size_t num) {
+
+	size_t i;
+
+	for (i = 0; i < num; i++) {
+
+		if (((uint8_t *) destination)[i] != 0) {
+			vm_error("vm_memcpy: dest[%u] is not 0\n", i);
+		}
+
+		((uint8_t *) destination)[i] = ((uint8_t *) source)[i];
+	}
+
+	return (destination);
+}
+/******************************************************************************/
+
 gc_obj_t *gc_obj_g = NULL;
 gc_obj_t *gc_obj_root_g = NULL;
 gc_carrlist_t *gc_carrlist_root_g = NULL;
@@ -126,8 +150,12 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 		vm_error("To space run out of space. Increase NEW_SEGMENT_SIZE.\n");
 	}
 
-	ret = memcpy(to_space_free_g, obj, size);
+	assert(gc_cheney_ptr_in_from_space(obj, size));
+
+	ret = vm_memcpy(to_space_free_g, obj, size);
 	to_space_free_g = ((uint8_t *) to_space_free_g) + size;
+
+	assert(gc_cheney_ptr_in_to_space(ret, size));
 
 	return (ret);
 }
@@ -204,6 +232,8 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 	kek_obj_t *from;
 	kek_obj_t *to;
 
+	vm_debug(DBG_GC, "gc_cheney_copy_neighbor_inner: obj=%p\n", (void *) obj);
+
 	//vm_debug(DBG_GC, "obj: %p\n", obj);
 
 	assert(obj != NULL);
@@ -232,10 +262,12 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 
-	vm_debug(DBG_GC, "gc_cheney_copy_inner_objs: objptr=%p obj=%p t=%d\n",
-			objptr, obj, obj->h.t);
+	vm_debug(DBG_GC, "gc_cheney_copy_neighbor: objptr=%p obj=%p t=%d\n", objptr,
+			obj, obj->h.t);
 
 	assert(IS_PTR(obj));
+	assert(OBJ_TYPE_CHECK(obj));
+	assert(gc_cheney_ptr_in_to_space(obj, vm_obj_size(obj)));
 
 	switch (obj->h.t) {
 	case KEK_NIL:
@@ -259,17 +291,38 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		if (obj->k_arr.elems == NULL) {
 			break;
 		}
+
 		arr_objs = KEK_ARR_OBJS(obj);
 		assert(arr_objs != NULL);
 		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
 		assert(arr_objs->h.length == obj->k_arr.length);
+		assert(gc_cheney_ptr_in_from_space(arr_objs, //
+				vm_obj_size((kek_obj_t* )arr_objs)));
 
 		for (i = 0; i < arr_objs->h.length; i++) {
+
+			vm_debug(DBG_GC, "arr_objs->elems[%d]=%p \"%s\"\n", i,
+					arr_objs->elems[i], kek_obj_print(arr_objs->elems[i]));
+
+			if (IS_PTR(arr_objs->elems[i])
+					&& !vm_is_const(arr_objs->elems[i])) {
+
+				assert(gc_cheney_ptr_in_from_space(arr_objs->elems[i], //
+						vm_obj_size(arr_objs->elems[i])));
+
+			}
+
 			if (IS_UDO(arr_objs->elems[i])) {
+				assert(gc_cheney_ptr_in_from_space(arr_objs->elems[i], //
+						vm_obj_size(arr_objs->elems[i])));
+
 				if (IS_INT(arr_objs->elems[i]->k_udo.inst_var[0])) {
-					vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d\n^^^^\n",i,
+					vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d (%p) later\n", i,
 							arr_objs->elems[i], //
-							INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
+							INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]),
+							&arr_objs->elems[i]->k_udo.inst_var[0]);
+				} else {
+					vm_debug(DBG_GC, "i=%d not INT\n", i);
 				}
 			}
 		}
@@ -278,6 +331,9 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		gc_cheney_copy_neighbor_inner((kek_obj_t **) &arr_objs);
 
 		obj->k_arr.elems = &(arr_objs->elems[0]);
+
+		assert(gc_cheney_ptr_in_to_space(obj->k_arr.elems, //
+				vm_obj_size(obj->k_arr.elems[0]) * obj->k_arr.length));
 
 		vm_debug(DBG_GC,
 				"gc_cheney_copy_inner_objs: after copy: obj->k_arr.elems: %p\n",
@@ -289,7 +345,11 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	case KEK_ARR_OBJS: {
 		int i;
 
+		vm_debug(DBG_GC,
+				"\n== gc_cheney_copy_neighbor KEK_ARR_OBJS BEGIN ==\n");
+
 		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
+
 			kek_obj_t * el = obj->k_arr_objs.elems[i];
 
 			vm_debug(DBG_GC, "==: obj->k_arr_objs.h.length: %d, i=%d, el=%p\n",
@@ -306,9 +366,15 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 			vm_assert(el != NULL, "el %d is NULL\n", i);
 			if (IS_PTR(el)) {
 
+				vm_debug(DBG_GC, "copy_neighbour KEK_ARR_OBJS: is_ptr(el) is in"
+						"from=%d, to=%d space\n", //
+						gc_cheney_ptr_in_from_space(el, vm_obj_size(el)), //
+						gc_cheney_ptr_in_to_space(el, vm_obj_size(el)));
+
 				if (obj->k_arr_objs.elems[i]->h.t == KEK_UDO) {
-					vm_debug(DBG_GC, "XXX\narr obj is udo of %s\n",
-							obj->k_arr_objs.elems[i]->k_udo.h.cls->name);
+					vm_debug(DBG_GC, "XXX\narr obj is udo of %s at %p\n",
+							obj->k_arr_objs.elems[i]->k_udo.h.cls->name,
+							obj->k_arr_objs.elems[i]);
 
 					uint32_t x;
 					for (x = 0;
@@ -317,10 +383,13 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 							x++) {
 						if (IS_INT(
 								obj->k_arr_objs.elems[i]->k_udo.inst_var[x])) {
-							vm_debug(DBG_GC, "inst val=%d\n",
-									obj->k_arr_objs.elems[i]->k_udo.inst_var[x]);
+							vm_debug(DBG_GC, "inst val=%d (%p)\n",
+									INT_VAL(
+											obj->k_arr_objs.elems[i]->k_udo.inst_var[x]),
+									&obj->k_arr_objs.elems[i]->k_udo.inst_var[x]);
 						} else {
-							vm_debug(DBG_GC, "inst val=?\n");
+							vm_debug(DBG_GC, "inst val=\"%s\"\n",
+									obj->k_arr_objs.elems[i]->k_udo.inst_var[x]);
 						}
 					}
 
@@ -329,6 +398,8 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
 			}
 		}
+
+		vm_debug(DBG_GC, "== gc_cheney_copy_neighbor KEK_ARR_OBJS END ==\n\n");
 		break;
 	}
 	case KEK_EXINFO:
@@ -345,7 +416,7 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	case KEK_FILE:
 		break;
 	case KEK_TERM:
-		// assert(0 && "this should  be in oldspace");
+// assert(0 && "this should  be in oldspace");
 		/* todo: bude v oldspace (vsechno  co je v sys) */
 		break;
 	case KEK_UDO: {
@@ -421,7 +492,8 @@ void gc_cheney_scavenge() {
 	while ((ptruint_t) scan_ptr_g < (ptruint_t) to_space_free_g) {
 		obj = (kek_obj_t *) scan_ptr_g;
 
-		vm_debug(DBG_GC, "gc_cheney_scavenge() scaned obj=%p\n", obj);
+		vm_debug(DBG_GC, "======= gc_cheney_scavenge() scaned obj=%p type=%d\n",
+				obj, obj->h.t);
 
 		assert(obj != NULL);
 		assert(IS_PTR(obj));
@@ -432,9 +504,12 @@ void gc_cheney_scavenge() {
 		gc_cheney_copy_neighbor(&obj);
 	}
 
+	assert(scan_ptr_g == to_space_free_g);
+
 	vm_debug(DBG_GC, "gc_cheney_scavenge() end "
 			"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
-}
+} /* gc_cheney_scavenge() *****************************************************/
+/******************************************************************************/
 
 void gc_cheney_init() {
 	vm_debug(DBG_GC, "gc_cheney_init()\n");
@@ -462,8 +537,8 @@ void gc_cheney_free() {
 
 bool gc_cheney_can_malloc(size_t size) {
 	size = ALIGNED(size);
-	return ((ptruint_t) ((uint8_t *) to_space_free_g + size) < //
-			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
+	return ((ptruint_t) (((uint8_t *) to_space_free_g) + size) < //
+			(ptruint_t) (((uint8_t *) segments_to_space_g->beginning)
 					+ NEW_SEGMENT_SIZE));
 }
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
@@ -478,7 +553,9 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	assert(segments_to_space_g != NULL);
 
+
 	if (!gc_cheney_can_malloc(size)) {
+
 		vm_debug(DBG_GC, "gc_cheney_malloc: From space needs GC. "
 				"##########################################################\n");
 		gc_cheney_scavenge();
@@ -490,11 +567,11 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	ptr = to_space_free_g;
 
-	to_space_free_g = (uint8_t *) to_space_free_g + size;
+	to_space_free_g = ((uint8_t *) to_space_free_g) + size;
 	to_space_size_g += size;
 
 	vm_debug(DBG_GC,
-			"gc_cheney_malloc: size=%lu from=%p to=%p (to=%p toend=%p)\n", //
+			"gc_cheney_malloc 2/2: size=%lu from=%p to=%p (to=%p toend=%p)\n", //
 			size, ptr, to_space_free_g, segments_to_space_g,
 			(uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE);
 
@@ -1124,7 +1201,7 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 
 	new_size = arr->alloc_size;
 	while (new_size < length) {
-		//arr->alloc_size = (arr->alloc_size * 3) / 2;
+//arr->alloc_size = (arr->alloc_size * 3) / 2;
 		new_size = (new_size * 3) / 2;
 	}
 
