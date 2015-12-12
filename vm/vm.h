@@ -39,7 +39,7 @@ enum Scope {
 #define EXIT_ON_ERROR 1 /* if not, kek will try to run even after an error */
 #define BRUTAL_KILL 1 /* valgrind tell us stack trace on error */
 
-#define FORCE_CALLOC 1
+#define FORCE_CALLOC 0
 
 /******************************************************************************/
 /* debugging */

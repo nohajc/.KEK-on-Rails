@@ -612,9 +612,6 @@ void vm_execute_bc(void) {
 	for (tick = 0;; tick++, ticks_g++) {
 		call_type = -1;
 		op_c = bc_arr_g[ip_g];
-
-		vm_debug(DBG_BC, "------- BC TICK %d\n", tick);
-
 		decode_instr: // For debugging (gdb can set a breakpoint at label)
 		switch (op_c) {
 		case LVBI_C: {
@@ -668,15 +665,7 @@ void vm_execute_bc(void) {
 			assert(addr != NULL);
 
 			vm_debug(DBG_BC, " - %p = %s\n", addr, kek_obj_print(obj));
-
-			vm_debug(DBG_GC, "STORING %s %p at %p <<<\n", kek_obj_print(obj),
-					DPTR_VAL(dst_obj, addr), obj);
-
 			*DPTR_VAL(dst_obj, addr) = obj;
-
-			/* nesrotom tmp */
-			vm_debug(DBG_BC, " - %p = %s <<<\n", addr, kek_obj_print(obj));
-
 			break;
 		}
 		case IDX: {
@@ -726,33 +715,21 @@ void vm_execute_bc(void) {
 			POP(idx);
 			TOP(obj);
 
-			if (!(obj && IS_ARR(obj) && idx && IS_INT(idx))) {
+			if (obj && IS_ARR(obj) && idx && IS_INT(idx)) {
+				int idx_n = INT_VAL(idx);
+				if (idx_n >= obj->k_arr.alloc_size) {
+					assert(obj->k_arr.alloc_size != 0);
+					native_grow_array(&obj->k_arr, idx_n + 1);
+				} else if (idx_n >= obj->k_arr.length) {
+					arr_set_length((kek_array_t *) obj, idx_n + 1);
+				}
+				TOP(obj); // Pointer could have changed after native_grow_array
+				/* FIXME: delete this */
+				//vm_debug(DBG_GC, "IDXA: idx_n=%d at %p\n", idx_n, (void*)&obj->k_arr.elems[idx_n]);
+				PUSH(MAKE_DPTR(obj, &obj->k_arr.elems[idx_n]));
+			} else {
 				vm_error("Invalid object or index.\n");
 			}
-
-			int idx_n = INT_VAL(idx);
-
-			if (idx_n >= obj->k_arr.alloc_size) {
-				vm_debug(DBG_GC, "IDXA: native grow array\n");
-				assert(obj->k_arr.alloc_size != 0);
-				native_grow_array(&obj->k_arr, idx_n + 1);
-			} else if (idx_n >= obj->k_arr.length) {
-				vm_debug(DBG_GC, "IDXA: arr_set_length\n");
-				arr_set_length((kek_array_t *) obj, idx_n + 1);
-			}
-
-			TOP(obj); // Pointer could have changed after native_grow_array
-
-			/* FIXME: delete this */
-
-			vm_debug(DBG_GC, "IDXA: idx_n=%d at %p\n", idx_n,
-					(void*) &obj->k_arr.elems[idx_n]);
-
-			/* nesrotom tmp */
-			vm_debug(DBG_GC, "IDXA: idx_n=%d at %p <<<\n", idx_n,
-					(void*) &obj->k_arr.elems[idx_n]);
-
-			PUSH(MAKE_DPTR(obj, &obj->k_arr.elems[idx_n]));
 			break;
 		}
 		case BOP: {

@@ -2,10 +2,6 @@
 //KEK_TEST_ARGS_0 300
 //KEK_TEST_ARGS_1 1000
 
-// ./compiler/kekc ./tests/gc_arrloop4.kek ./tests/kexes/gc_arrloop4.kexe 
-// make -C vm && valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ./vm/kek -d gc -d gc_stats ./tests/kexes/gc_arrloop4.kexe
-
-
 class MyObj {
   var v
   var str
@@ -44,7 +40,7 @@ class Main {
     var tmp
     
     var another = []
-    another[1] = new MyObj(42);
+    another[1] = new MyObj(1);
 
 
     for (r = 0; r < repeat; r++) {
@@ -54,14 +50,11 @@ class Main {
       
       for (i = 0; i < cnt; i++) {
         write "writing tmp[i] where i = "; write i
-        
-        write "tmp[i] = new MyObj(i) begin\n"
         tmp[i] = new MyObj(i)
-        write "tmp[i] = new MyObj(i) end\n"
       }
       
-      if (another[1].val() != 42) {
-        write "fail: another[1].val() should be 42 but is "
+      if (another[1].val() != 1) {
+        write "fail: another[1].val() should be 1 but is "
         write another[1].val()
         write "eom\n"
         return
