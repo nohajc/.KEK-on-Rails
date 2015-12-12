@@ -920,9 +920,6 @@ void vm_execute_bc(void) {
 				cls = cls->parent;
 			}
 
-			vm_debug(DBG_FC, "fp=%d obj=%s method=%s\n", //
-					fp_g, kek_obj_print(obj), sym->k_sym.symbol);
-
 			assert(cls);
 			if (ilc->cls != cls) { // Inline cache miss
 				mth = vm_find_method_in_class(cls, sym->k_sym.symbol,
@@ -959,6 +956,8 @@ void vm_execute_bc(void) {
 							mth->locals_cnt);
 				}
 			}
+			vm_debug(DBG_FC, "obj=%s method=%s ap=%d fp=%d\n", //
+					kek_obj_print(obj), sym->k_sym.symbol, ap_g, fp_g);
 
 			break;
 		}
