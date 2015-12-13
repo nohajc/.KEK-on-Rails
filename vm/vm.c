@@ -254,8 +254,17 @@ void vm_init_parent_pointers(void) {
 			classes_g[i].parent = vm_find_class(classes_g[i].parent_name);
 			assert(classes_g[i].parent != NULL);
 		}
+	}
+}
+
+void vm_calculate_udo_sizes(void) {
+	uint32_t i;
+	for (i = 0; i < classes_cnt_g; i++) {
 		(void) calc_total_syms_cnt(&classes_g[i]);
 		(void) calc_syms_offset(&classes_g[i]);
+		/*printf("UDO %s, total_syms_cnt = %d, syms_offset = %d.\n",
+				classes_g[i].name, classes_g[i].total_syms_instance_cnt,
+				classes_g[i].syms_instance_offset);*/
 	}
 }
 
