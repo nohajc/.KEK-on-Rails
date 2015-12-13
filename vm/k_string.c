@@ -23,7 +23,7 @@ void init_kek_string_class(void) {
 	strcpy(classes_g[classes_cnt_g].name, name);
 
 	classes_g[classes_cnt_g].parent = NULL;
-	classes_g[classes_cnt_g].methods_cnt = 6;
+	classes_g[classes_cnt_g].methods_cnt = 7;
 
 	classes_g[classes_cnt_g].methods = malloc(
 		classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
@@ -33,6 +33,7 @@ void init_kek_string_class(void) {
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[3], "toInt", 0, false, string_toInt);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[4], "fromArray", 1, true, string_fromArray);
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[5], "fromInt", 1, true, string_fromInt);
+	vm_init_native_method(&classes_g[classes_cnt_g].methods[6], "fromSymbol", 1, true, string_fromSymbol);
 
 	classes_g[classes_cnt_g].allocator = NULL;
 	classes_g[classes_cnt_g].constructor = NULL;
@@ -244,5 +245,16 @@ void string_fromArray(void) {
 	free(buf);
 
 	PUSH(str);
+	BC_RET;
+}
+
+void string_fromSymbol(void) {
+	kek_obj_t * obj = ARG(0);
+
+	if (!IS_SYM(obj)) {
+		vm_error("Expected symbol as argument.\n");
+	}
+
+	PUSH(new_string_from_cstring(obj->k_sym.symbol));
 	BC_RET;
 }

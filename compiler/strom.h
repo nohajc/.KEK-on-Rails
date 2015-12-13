@@ -148,6 +148,16 @@ public:
 	virtual void Print(int);
 };
 
+class Symbol: public Const {
+	char * value;
+public:
+	Symbol(const char *);
+	virtual ~Symbol();
+	virtual uint32_t Translate();
+	char * Value();
+	virtual void Print(int);
+};
+
 class Array: public Const {
 	ArgList * elems;
 public:

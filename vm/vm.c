@@ -594,6 +594,23 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 			break;
 		}
 		return res;
+	} else if (IS_SYM(a) && IS_SYM(b)) {
+		kek_obj_t *res = NULL;
+		str_a = a->k_sym.symbol;
+		str_b = b->k_sym.symbol;
+
+		switch(o) {
+		case Eq:
+			res = (kek_obj_t*) make_integer(!strcmp(str_a, str_b));
+			break;
+		case NotEq:
+			res = (kek_obj_t*) make_integer(strcmp(str_a, str_b));
+			break;
+		default:
+			vm_error("bc_bop: unsupported bop %d on symbols\n", o);
+			break;
+		}
+		return res;
 	} else {
 		kek_int_t *res = NULL;
 
@@ -1380,8 +1397,7 @@ size_t vm_obj_size(kek_obj_t *obj) {
 	case KEK_STR:
 		return (sizeof(kek_string_t) + obj->k_str.length);
 	case KEK_SYM:
-		vm_error("KEK_SYM should be only in const. table\n");
-		return (0);
+		return (sizeof(kek_symbol_t) + obj->k_sym.length);
 	case KEK_ARR_OBJS:
 		return (sizeof(kek_array_objs_t)
 				+ (obj->k_arr_objs.h.alloc_size - 1) * sizeof(kek_obj_t*));

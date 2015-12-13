@@ -133,6 +133,15 @@ String::~String() {
 	delete [] value;
 }
 
+Symbol::Symbol(const char * v) {
+	value = new char[strlen(v) + 1];
+	strcpy(value, v);
+}
+
+Symbol::~Symbol() {
+	delete [] value;
+}
+
 Array::Array(ArgList * e) {
 	elems = e;
 }
@@ -146,6 +155,10 @@ int Numb::Value() {
 }
 
 char * String::Value() {
+	return value;
+}
+
+char * Symbol::Value() {
 	return value;
 }
 
@@ -754,10 +767,18 @@ uint32_t String::Translate() {
 	return 0;
 }
 
+uint32_t Symbol::Translate() {
+	uint32_t sym_idx = bco_sym(bcout_g, value);
+	bco_ww1(bcout_g, LVBI_C, sym_idx);
+
+	return 0;
+}
+
 uint32_t construct_const_array(Array & a) {
 	ArgList * e = a.elems;
 	Numb * n;
-	String * s;
+	String * str;
+	Symbol * sym;
 	Array * inner_a;
 	int elem_count = e->Count();
 	uint32_t arr_idx = bco_arr(bcout_g, elem_count);
@@ -769,9 +790,14 @@ uint32_t construct_const_array(Array & a) {
 			bco_arr_set_idx(bcout_g, arr_idx, i, int_idx);
 			//printf("DEBUG int_idx = %u\n", int_idx);
 		}
-		else if((s = dynamic_cast<String*>(e->arg))) {
-			uint32_t str_idx = bco_str(bcout_g, s->Value());
+		else if((str = dynamic_cast<String*>(e->arg))) {
+			uint32_t str_idx = bco_str(bcout_g, str->Value());
 			bco_arr_set_idx(bcout_g, arr_idx, i, str_idx);
+			//printf("DEBUG str_idx = %u\n", str_idx);
+		}
+		else if((sym = dynamic_cast<Symbol*>(e->arg))) {
+			uint32_t sym_idx = bco_sym(bcout_g, sym->Value());
+			bco_arr_set_idx(bcout_g, arr_idx, i, sym_idx);
 			//printf("DEBUG str_idx = %u\n", str_idx);
 		}
 		else if((inner_a = dynamic_cast<Array*>(e->arg))) {
@@ -1371,6 +1397,10 @@ void Numb::Print(int ident) {
 
 void String::Print(int ident) {
 	printfi(ident, "String [value=\"%s\"]\n", this->value);
+}
+
+void Symbol::Print(int ident) {
+	printfi(ident, "Symbol [value=\"%s\"]\n", this->value);
 }
 
 void Array::Print(int ident) {

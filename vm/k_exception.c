@@ -11,6 +11,7 @@
 #include "vm.h"
 #include "memory.h"
 #include "k_exception.h"
+#include "k_symbol.h"
 #include "stack.h"
 
 void init_kek_exception_class(void) {
@@ -74,6 +75,6 @@ void exception_msg(void) {
 
 void exception_type(void) {
 	kek_except_t * expt = (kek_except_t*)THIS;
-	PUSH(expt->h.cls);
+	PUSH(new_symbol_from_cstring(expt->h.cls->name));
 	BC_RET;
 }

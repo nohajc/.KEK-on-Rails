@@ -22,5 +22,6 @@ void string_replace(void);
 // Static methods
 void string_fromInt(void);
 void string_fromArray(void);
+void string_fromSymbol(void);
 
 #endif

@@ -236,7 +236,6 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	case KEK_STR:
 		break;
 	case KEK_SYM:
-		assert(0 && "only in cost tbl");
 		break;
 	case KEK_ARR: {
 		kek_array_objs_t *arr_objs;
@@ -1159,6 +1158,11 @@ void arr_realloc_elems(kek_array_t *arr, int length) {
 kek_obj_t * alloc_string(class_t * str_class, int length) {
 	vm_debug(DBG_MEM, "== alloc_string length=%d\n", length);
 	return (gc_obj_malloc(KEK_STR, str_class, sizeof(kek_string_t) + length));
+}
+
+kek_obj_t * alloc_symbol(int length) {
+	vm_debug(DBG_MEM, "== alloc_symbol length=%d\n", length);
+	return (gc_obj_malloc(KEK_SYM, NULL, sizeof(kek_symbol_t) + length));
 }
 
 kek_obj_t * alloc_integer(void) {

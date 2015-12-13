@@ -487,8 +487,8 @@ Expr *VarOrConst(char *id, ArgList * offset, Env env)
 	int v;
 	PrvekTab * p = hledejMember(id, env.clsEnv, env.mthEnv);
 	if (!p) {
-		if (env.mthEnv) { // ClassRef alone
-			return new ClassRef(id, true, NULL);
+		if (env.mthEnv) { // Symbol
+			return new Symbol(id);
 		}
 		Chyba("Neplatna reference na tridu.");
 	}
