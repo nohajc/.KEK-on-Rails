@@ -78,8 +78,8 @@ void gc_delete_all() {
 /* http://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection */
 
 /* global variables */
-segment_t *segments_from_space_g = NULL;
-segment_t *segments_to_space_g = NULL;
+void *segments_from_space_g = NULL;
+void *segments_to_space_g = NULL;
 void *to_space_free_g;
 size_t to_space_size_g;
 void *scan_ptr_g;
@@ -104,12 +104,12 @@ bool gc_cheney_ptr_in_space(void *segment_data, void *ptr, size_t size) {
 
 bool gc_cheney_ptr_in_from_space(void *ptr, size_t size) {
 	size = ALIGNED(size);
-	return (gc_cheney_ptr_in_space(segments_from_space_g->beginning, ptr, size));
+	return (gc_cheney_ptr_in_space(segments_from_space_g, ptr, size));
 }
 
 bool gc_cheney_ptr_in_to_space(void *ptr, size_t size) {
 	size = ALIGNED(size);
-	return (gc_cheney_ptr_in_space(segments_to_space_g->beginning, ptr, size));
+	return (gc_cheney_ptr_in_space(segments_to_space_g, ptr, size));
 }
 
 kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
@@ -122,8 +122,7 @@ kek_obj_t *gc_cheney_copy_obj_to_space_free(kek_obj_t *obj) {
 	assert(OBJ_TYPE_CHECK(obj));
 
 	if ((ptruint_t) ((uint8_t *) to_space_free_g + size) >= //
-			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
-					+ NEW_SEGMENT_SIZE)) {
+			(ptruint_t) ((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE)) {
 		vm_error("To space run out of space. Increase NEW_SEGMENT_SIZE.\n");
 	}
 
@@ -381,7 +380,7 @@ void gc_cheney_scavenge() {
 	segments_to_space_g = swap_ptr;
 
 	/* set free and alloc ptr to the beginning of the to-space segment */
-	to_space_free_g = segments_to_space_g->beginning;
+	to_space_free_g = segments_to_space_g;
 	scan_ptr_g = to_space_free_g;
 
 	/* clear space */
@@ -414,15 +413,23 @@ void gc_cheney_scavenge() {
 
 void gc_cheney_init() {
 	vm_debug(DBG_GC, "gc_cheney_init()\n");
-	segments_from_space_g = mem_segment_init(NEW_SEGMENT_SIZE);
-	segments_to_space_g = mem_segment_init(NEW_SEGMENT_SIZE);
+
+	segments_from_space_g = malloc(
+			NEW_SEGMENT_SIZE * OBJ_ALIGN * sizeof(uint8_t));
+
+	assert(segments_from_space_g);
+
+	segments_to_space_g = malloc(
+			NEW_SEGMENT_SIZE * OBJ_ALIGN * sizeof(uint8_t));
+
+	assert(segments_to_space_g);
 
 #if FORCE_CALLOC == 1
-	memset(segments_from_space_g->beginning, 0, NEW_SEGMENT_SIZE);
-	memset(segments_to_space_g->beginning, 0, NEW_SEGMENT_SIZE);
+	(void) memset(segments_from_space_g, 0, NEW_SEGMENT_SIZE);
+	(void)memset(segments_to_space_g, 0, NEW_SEGMENT_SIZE);
 #endif /* FORCE_CALLOC */
 
-	to_space_free_g = segments_to_space_g->end;
+	to_space_free_g = segments_to_space_g;
 	to_space_size_g = 0;
 	gc_cheney_iteration_t = 0;
 }
@@ -439,8 +446,7 @@ void gc_cheney_free() {
 bool gc_cheney_can_malloc(size_t size) {
 	size = ALIGNED(size);
 	return ((ptruint_t) ((uint8_t *) to_space_free_g + size) < //
-			(ptruint_t) ((uint8_t *) segments_to_space_g->beginning
-					+ NEW_SEGMENT_SIZE));
+			(ptruint_t) ((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE));
 }
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	void *ptr;
@@ -1054,8 +1060,7 @@ double gc_remaining(void) {
 		return 0;
 
 	return ((double) ((ptruint_t) to_space_free_g
-			- (ptruint_t) segments_to_space_g->beginning)
-			/ ((double) NEW_SEGMENT_SIZE));
+			- (ptruint_t) segments_to_space_g) / ((double) NEW_SEGMENT_SIZE));
 }
 
 /******************************************************************************/
