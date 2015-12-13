@@ -87,6 +87,8 @@ static void set_gc(char *type) {
 int main(int argc, char *argv[]) {
 	int c;
 	char *filename = NULL;
+	int exit_code = EXIT_SUCCESS;
+	kek_obj_t * exit_obj;
 
 	while ((c = getopt(argc, argv, "d:g:t:")) != -1) {
 		switch (c) {
@@ -134,6 +136,10 @@ int main(int argc, char *argv[]) {
 	// or we could do some sort of lazy loading.
 	vm_call_class_initializers();
 	vm_call_main(argc - optind, argv + optind);
+	exit_obj = stack_top();
+	if (IS_INT(exit_obj)) {
+		exit_code = INT_VAL(exit_obj);
+	}
 
 	free_globals();
 
@@ -142,5 +148,5 @@ int main(int argc, char *argv[]) {
 		return (EXIT_FAILURE);
 	}
 
-	return (EXIT_SUCCESS);
+	return (exit_code);
 }

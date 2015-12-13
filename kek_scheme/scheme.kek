@@ -86,7 +86,7 @@ class Scheme {
 				parser = new Parser(rd)
 				REPL()
 				f.close()
-				return
+				return 0
 			}
 			catch (e) {
 				out.writeln(e.msg())
@@ -100,5 +100,7 @@ class Scheme {
 		parser = new Parser(rd)
 		REPL()
 		out.writeln("\n")
+
+		return 0
 	}
 }
