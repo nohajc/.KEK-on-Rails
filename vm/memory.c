@@ -979,7 +979,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 /* this function will be called every X ticks */
 void gc() {
-	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%\n", ticks_g, gc_remaining());
+	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%\n", ticks_g, gc_remaining() * 100);
 }
 
 void gc_init() {
