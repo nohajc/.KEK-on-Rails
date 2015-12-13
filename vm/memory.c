@@ -169,36 +169,6 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	*objptr = obj;
 }
 
-void gc_cheney_copy_inner_obj(kek_obj_t **objptr) {
-	kek_obj_t *obj = *objptr;
-	kek_obj_t *from_neighbor;
-	kek_obj_t *to_neighbor;
-
-	assert(IS_PTR(obj));
-	assert(obj->h.t != KEK_COPIED);
-
-	if (IS_PTR(obj) /* TODO: not in old space */) {
-		vm_debug(DBG_GC, "gc_cheney_scavenge() obj found! obj=%p\n", obj);
-
-		if (vm_is_const(obj)) {
-			vm_debug(DBG_GC, "gc_cheney_scavenge() it's const\n");
-			return;
-		}
-
-		from_neighbor = obj;
-
-		if (from_neighbor->h.cls != NULL) {
-			to_neighbor = (kek_obj_t *) from_neighbor->h.cls;
-		} else {
-			to_neighbor = gc_cheney_copy_obj_to_space_free(from_neighbor);
-			from_neighbor->h.cls = (struct _class *) to_neighbor;
-			from_neighbor->h.t = KEK_COPIED;
-		}
-
-		obj = to_neighbor;
-	}
-}
-
 void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 	kek_obj_t *from;
