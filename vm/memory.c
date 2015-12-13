@@ -22,9 +22,11 @@ void gc_obj_add(kek_obj_t *obj, size_t size) {
 
 	size = ALIGNED(size);
 
+#ifndef JUST_USE_MALLOC
 	if (gc_type_g != GC_NONE) {
 		return;
 	}
+#endif
 
 	vm_debug(DBG_GC, "gc_obj_add objptr=%p\n", (void*) obj);
 
@@ -48,17 +50,15 @@ void gc_obj_add(kek_obj_t *obj, size_t size) {
 	}
 }
 
-void gc_obj_free(gc_obj_t *obj) {
-	free(obj);
-}
-
 void gc_delete_all() {
 	gc_obj_t *gcptr = gc_obj_root_g;
 	gc_obj_t *gcptr_next;
 
+#ifndef JUST_USE_MALLOC
 	if (gc_type_g != GC_NONE) {
 		return;
 	}
+#endif
 
 	vm_debug(DBG_GC, "gc_delete_all\n");
 
@@ -66,7 +66,8 @@ void gc_delete_all() {
 		vm_debug(DBG_GC, "gc_delete_all gcptr=%p (%lu)\n", gcptr,
 				(ptruint_t) gcptr);
 		gcptr_next = gcptr->next;
-		gc_obj_free(gcptr);
+		free(gcptr->obj);
+		free(gcptr);
 		gcptr = gcptr_next;
 	}
 }
@@ -237,17 +238,17 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		arr_objs = KEK_ARR_OBJS(obj);
 
 		/*
-		// arr_objs may already be copied!
-		// This debug message could access invalid memory.
-		for (i = 0; i < arr_objs->h.length; i++) {
-			if (IS_UDO(arr_objs->elems[i])) {
-				if (IS_INT(arr_objs->elems[i]->k_udo.inst_var[0])) {
-					vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d\n^^^^\n",i,
-							arr_objs->elems[i], //
-							INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
-				}
-			}
-		}*/
+		 // arr_objs may already be copied!
+		 // This debug message could access invalid memory.
+		 for (i = 0; i < arr_objs->h.length; i++) {
+		 if (IS_UDO(arr_objs->elems[i])) {
+		 if (IS_INT(arr_objs->elems[i]->k_udo.inst_var[0])) {
+		 vm_debug(DBG_GC, "i=%d WILL CPY %p. val=%d\n^^^^\n",i,
+		 arr_objs->elems[i], //
+		 INT_VAL(arr_objs->elems[i]->k_udo.inst_var[0]));
+		 }
+		 }
+		 }*/
 
 		/* this will copy the structure with the pointers to the objs */
 		gc_cheney_copy_neighbor_inner((kek_obj_t **) &arr_objs);
@@ -691,17 +692,16 @@ inline void *mem_obj_malloc(type_t type, class_t *cls, size_t size) {
 	kek_obj_t *obj;
 
 	size = ALIGNED(size);
-#if 1
+#ifndef JUST_USE_MALLOC
 	obj = mem_segment_malloc(size);
 #else
 	obj = malloc(size);
+	gc_obj_add(obj, size);
 #endif
 	assert(obj);
 
 	obj->h.t = type;
 	obj->h.cls = cls;
-
-//	gc_obj_add(obj, size);
 
 	return (obj);
 }
@@ -710,13 +710,17 @@ inline void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size) 
 	kek_obj_t *obj;
 
 	size = ALIGNED(size);
+#ifndef JUST_USE_MALLOC
 	obj = mem_segment_calloc(num * size);
+#else
+	obj = calloc(num, size);
+	gc_obj_add(obj, num * size);
+#endif
+
 	assert(obj);
 
 	obj->h.t = type;
 	obj->h.cls = cls;
-
-	gc_obj_add(obj, size);
 
 	return (obj);
 }
@@ -938,9 +942,9 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 		if (stack_g[i] != NULL && IS_PTR(stack_g[i])) {
 			// Temporary debug msg
 			/*if (stack_g[i]->h.t == KEK_COPIED) {
-				vm_error("rootset: ERROR: KEK_COPIED at stack_g[%d], obj ptr = %p.\n", i, stack_g[i]);
-			}
-			assert(stack_g[i]->h.t != KEK_COPIED);*/
+			 vm_error("rootset: ERROR: KEK_COPIED at stack_g[%d], obj ptr = %p.\n", i, stack_g[i]);
+			 }
+			 assert(stack_g[i]->h.t != KEK_COPIED);*/
 			if (stack_g[i]->h.t == KEK_CLASS) {
 //				vm_debug(DBG_GC, "rootset: ignoring class\n");
 				continue;

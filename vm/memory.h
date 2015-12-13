@@ -140,7 +140,10 @@ typedef enum _gc_type {
 	GC_GEN // generational GC. new and old space
 } gc_type_t;
 
-#define GC_TYPE_DEFAULT GC_NEW
+#define JUST_USE_MALLOC
+
+//#define GC_TYPE_DEFAULT GC_NEW
+#define GC_TYPE_DEFAULT GC_NONE
 extern gc_type_t gc_type_g;
 
 typedef struct _gc_obj {
