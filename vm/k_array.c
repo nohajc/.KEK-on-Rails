@@ -27,7 +27,6 @@ void init_kek_array_class(void) {
 
 	classes_g[classes_cnt_g].parent = NULL;
 	classes_g[classes_cnt_g].methods_cnt = 2;
-	// TODO: add native methods such as length(), get_idx(), get_idxa()
 	classes_g[classes_cnt_g].methods = malloc(
 			classes_g[classes_cnt_g].methods_cnt * sizeof(method_t));
 	vm_init_native_method(&classes_g[classes_cnt_g].methods[0], "length", 0,

@@ -12,6 +12,23 @@ class Environment {
 	var parentEnv
 
 	static initBuiltinFunctions(env) {
+		var bindings = [
+			["define", "scmDefine"],
+			["quote", "scmQuote"],
+			["lambda", "scmLambda"],
+			["if", "scmIf"],
+			["when", "scmWhen"],
+			["unless", "scmUnless"],
+			["let", "scmLet"],
+			["and", "scmAnd"],
+			["or", "scmOr"]
+		]
+
+		/*var i
+		for (i = 0; i < bindings.length(); i++) {
+			Sys.out.writeln(bindings[i][0] + ": " + bindings[i][1] + "\n")
+		}*/
+
 		env.set(scmSymbol.getSym("define"), new scmDefine())
 		env.set(scmSymbol.getSym("quote"), new scmQuote())
 		env.set(scmSymbol.getSym("lambda"), new scmLambda())

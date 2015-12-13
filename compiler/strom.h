@@ -155,6 +155,7 @@ public:
 	virtual ~Array();
 	virtual uint32_t Translate();
 	virtual void Print(int);
+	friend uint32_t construct_const_array(Array & a);
 };
 
 class Nil: public Const {

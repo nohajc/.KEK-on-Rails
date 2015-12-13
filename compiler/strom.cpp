@@ -754,11 +754,12 @@ uint32_t String::Translate() {
 	return 0;
 }
 
-uint32_t Array::Translate() {
-	ArgList * e = elems;
+uint32_t construct_const_array(Array & a) {
+	ArgList * e = a.elems;
 	Numb * n;
 	String * s;
-	int elem_count = elems->Count();
+	Array * inner_a;
+	int elem_count = e->Count();
 	uint32_t arr_idx = bco_arr(bcout_g, elem_count);
 	int i = 0;
 
@@ -773,11 +774,20 @@ uint32_t Array::Translate() {
 			bco_arr_set_idx(bcout_g, arr_idx, i, str_idx);
 			//printf("DEBUG str_idx = %u\n", str_idx);
 		}
+		else if((inner_a = dynamic_cast<Array*>(e->arg))) {
+			uint32_t inner_a_idx = construct_const_array(*inner_a);
+			bco_arr_set_idx(bcout_g, arr_idx, i, inner_a_idx);
+		}
 		i++;
 
 		e = e->next;
 	}
 
+	return arr_idx;
+}
+
+uint32_t Array::Translate() {
+	uint32_t arr_idx = construct_const_array(*this);
 	bco_ww1(bcout_g, LVBI_C, arr_idx);
 
 	return 0;

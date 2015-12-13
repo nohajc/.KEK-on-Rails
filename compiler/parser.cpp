@@ -1144,11 +1144,11 @@ Expr * Faktor(Env env) {
 ArgList * ZbElems(Env env) {
 	Const * e = NULL;
 
+	skipNewlines();
 	if(Symb.type == RBRAC) {
 		return NULL;
 	}
 
-	skipNewlines();
 	Srovnani(COMMA);
 	skipNewlines();
 
@@ -1162,7 +1162,9 @@ ArgList * ZbElems(Env env) {
 }
 
 ArgList * Elems(Env env) {
+	skipNewlines();
 	Const * e = dynamic_cast<Const*>(Vyraz(env)->Optimize());
+	skipNewlines();
 
 	if (!e) {
 		Chyba("Inicializator pole muze obsahovat pouze konstantni vyrazy.");
