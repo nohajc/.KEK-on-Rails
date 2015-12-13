@@ -22,6 +22,7 @@
 #include "k_term.h"
 #include "k_sys.h"
 #include "k_exception.h"
+#include "k_meta.h"
 #include "stack.h"
 #include "memory.h"
 
@@ -211,6 +212,7 @@ void vm_init_builtin_classes(void) {
 	init_kek_term_class();
 	init_kek_sys_class();
 	init_kek_exception_class();
+	init_kek_meta_class();
 }
 
 static uint32_t calc_total_syms_cnt(class_t * cls) {

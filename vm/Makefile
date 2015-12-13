@@ -11,6 +11,7 @@ OBJS=\
 	k_term.o \
 	k_sys.o \
 	k_exception.o \
+	k_meta.o \
 	loader.o \
 	stack.o \
 	vm.o \
@@ -19,7 +20,7 @@ OBJS=\
 kek: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
-$(OBJS): stack.h vm.h types.h bc.h loader.h k_integer.h k_array.h k_string.h k_symbol.h k_file.h k_term.h k_sys.h k_exception.h memory.h
+$(OBJS): stack.h vm.h types.h bc.h loader.h k_integer.h k_array.h k_string.h k_symbol.h k_file.h k_term.h k_sys.h k_exception.h k_meta.h memory.h
 
 clean:
 	rm -f $(OBJS)
