@@ -1,6 +1,7 @@
-//KEK_TEST_RUNS 2
-//KEK_TEST_ARGS_0 300
-//KEK_TEST_ARGS_1 1000
+//KEK_TEST_RUNS 3
+//KEK_TEST_ARGS_0 20
+//KEK_TEST_ARGS_1 100
+//KEK_TEST_ARGS_2 600
 
 class Main {
   static main(args) {

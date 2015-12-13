@@ -1,0 +1,161 @@
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 1 500
+//KEK_TEST_ARGS_1 2 500
+
+class C {
+  var v
+  var check
+  
+  C(av) {
+    v = av
+    
+    check = []
+    check[0] = 42
+    check[1] = 666
+  }
+  
+  val() {
+    if (check[0] != 42) {
+      write "c 0 fail"
+    }
+    
+    if (check[1] != 666) {
+      write "c 1 fail"
+    }
+    
+    return v
+  }
+}
+
+class B {
+  var v
+  var c
+  
+  B(av) {
+    v = av
+    c = new C(av)
+  }
+  
+  val() {
+    if (c.val() == v) {
+      return v
+    }
+    write "fail: class B c.val() != v"
+  }
+}
+
+class A {
+  var b
+  var cnt
+  var v
+  
+  A(av, acnt) {
+    var i
+    
+    b = []
+    cnt = acnt
+    v = av
+    
+    for (i = 0; i < cnt; i++) {
+      b[i] = new B(v + i)
+    }
+  }
+  
+  val() {
+    var i
+    for (i = 0; i < cnt; i++) {
+      if (b[i].val() != v + i) {
+        write "fail: i="
+        write i
+        write ",b[i].val()="
+        write b[i].val()
+        write "v="
+        write v
+        write "v+i="
+        write v+i
+      }
+    }
+    return b[0].val()
+  }
+}
+
+class MyObj {
+  var v
+  
+  MyObj(av) {
+    v = av;
+  }
+  
+  val() {
+    return v
+  }
+}
+
+class Main {
+  static main(args) {
+    var i
+    var j
+    var r
+    var arr
+
+    //var cnt = 23
+    //var repeat = 8
+    
+    var cnt = args[1].toInt()
+    var repeat = args[2].toInt()
+        
+    //write "cnt = "; write cnt
+    
+    //write "repeat = "; write repeat
+    
+    var tmp
+    
+    var oldtmp = []
+    oldtmp[0] = -42
+    
+    var another = []
+    another[8] = new A(1, cnt);
+
+
+    for (r = 0; r < repeat; r++) {
+      //write "r = "; write r
+        
+      tmp = []
+      
+      for (i = 0; i < cnt; i++) {
+        //write "writing tmp[i] where i = "; write i
+        tmp[i] = new A(i, cnt)
+      }
+      
+      if (another[8].val() != 1) {
+        write "fail: another[8].val() should be 1 but is "
+        write another[8].val()
+        write "eom\n"
+        return
+      }
+            
+      for (i = 0; i < cnt; i++) {
+        //write "checking tmp[i] where i = "; write i
+        if (tmp[i].val() != i) {
+          write "fail loop\n"
+          return
+        }
+      }
+      
+      if (oldtmp[0] != -42) {
+        for (i = 0; i < cnt; i++) {
+          //write "checking tmp[i] where i = "; write i
+          if (oldtmp[i].val() != i) {
+            write "fail oldtmp\n"
+            return
+          }
+        }
+      }
+      
+      oldtmp = tmp
+      
+    } // for repeat
+    
+    write "=== OK ===\n"
+  } // main
+} // Main
