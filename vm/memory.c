@@ -160,18 +160,20 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 		return;
 	}
 
-	switch (obj->h.state) {
-	case OBJ_NEW_IN_YOUNG:
-		obj->h.state = OBJ_1ST_GEN_YOUNG;
-		break;
-	case OBJ_1ST_GEN_YOUNG:
-		vm_debug(DBG_GC_STATS, "Moving obj=%p to old space.\n", obj);
-		/* copy to old space STUB */
-		obj->h.state = OBJ_OLD_WHITE;
-		break;
-	default:
-		vm_error("Invalid obj state=%d\n", obj->h.state);
-		break;
+	if (gc_type_g == GC_GEN) {
+		switch (obj->h.state) {
+		case OBJ_NEW_IN_YOUNG:
+			obj->h.state = OBJ_1ST_GEN_YOUNG;
+			break;
+		case OBJ_1ST_GEN_YOUNG:
+			vm_debug(DBG_GC_STATS, "Moving obj=%p to old space.\n", obj);
+			/* copy to old space STUB */
+			obj->h.state = OBJ_OLD_WHITE;
+			break;
+		default:
+			vm_error("Invalid obj state=%d\n", obj->h.state);
+			break;
+		}
 	}
 
 	copy = gc_cheney_copy_obj_to_space_free(obj);

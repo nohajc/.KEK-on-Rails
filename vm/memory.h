@@ -204,5 +204,18 @@ void *gc_cheney_calloc(type_t type, class_t *cls, size_t size);
 void gc_cheney_scavenge();
 
 /******************************************************************************/
+/* old space */
+
+typedef struct _os_ptr_list {
+	struct _os_ptr_list *next;
+	kek_obj_t *obj;
+} os_ptr_list_t;
+
+typedef struct _old_space_item {
+	struct _old_space_item *next;
+	kek_obj_t *obj;
+} old_space_item_t;
+
+/******************************************************************************/
 
 #endif
