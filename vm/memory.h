@@ -42,7 +42,7 @@ union _kek_obj * alloc_term(struct _class * term_class);
 /* from claus */
 #define SEGMENT_SIZE (4096*4096*2) /* FIXME TODO creating new segments is disabled
  just make sure that this is big enough when using -gx */
-#define OBJ_ALIGN 64
+#define OBJ_ALIGN 8
 #define ALIGNED(n) ((((n) + OBJ_ALIGN-1) & ~(OBJ_ALIGN-1)))
 
 /* Remember set */
