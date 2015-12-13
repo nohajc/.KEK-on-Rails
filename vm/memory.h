@@ -140,10 +140,10 @@ typedef enum _gc_type {
 	GC_GEN // generational GC. new and old space
 } gc_type_t;
 
-#define JUST_USE_MALLOC
+//#define JUST_USE_MALLOC
 
-//#define GC_TYPE_DEFAULT GC_NEW
-#define GC_TYPE_DEFAULT GC_NONE
+#define GC_TYPE_DEFAULT GC_NEW
+//#define GC_TYPE_DEFAULT GC_NONE
 extern gc_type_t gc_type_g;
 
 typedef struct _gc_obj {
@@ -195,7 +195,7 @@ void gc_rootset(void (*fn)(kek_obj_t **));
 /******************************************************************************/
 /* cheney */
 
-#define NEW_SEGMENT_SIZE (1024*128)
+#define NEW_SEGMENT_SIZE (1024*512)
 extern void *segments_from_space_g;
 extern void *segments_to_space_g;
 extern void *to_space_free_g; /* points to the end of data in from-space */

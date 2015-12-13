@@ -85,6 +85,7 @@ class Scheme {
 				rd = new Reader(wi)
 				parser = new Parser(rd)
 				REPL()
+				f.close()
 				return
 			}
 			catch (e) {
