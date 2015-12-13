@@ -45,6 +45,26 @@ static const char *type_str_g[] = { "NIL", "INT", "STR", "SYM", "ARR", "EXINFO",
 		"EXPT", "FILE", "TERM", "UDO", "CLASS", "STACK", "COPIED" };
 
 /******************************************************************************/
+/* obj state */
+
+/* excerpt from: http://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection
+ * There are three marking states. If an object is white, it has not yet been
+ * discovered by the garbage collector. If an object is grey, it has been
+ * discovered by the garbage collector, but not all of its neighbors have been
+ * processed yet. If an object is black, it has been discovered, and all of
+ * its neighbors have been fully processed.
+ *
+ * IF YOU EDIT THIS. EDIT IT IN BCOUT.CPP ALSO */
+typedef enum _obj_state {
+	OBJ_UNKNOWN_STATE = 0, //
+	OBJ_NEW_IN_YOUNG, //
+	OBJ_1ST_GEN_YOUNG, //
+	OBJ_OLD_WHITE, //
+	OBJ_OLD_GRAY, //
+	OBJ_OLD_BLACK //
+} obj_state_t;
+
+/******************************************************************************/
 
 typedef struct _header {
 	type_t t;
@@ -56,7 +76,11 @@ typedef struct _header {
 	/* todo: pocet preziti */
 	/* gc se bude moc volat nasilne, gc bude mit zamek, kdy se gc volat nebude*/
 	/* todo: gc se bude volat s rezervou */
+	uint32_t id;
+	obj_state_t state;
 } header_t;
+
+extern uint32_t last_id_g;
 
 /* nil - immutable, singleton */
 typedef struct _kek_nil {

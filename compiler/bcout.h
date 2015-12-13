@@ -122,9 +122,20 @@ typedef enum _constant_type {
 	KEK_EXINFO
 } constant_type_t;
 
+typedef enum _obj_state {
+	OBJ_UNKNOWN_STATE = 0, //
+	OBJ_NEW_IN_YOUNG, //
+	OBJ_1ST_GEN_YOUNG, //
+	OBJ_OLD_WHITE, //
+	OBJ_OLD_GRAY, //
+	OBJ_OLD_BLACK //
+} obj_state_t;
+
 typedef struct _header {
 	constant_type_t t;
 	uint64_t cls; /* Each object needs a pointer to its class - resolved at runtime. */
+	uint32_t id;
+	obj_state_t state;
 } header_t;
 
 typedef struct _constant_nil {

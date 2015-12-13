@@ -160,6 +160,20 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 		return;
 	}
 
+	switch (obj->h.state) {
+	case OBJ_NEW_IN_YOUNG:
+		obj->h.state = OBJ_1ST_GEN_YOUNG;
+		break;
+	case OBJ_1ST_GEN_YOUNG:
+		vm_debug(DBG_GC_STATS, "Moving obj=%p to old space.\n", obj);
+		/* copy to old space STUB */
+		obj->h.state = OBJ_OLD_WHITE;
+		break;
+	default:
+		vm_error("Invalid obj state=%d\n", obj->h.state);
+		break;
+	}
+
 	copy = gc_cheney_copy_obj_to_space_free(obj);
 	assert(IS_PTR(copy));
 	assert(OBJ_TYPE_CHECK(copy));
@@ -167,6 +181,7 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) copy;
+
 	obj = copy;
 
 	*objptr = obj;
@@ -415,12 +430,12 @@ void gc_cheney_init() {
 	vm_debug(DBG_GC, "gc_cheney_init()\n");
 
 	segments_from_space_g = malloc(
-			NEW_SEGMENT_SIZE * OBJ_ALIGN * sizeof(uint8_t));
+	NEW_SEGMENT_SIZE * OBJ_ALIGN * sizeof(uint8_t));
 
 	assert(segments_from_space_g);
 
 	segments_to_space_g = malloc(
-			NEW_SEGMENT_SIZE * OBJ_ALIGN * sizeof(uint8_t));
+	NEW_SEGMENT_SIZE * OBJ_ALIGN * sizeof(uint8_t));
 
 	assert(segments_to_space_g);
 
@@ -448,6 +463,9 @@ bool gc_cheney_can_malloc(size_t size) {
 	return ((ptruint_t) ((uint8_t *) to_space_free_g + size) < //
 			(ptruint_t) ((uint8_t *) segments_to_space_g + NEW_SEGMENT_SIZE));
 }
+
+uint32_t last_id_g = 0;
+
 void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	void *ptr;
 	segment_t *new;
@@ -491,6 +509,8 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 
 	((kek_obj_t *) ptr)->h.t = type;
 	((kek_obj_t *) ptr)->h.cls = cls;
+	((kek_obj_t *) ptr)->h.id = ++last_id_g;
+	((kek_obj_t *) ptr)->h.state = OBJ_NEW_IN_YOUNG;
 
 	return (ptr);
 }
@@ -979,7 +999,8 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 /* this function will be called every X ticks */
 void gc() {
-	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%\n", ticks_g, gc_remaining() * 100);
+	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%\n", ticks_g,
+			gc_remaining() * 100);
 }
 
 void gc_init() {

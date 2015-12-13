@@ -97,15 +97,6 @@ void *mem_obj_calloc(type_t type, class_t *cls, size_t num, size_t size);
 /******************************************************************************/
 /* obj_table */
 
-typedef enum _obj_state {
-	OBJ_UNKNOWN_STATE = 0, //
-	OBJ_1ST_GEN_YOUNG, //
-	OBJ_2ND_GEN_YOUNG, //
-	OBJ_OLD_WHITE, //
-	OBJ_OLD_GRAY, //
-	OBJ_OLD_BLACK //
-} obj_state_t;
-
 typedef struct _obj_table {
 	obj_state_t state;
 	kek_obj_t *obj_ptr;
@@ -170,7 +161,6 @@ void gc_rootset_remove_ptr(kek_obj_t **obj);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
 
-
 #define GC_TICKS_DEFAULT 1000
 extern int gc_ticks_g; /* how often will gc run */
 extern gc_obj_t *gc_obj_g;
@@ -185,7 +175,6 @@ double gc_remaining(void);
 void *gc_obj_malloc(type_t type, class_t *cls, size_t size);
 bool gc_in_new(void *ptr, size_t size);
 bool gc_in_old(void *ptr, size_t size);
-
 
 void gc_init(void);
 void gc_free(void);
