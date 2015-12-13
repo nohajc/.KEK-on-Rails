@@ -239,13 +239,13 @@ main() {
 	kek_clear_out
 	kek_make
 
-if false; then
+
 	for k in $KEK_SRC_DIR/*.kek; do
 		ftmp=${k##*/}
 		f=${ftmp%.*}
 		kek_execute $f
 	done
-fi
+
 	
 	echo "LETS TEST KEK_SCHEME"
 	
