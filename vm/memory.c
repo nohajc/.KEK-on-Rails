@@ -156,6 +156,9 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 		*objptr = (kek_obj_t *) obj->h.cls;
 		return;
 	}
+	if (gc_cheney_ptr_in_to_space(obj, sizeof(header_t))) {
+		return;
+	}
 
 	copy = gc_cheney_copy_obj_to_space_free(obj);
 	assert(IS_PTR(copy));
@@ -189,6 +192,8 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 	from = obj;
 	if (from->h.t == KEK_COPIED) {
 		to = (kek_obj_t *) from->h.cls;
+	} else if (gc_cheney_ptr_in_to_space(obj, sizeof(header_t))) {
+		return;
 	} else {
 		to = gc_cheney_copy_obj_to_space_free(from);
 		from->h.t = KEK_COPIED;
