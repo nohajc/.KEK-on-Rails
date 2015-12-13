@@ -552,39 +552,42 @@ void method_free(method_t *method) {
 	//free(method);
 }
 
-void class_free(class_t *class) {
+void class_free(class_t *cls) {
 	uint32_t i;
 
-	if (class == NULL) {
+	if (cls == NULL) {
 		return;
 	}
 
-	vm_debug(DBG_MEM, "=== deleting class %p \"%s\"\n", class, class->name);
+	vm_debug(DBG_MEM, "=== deleting class %p \"%s\"\n", cls, cls->name);
 
 	if (gc_type_g != GC_NONE) {
-		assert(!gc_cheney_ptr_in_to_space(class, sizeof(class_t)));
-		assert(!gc_cheney_ptr_in_from_space(class, sizeof(class_t)));
+		assert(!gc_cheney_ptr_in_to_space(cls, sizeof(class_t)));
+		assert(!gc_cheney_ptr_in_from_space(cls, sizeof(class_t)));
 	}
 
-	free(class->name);
-	free(class->parent_name);
+	free(cls->name);
+	free(cls->parent_name);
 
-	method_free(class->constructor);
-	free(class->constructor);
+	method_free(cls->constructor);
+	free(cls->constructor);
 
-	for (i = 0; i < class->methods_cnt; i++) {
-		method_free(&class->methods[i]);
+	method_free(cls->static_init);
+	free(cls->static_init);
+
+	for (i = 0; i < cls->methods_cnt; i++) {
+		method_free(&cls->methods[i]);
 	}
-	free(class->methods);
+	free(cls->methods);
 
-	for (i = 0; i < class->syms_static_cnt; i++) {
-		symbol_free(&class->syms_static[i]);
+	for (i = 0; i < cls->syms_static_cnt; i++) {
+		symbol_free(&cls->syms_static[i]);
 	}
-	free(class->syms_static);
+	free(cls->syms_static);
 
-	for (i = 0; i < class->syms_instance_cnt; i++) {
-		symbol_free(&class->syms_instance[i]);
+	for (i = 0; i < cls->syms_instance_cnt; i++) {
+		symbol_free(&cls->syms_instance[i]);
 	}
-	free(class->syms_instance);
+	free(cls->syms_instance);
 }
 
