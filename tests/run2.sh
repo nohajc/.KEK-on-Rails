@@ -239,12 +239,33 @@ main() {
 	kek_clear_out
 	kek_make
 
+if false; then
 	for k in $KEK_SRC_DIR/*.kek; do
 		ftmp=${k##*/}
 		f=${ftmp%.*}
 		kek_execute $f
 	done
-
+fi
+	
+	echo "LETS TEST KEK_SCHEME"
+	
+	cd ./kek_scheme
+	make -C ../compiler >/dev/null 2>&1
+	../compiler/kekc scheme.kek ../tests/kexes/scheme.kexe >/dev/null 2>&1
+	make -C ../vm  >/dev/null 2>&1
+	
+	echo "scheme (fact 10)"
+  valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ../vm/kek ../tests/kexes/scheme.kexe <(echo "(fact 10)") >f10.out 2>&1
+	echo "valgdrind \$?=$?"
+	diff <(cat f10.out | grep -v ==) <(echo 3628800)
+	echo "diff \$?=$?"
+	
+	echo "scheme sat:"
+	valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ../vm/kek ../tests/kexes/scheme.kexe sat.scm sat_in.txt 2>/dev/null
+	echo "valgdrind \$?=$?"
+	
+  cd ..
+	
 }
 
 # MAIN #########################################################################
