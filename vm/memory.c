@@ -1419,10 +1419,7 @@ bool gc_os_is_in_new(kek_obj_t *obj) {
 	}
 }
 
-void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr) {
-	kek_obj_t *dst_obj = *dst_objptr;
-	kek_obj_t *obj = *objptr;
-
+void gc_os_write_barrier(kek_obj_t *dst_obj, kek_obj_t **dst_addr) {
 	os_remember_set_t *rs_on; /* remember set: old->new */
 //	os_remember_set_t *rs_bw; /* remember set: black->white */
 
@@ -1433,13 +1430,13 @@ void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr) {
 	}
 
 	/* old -> new */
-	if (gc_os_is_in_old(dst_obj) && gc_os_is_in_new(obj)) {
+	if (gc_os_is_in_old(dst_obj) && gc_os_is_in_new(*dst_addr)) {
 		rs_on = malloc(sizeof(os_remember_set_t));
 		assert(rs_on);
 
 		rs_on->next = NULL;
 		rs_on->old_obj = dst_obj;
-		rs_on->new_obj = objptr;
+		rs_on->new_obj = dst_addr;
 
 		if (gc_os_remember_set_g == NULL) {
 			gc_os_remember_set_g = rs_on;

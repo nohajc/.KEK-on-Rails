@@ -235,7 +235,7 @@ bool gc_os_is_in_old(kek_obj_t *);
 bool gc_os_is_in_new(kek_obj_t *);
 
 /* this is called in executing ST bytecode */
-void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr);
+void gc_os_write_barrier(kek_obj_t *dst_obj, kek_obj_t **dst_addr);
 
 int gc_os_items_cnt(void);
 int gc_os_rs_items_cnt(void);
