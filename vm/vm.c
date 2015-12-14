@@ -725,7 +725,7 @@ void vm_execute_bc(void) {
 
 			*DPTR_VAL(dst_obj, addr) = obj;
 
-			if (gc_type_g == GC_GEN && IS_PTR(obj) && !vm_is_const(obj)) {
+			if (gc_type_g == GC_GEN && IS_PTR(obj)) {
 				gc_os_write_barrier(dst_obj, DPTR_VAL(dst_obj, addr));
 			}
 
