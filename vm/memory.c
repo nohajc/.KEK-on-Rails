@@ -1256,6 +1256,12 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 	assert(IS_PTR(obj));
 	assert(OBJ_TYPE_CHECK(obj));
 
+	if (obj->h.t == KEK_COPIED) {
+		vm_debug(DBG_OLD, "gc_os_rec_cpy_neighbors: it's a copy, skip\n");
+		*objptr = (kek_obj_t *) obj->h.cls;
+		return;
+	}
+
 	if (!gc_os_is_in_old(obj)) {
 		assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
 	}
@@ -1393,8 +1399,9 @@ void gc_os_add_item(kek_obj_t **objptr) {
 		gc_os_items_g->next = os_item;
 	}
 
-	/* recursive copy all its neighbors */
-//	gc_os_rec_cpy_neighbors(&os_item->obj);
+	obj->h.t = KEK_COPIED;
+	obj->h.cls = (struct _class *) os_item->obj;
+
 	*objptr = os_item->obj;
 }
 
