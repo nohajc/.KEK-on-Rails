@@ -75,12 +75,9 @@ void vm_error(const char *format, ...) {
 char *kek_obj_print(kek_obj_t *kek_obj) {
 	static char str[1024];
 
-	if (kek_obj != NULL && IS_PTR(kek_obj) && !TYPE_CHECK(kek_obj->h.t)) {
-		vm_error("kek_obj_print typecheck failed. type=\"%d\"\n", kek_obj->h.t);
-	}
-
 	if (kek_obj == (kek_obj_t *) 0xffffffffffffffff) {
 		(void) snprintf(str, 1024, "kek_obj == 0xffffffffffffffff");
+		assert(0);
 		goto out;
 	}
 
@@ -97,6 +94,21 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
 		}
 	} else {
+
+		vm_assert(TYPE_CHECK(kek_obj->h.t), //
+				"kek_obj=%p, "//
+				"type=%d, "//
+				"state=%d, "//
+				"is_const=%d, "//
+				"fromspace=%d, "//
+				"tospace=%d\n",//
+				kek_obj,//
+				kek_obj->h.t,//
+				kek_obj->h.state,//
+				vm_is_const(kek_obj),//
+				gc_cheney_ptr_in_from_space(kek_obj, 1),//
+				gc_cheney_ptr_in_to_space(kek_obj, 1));
+
 		switch (kek_obj->h.t) {
 		case KEK_INT:
 			(void) snprintf(str, 1024, "int -%d-", INT_VAL(kek_obj));
@@ -143,10 +155,7 @@ char *kek_obj_print(kek_obj_t *kek_obj) {
 			(void) snprintf(str, 1024, "COPIED!");
 			break;
 		default:
-			(void) snprintf(str, 1024, "unknown type %d (obj=%p, typeptr=%p)",
-					kek_obj->h.t, (void *) kek_obj, (void *) &(kek_obj->h.t));
-			/* vm_error("kek_obj_print: unhandled type %d\n", kek_obj->type);
-			 assert(0 && "unhandled kek_obj->type"); */
+			assert(0);
 			break;
 		}
 	}
