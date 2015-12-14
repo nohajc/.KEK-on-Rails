@@ -720,13 +720,15 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
+			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj),
+					((ptruint_t) addr & ~0x3), kek_obj_print(obj));
+
+			*DPTR_VAL(dst_obj, addr) = obj;
+
 			if (gc_type_g == GC_GEN && IS_PTR(obj) && !vm_is_const(obj)) {
 				gc_os_write_barrier(DPTR_VAL(dst_obj, addr), &obj);
 			}
 
-			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj),
-					((ptruint_t) addr & ~0x3), kek_obj_print(obj));
-			*DPTR_VAL(dst_obj, addr) = obj;
 			break;
 		}
 		case IDX: {

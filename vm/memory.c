@@ -1359,7 +1359,7 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		assert(0);
 		break;
 	case KEK_COPIED:
-		assert(0);
+		vm_error("gc_os_rec_cpy_neighbors got KEK_COPIED\n");
 		break;
 	default:
 		vm_error("Unknown obj->h.t=%d in gc_cheney_copy_inner_objs\n",
@@ -1417,13 +1417,8 @@ bool gc_os_is_in_old(kek_obj_t *obj) {
 	case OBJ_1ST_GEN_YOUNG:
 		return (false);
 	default:
-
-		/* this will make Valgrind to tell us who allocated the obj */
-		memset((uint8_t *) obj - 1, 1, 1);
-
 		vm_error("gc_os_is_in_old: invalid obj->h.state %d, obj->h.t=%d\n",
 				obj->h.state, obj->h.t);
-
 		return (false);
 	}
 }
@@ -1440,10 +1435,6 @@ bool gc_os_is_in_new(kek_obj_t *obj) {
 	case OBJ_1ST_GEN_YOUNG:
 		return (true);
 	default:
-
-		/* this will make Valgrind to tell us who allocated the obj */
-		memset((uint8_t *) obj - 1, 1, 1);
-
 		vm_error("gc_os_is_in_new: invalid state %d\n", obj->h.state);
 		return (false);
 	}
