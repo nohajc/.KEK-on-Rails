@@ -1439,16 +1439,10 @@ void gc_os_write_barrier(kek_obj_t *dst_obj, kek_obj_t **dst_addr) {
 		rs_on = malloc(sizeof(os_remember_set_t));
 		assert(rs_on);
 
-		rs_on->next = NULL;
+		rs_on->next = gc_os_remember_set_g;
 		rs_on->old_obj = dst_obj;
 		rs_on->new_obj = dst_addr;
-
-		if (gc_os_remember_set_g == NULL) {
-			gc_os_remember_set_g = rs_on;
-		} else {
-			assert(gc_os_remember_set_g->next == NULL);
-			gc_os_remember_set_g->next = rs_on;
-		}
+		gc_os_remember_set_g = rs_on;
 	}
 
 	/* black -> white */
