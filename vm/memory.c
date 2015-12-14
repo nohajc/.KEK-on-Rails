@@ -1256,7 +1256,7 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 
 	assert(IS_PTR(obj));
 
-	if (vm_is_const(obj)) {
+	if (vm_is_const(obj) || gc_os_is_in_old(obj)) {
 		return;
 	}
 
