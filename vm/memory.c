@@ -1410,6 +1410,10 @@ bool gc_os_is_in_old(kek_obj_t *obj) {
 bool gc_os_is_in_new(kek_obj_t *obj) {
 	vm_assert(obj != NULL, "obj is null (%d)\n", 0);
 
+	if (vm_is_const(obj) || obj->h.t == KEK_STACK || obj->h.t == KEK_CLASS) {
+		return (false);
+	}
+
 	switch (obj->h.state) {
 	case OBJ_OLD_WHITE:
 	case OBJ_OLD_GRAY:
