@@ -267,8 +267,8 @@ void vm_calculate_udo_sizes(void) {
 		(void) calc_total_syms_cnt(&classes_g[i]);
 		(void) calc_syms_offset(&classes_g[i]);
 		/*printf("UDO %s, total_syms_cnt = %d, syms_offset = %d.\n",
-				classes_g[i].name, classes_g[i].total_syms_instance_cnt,
-				classes_g[i].syms_instance_offset);*/
+		 classes_g[i].name, classes_g[i].total_syms_instance_cnt,
+		 classes_g[i].syms_instance_offset);*/
 	}
 }
 
@@ -603,7 +603,7 @@ static inline kek_obj_t * bc_bop(op_t o, kek_obj_t *a, kek_obj_t *b) {
 		str_a = a->k_sym.symbol;
 		str_b = b->k_sym.symbol;
 
-		switch(o) {
+		switch (o) {
 		case Eq:
 			res = (kek_obj_t*) make_integer(!strcmp(str_a, str_b));
 			break;
@@ -720,7 +720,7 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
-			if (gc_type_g == GC_GEN) {
+			if (gc_type_g == GC_GEN && IS_PTR(obj) && !vm_is_const(obj)) {
 				gc_os_write_barrier(DPTR_VAL(dst_obj, addr), &obj);
 			}
 

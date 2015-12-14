@@ -1406,6 +1406,8 @@ void gc_os_add_item(kek_obj_t **objptr) {
 }
 
 bool gc_os_is_in_old(kek_obj_t *obj) {
+	vm_assert(obj != NULL, "obj is null (%d)\n", 0);
+
 	switch (obj->h.state) {
 	case OBJ_OLD_WHITE:
 	case OBJ_OLD_GRAY:
@@ -1415,12 +1417,20 @@ bool gc_os_is_in_old(kek_obj_t *obj) {
 	case OBJ_1ST_GEN_YOUNG:
 		return (false);
 	default:
-		vm_error("gc_os_is_in_old: invalid state %d\n", obj->h.state);
+
+		/* this will make Valgrind to tell us who allocated the obj */
+		memset((uint8_t *) obj - 1, 1, 1);
+
+		vm_error("gc_os_is_in_old: invalid obj->h.state %d, obj->h.t=%d\n",
+				obj->h.state, obj->h.t);
+
 		return (false);
 	}
 }
 
 bool gc_os_is_in_new(kek_obj_t *obj) {
+	vm_assert(obj != NULL, "obj is null (%d)\n", 0);
+
 	switch (obj->h.state) {
 	case OBJ_OLD_WHITE:
 	case OBJ_OLD_GRAY:
@@ -1430,6 +1440,10 @@ bool gc_os_is_in_new(kek_obj_t *obj) {
 	case OBJ_1ST_GEN_YOUNG:
 		return (true);
 	default:
+
+		/* this will make Valgrind to tell us who allocated the obj */
+		memset((uint8_t *) obj - 1, 1, 1);
+
 		vm_error("gc_os_is_in_new: invalid state %d\n", obj->h.state);
 		return (false);
 	}
@@ -1441,6 +1455,12 @@ void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr) {
 
 	os_remember_set_t *rs_on; /* remember set: old->new */
 //	os_remember_set_t *rs_bw; /* remember set: black->white */
+
+	/* this happens when dst_obj is not in the old space neither in
+	 * the new space */
+	if (dst_obj == NULL) {
+		return;
+	}
 
 	/* old -> new */
 	if (gc_os_is_in_old(dst_obj) && gc_os_is_in_new(obj)) {
