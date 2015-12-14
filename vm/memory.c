@@ -407,7 +407,7 @@ void gc_cheney_scavenge() {
 
 	/* clear space */
 #if FORCE_CALLOC == 1
-	memset(segments_to_space_g->beginning, 0, NEW_SEGMENT_SIZE);
+	memset(segments_to_space_g, 0, NEW_SEGMENT_SIZE);
 #endif /* FORCE_CALLOC */
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots BEGIN\n");
