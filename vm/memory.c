@@ -1013,8 +1013,9 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 /* this function will be called every X ticks */
 void gc() {
-	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%\n", ticks_g,
-			gc_remaining() * 100);
+	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%, newgc=%u old=%d, rs=%d\n",
+			ticks_g, gc_remaining() * 100, gc_cheney_iteration_t,
+			gc_os_items_cnt(), gc_os_rs_items_cnt());
 }
 
 void gc_init() {
@@ -1292,7 +1293,7 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 				obj);
 
 		arr_objs = KEK_ARR_OBJS(obj);
-		gc_os_rec_cpy_neighbors((kek_obj_t**)&arr_objs);
+		gc_os_rec_cpy_neighbors((kek_obj_t**) &arr_objs);
 		/* update elems ptr */
 		obj->k_arr.elems = &(arr_objs->elems[0]);
 		break;
@@ -1450,6 +1451,26 @@ void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr) {
 
 	/* black -> white */
 	/* TODO */
+}
+
+int gc_os_items_cnt(void) {
+	os_item_t *itemptr;
+	int cnt = 0;
+
+	for (itemptr = gc_os_items_g; itemptr; cnt++, itemptr = itemptr->next)
+		;
+
+	return (cnt);
+}
+
+int gc_os_rs_items_cnt(void) {
+	os_remember_set_t *rsptr;
+	int cnt = 0;
+
+	for (rsptr = gc_os_remember_set_g; rsptr; cnt++, rsptr = rsptr->next)
+		;
+
+	return (cnt);
 }
 
 /******************************************************************************/

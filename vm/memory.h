@@ -162,7 +162,7 @@ void gc_rootset_remove_id(uint32_t id);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
 
-#define GC_TICKS_DEFAULT 1000
+#define GC_TICKS_DEFAULT 10000
 extern int gc_ticks_g; /* how often will gc run */
 extern gc_obj_t *gc_obj_g;
 extern gc_obj_t *gc_obj_root_g;
@@ -236,6 +236,9 @@ bool gc_os_is_in_new(kek_obj_t *);
 
 /* this is called in executing ST bytecode */
 void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr);
+
+int gc_os_items_cnt(void);
+int gc_os_rs_items_cnt(void);
 
 /******************************************************************************/
 
