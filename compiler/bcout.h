@@ -124,8 +124,8 @@ typedef enum _constant_type {
 
 typedef enum _obj_state {
 	OBJ_UNKNOWN_STATE = 0, //
-	OBJ_NEW_IN_YOUNG, //
 	OBJ_1ST_GEN_YOUNG, //
+	OBJ_2ND_GEN_YOUNG, //
 	OBJ_OLD_WHITE, //
 	OBJ_OLD_GRAY, //
 	OBJ_OLD_BLACK //

@@ -720,6 +720,10 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
+			if (gc_type_g == GC_GEN) {
+				gc_os_write_barrier(DPTR_VAL(dst_obj, addr), &obj);
+			}
+
 			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj),
 					((ptruint_t) addr & ~0x3), kek_obj_print(obj));
 			*DPTR_VAL(dst_obj, addr) = obj;

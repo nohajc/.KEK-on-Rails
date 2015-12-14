@@ -163,10 +163,10 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 
 	if (gc_type_g == GC_GEN) {
 		switch (obj->h.state) {
-		case OBJ_NEW_IN_YOUNG:
-			obj->h.state = OBJ_1ST_GEN_YOUNG;
-			break;
 		case OBJ_1ST_GEN_YOUNG:
+			obj->h.state = OBJ_2ND_GEN_YOUNG;
+			break;
+		case OBJ_2ND_GEN_YOUNG:
 			vm_debug(DBG_GC_STATS, "Moving obj=%p to old space.\n", obj);
 
 			/* If the object survived twice in the old space, move it to the
@@ -518,7 +518,7 @@ void *gc_cheney_malloc(type_t type, class_t *cls, size_t size) {
 	((kek_obj_t *) ptr)->h.t = type;
 	((kek_obj_t *) ptr)->h.cls = cls;
 	((kek_obj_t *) ptr)->h.id = ++last_id_g;
-	((kek_obj_t *) ptr)->h.state = OBJ_NEW_IN_YOUNG;
+	((kek_obj_t *) ptr)->h.state = OBJ_1ST_GEN_YOUNG;
 
 	return (ptr);
 }
@@ -802,7 +802,7 @@ uint32_t obj_table_add(kek_obj_t **objptr, kek_obj_t *obj) {
 		if (obj_table_g[i].obj_ptr == NULL) {
 			obj_table_g[i].obj_ptr = obj;
 			obj_table_g[i].ptr = objptr;
-			obj_table_g[i].state = OBJ_1ST_GEN_YOUNG;
+			obj_table_g[i].state = OBJ_2ND_GEN_YOUNG;
 
 			vm_debug(DBG_OBJ_TBL,
 					"obj_table_add(whoami=%p, obj=%p) added on %d\n", objptr,
@@ -821,7 +821,7 @@ uint32_t obj_table_add(kek_obj_t **objptr, kek_obj_t *obj) {
 
 	obj_table_g[obj_table_size_g / 2].obj_ptr = obj;
 	obj_table_g[obj_table_size_g / 2].ptr = objptr;
-	obj_table_g[obj_table_size_g / 2].state = OBJ_1ST_GEN_YOUNG;
+	obj_table_g[obj_table_size_g / 2].state = OBJ_2ND_GEN_YOUNG;
 
 	return (obj_table_size_g / 2);
 }
@@ -1005,15 +1005,8 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 			assert(IS_PTR(*(rsptr->new_obj)));
 			assert(OBJ_TYPE_CHECK(*(rsptr->new_obj)));
 
-			/* (this will fail, need to decide what to do)
-			 * when a new_obj is in old_space, just delete him? */
-			assert(!gc_os_is_in(*(rsptr->new_obj)));
-			assert(
-					gc_cheney_ptr_in_from_space(*(rsptr->new_obj),
-							vm_obj_size(*(rsptr->new_obj)))
-							|| gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
-									vm_obj_size(*(rsptr->new_obj))));
-
+			assert(!gc_os_is_in_old(*(rsptr->new_obj)));
+			assert(gc_os_is_in_new(*(rsptr->new_obj)));
 
 			(*fn)(rsptr->new_obj);
 		}
@@ -1263,7 +1256,7 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 	assert(IS_PTR(obj));
 	assert(OBJ_TYPE_CHECK(obj));
 
-	if (!gc_os_is_in(obj)) {
+	if (!gc_os_is_in_old(obj)) {
 		assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
 	}
 
@@ -1405,19 +1398,62 @@ void gc_os_add_item(kek_obj_t **objptr) {
 	*objptr = os_item->obj;
 }
 
-bool gc_os_is_in(kek_obj_t *obj) {
+bool gc_os_is_in_old(kek_obj_t *obj) {
 	switch (obj->h.state) {
 	case OBJ_OLD_WHITE:
 	case OBJ_OLD_GRAY:
 	case OBJ_OLD_BLACK:
 		return (true);
+	case OBJ_2ND_GEN_YOUNG:
 	case OBJ_1ST_GEN_YOUNG:
-	case OBJ_NEW_IN_YOUNG:
 		return (false);
 	default:
-		vm_error("gc_os_is_in: invalid state %d\n", obj->h.state);
+		vm_error("gc_os_is_in_old: invalid state %d\n", obj->h.state);
 		return (false);
 	}
+}
+
+bool gc_os_is_in_new(kek_obj_t *obj) {
+	switch (obj->h.state) {
+	case OBJ_OLD_WHITE:
+	case OBJ_OLD_GRAY:
+	case OBJ_OLD_BLACK:
+		return (false);
+	case OBJ_2ND_GEN_YOUNG:
+	case OBJ_1ST_GEN_YOUNG:
+		return (true);
+	default:
+		vm_error("gc_os_is_in_new: invalid state %d\n", obj->h.state);
+		return (false);
+	}
+}
+
+void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr) {
+	kek_obj_t *dst_obj = *dst_objptr;
+	kek_obj_t *obj = *objptr;
+
+	os_remember_set_t *rs_on; /* remember set: old->new */
+//	os_remember_set_t *rs_bw; /* remember set: black->white */
+
+	/* old -> new */
+	if (gc_os_is_in_old(dst_obj) && gc_os_is_in_new(obj)) {
+		rs_on = malloc(sizeof(os_remember_set_t));
+		assert(rs_on);
+
+		rs_on->next = NULL;
+		rs_on->old_obj = dst_obj;
+		rs_on->new_obj = objptr;
+
+		if (gc_os_remember_set_g == NULL) {
+			gc_os_remember_set_g = rs_on;
+		} else {
+			assert(gc_os_remember_set_g->next == NULL);
+			gc_os_remember_set_g->next = rs_on;
+		}
+	}
+
+	/* black -> white */
+	/* TODO */
 }
 
 /******************************************************************************/

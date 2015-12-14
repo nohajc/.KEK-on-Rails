@@ -213,8 +213,7 @@ typedef struct _os_item {
 
 typedef struct _os_remember_set {
 	struct _os_remember_set *next;
-	kek_obj_t **old_obj;
-	os_item_t *old_obj_os_item; /* this is maybe useless */
+	kek_obj_t *old_obj;
 	kek_obj_t **new_obj;
 } os_remember_set_t;
 
@@ -231,8 +230,12 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **);
 /* move the object to the old space with all its neighbors */
 void gc_os_add_item(kek_obj_t **);
 
-/* return true, if the object is in the old space */
-bool gc_os_is_in(kek_obj_t *);
+/* return true, if the object is in the old/new space */
+bool gc_os_is_in_old(kek_obj_t *);
+bool gc_os_is_in_new(kek_obj_t *);
+
+/* this is called in executing ST bytecode */
+void gc_os_write_barrier(kek_obj_t **dst_objptr, kek_obj_t **objptr);
 
 /******************************************************************************/
 
