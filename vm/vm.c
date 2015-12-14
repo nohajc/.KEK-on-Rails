@@ -177,6 +177,8 @@ static char *vm_debug_flag(uint32_t flag) {
 		return ("gc stats");
 	case DBG_FC:
 		return ("fc");
+	case DBG_OLD:
+		return ("old");
 	default:
 		return ("unknown");
 	}

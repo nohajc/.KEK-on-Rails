@@ -64,6 +64,8 @@ static void debug_add(char *type) {
 		debug_level_g |= DBG_GC_STATS;
 	} else if (strcmp(type, "f") == 0 || strcmp(type, "fc") == 0) {
 		debug_level_g |= DBG_FC;
+	} else if (strcmp(type, "O") == 0 || strcmp(type, "old") == 0) {
+		debug_level_g |= DBG_OLD;
 	} else {
 		fprintf(stderr, "Unknown debug level \"%s\"\n", type);
 		exit(1);

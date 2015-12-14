@@ -158,7 +158,7 @@ extern gc_rootset_t *gc_rootset_g;
 extern uint32_t gc_rootset_last_uid_g;
 uint32_t gc_rootset_add(kek_obj_t **obj);
 void gc_rootset_remove_id(uint32_t id);
-void gc_rootset_remove_ptr(kek_obj_t **obj);
+//void gc_rootset_remove_ptr(kek_obj_t **obj);
 void gc_rootset_init(void);
 void gc_rootset_free(void);
 
@@ -206,15 +206,33 @@ void gc_cheney_scavenge();
 /******************************************************************************/
 /* old space */
 
-typedef struct _os_ptr_list {
-	struct _os_ptr_list *next;
+typedef struct _os_item {
+	struct _os_item *next;
 	kek_obj_t *obj;
-} os_ptr_list_t;
+} os_item_t;
 
-typedef struct _old_space_item {
-	struct _old_space_item *next;
-	kek_obj_t *obj;
-} old_space_item_t;
+typedef struct _os_remember_set {
+	struct _os_remember_set *next;
+	kek_obj_t **old_obj;
+	os_item_t *old_obj_os_item; /* this is maybe useless */
+	kek_obj_t **new_obj;
+} os_remember_set_t;
+
+extern os_remember_set_t *gc_os_remember_set_g;
+extern os_item_t *gc_os_items_g; /* linked list of items in old space */
+
+void gc_os_init();
+
+/* free all objects in the old space, its wrappers and remember set */
+void gc_os_free();
+
+void gc_os_rec_cpy_neighbors(kek_obj_t **);
+
+/* move the object to the old space with all its neighbors */
+void gc_os_add_item(kek_obj_t **);
+
+/* return true, if the object is in the old space */
+bool gc_os_is_in(kek_obj_t *);
 
 /******************************************************************************/
 

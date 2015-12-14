@@ -57,11 +57,11 @@ extern uint32_t ticks_g;
 #define DBG_MEM			0x00000080 /* memory */
 #define DBG_OBJ_TBL		0x00000100 /* object table */
 #define DBG_GC_STATS	0x00000200 /* gc stats */
-#define DBG_FC		0x00000400 /* fc */
-
+#define DBG_FC			0x00000400 /* fc */
+#define DBG_OLD			0x00000800 /* old space debugging */
 
 #define DBG_ALL (DBG_LOADING|DBG_BC|DBG_STACK|DBG_STACK_FULL|DBG_VM|DBG_BC| \
-	DBG_OBJ_TBL|DBG_GC|DBG_GC_STATS|DBG_FC)
+	DBG_OBJ_TBL|DBG_GC|DBG_GC_STATS|DBG_FC|DBG_OLD)
 
 void vm_debug(uint32_t level, const char *format, ...);
 void vm_error(const char *format, ...);

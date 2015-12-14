@@ -156,6 +156,7 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 		*objptr = (kek_obj_t *) obj->h.cls;
 		return;
 	}
+
 	if (gc_cheney_ptr_in_to_space(obj, sizeof(header_t))) {
 		return;
 	}
@@ -167,9 +168,15 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 			break;
 		case OBJ_1ST_GEN_YOUNG:
 			vm_debug(DBG_GC_STATS, "Moving obj=%p to old space.\n", obj);
-			/* copy to old space STUB */
-			obj->h.state = OBJ_OLD_WHITE;
-			break;
+
+			/* If the object survived twice in the old space, move it to the
+			 * old space. This function will memcpy the object, set its
+			 * state to WHITE and memcpy all its neighbors recursively.
+			 */
+			gc_os_rec_cpy_neighbors(objptr);
+
+			/* RETURN */
+			return;
 		default:
 			vm_error("Invalid obj state=%d\n", obj->h.state);
 			break;
@@ -593,14 +600,6 @@ void gc_rootset_remove_id(uint32_t id) {
 	}
 }
 
-void gc_rootset_remove_ptr(kek_obj_t **obj) {
-	if (gc_type_g == GC_NONE) {
-		return;
-	}
-
-	assert(0 && "implement me");
-}
-
 void gc_rootset_init(void) {
 	if (gc_type_g == GC_NONE) {
 		return;
@@ -996,6 +995,29 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 			(*fn)(&stack_g[i]);
 		}
 	}
+
+	/* pointers in the old space that points to the new space are stored
+	 * in the remember set */
+	if (gc_type_g == GC_GEN) {
+		os_remember_set_t *rsptr;
+
+		for (rsptr = gc_os_remember_set_g; rsptr; rsptr = rsptr->next) {
+			assert(IS_PTR(*(rsptr->new_obj)));
+			assert(OBJ_TYPE_CHECK(*(rsptr->new_obj)));
+
+			/* (this will fail, need to decide what to do)
+			 * when a new_obj is in old_space, just delete him? */
+			assert(!gc_os_is_in(*(rsptr->new_obj)));
+			assert(
+					gc_cheney_ptr_in_from_space(*(rsptr->new_obj),
+							vm_obj_size(*(rsptr->new_obj)))
+							|| gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
+									vm_obj_size(*(rsptr->new_obj))));
+
+
+			(*fn)(rsptr->new_obj);
+		}
+	}
 }
 
 /* this function will be called every X ticks */
@@ -1206,3 +1228,196 @@ kek_obj_t * alloc_exception(class_t * expt_class) {
 	}
 	return (gc_obj_malloc(KEK_EXPT, expt_class, sizeof(kek_except_t)));
 }
+
+/******************************************************************************/
+/* old space */
+
+os_remember_set_t *gc_os_remember_set_g;
+os_item_t *gc_os_items_g;
+
+void gc_os_init() {
+	gc_os_remember_set_g = NULL;
+	gc_os_items_g = NULL;
+}
+
+void gc_os_free() {
+	os_remember_set_t *rsptr;
+	os_remember_set_t *rstmpptr;
+
+	os_item_t *itemptr;
+	os_item_t *itemtmpptr;
+
+	for (rsptr = gc_os_remember_set_g; rsptr;
+			rstmpptr = rsptr, rsptr = rsptr->next, free(rstmpptr))
+		;
+
+	for (itemptr = gc_os_items_g; itemptr; itemtmpptr = itemptr, itemptr =
+			itemptr->next, free(itemtmpptr->obj), free(itemtmpptr))
+		;
+}
+
+/* ONEDIT: this function must somehow correspond with gc_cheney_copy_neighbor */
+void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
+	kek_obj_t *obj = *objptr;
+
+	assert(IS_PTR(obj));
+	assert(OBJ_TYPE_CHECK(obj));
+
+	if (!gc_os_is_in(obj)) {
+		assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
+	}
+
+	gc_os_add_item(objptr);
+
+	switch (obj->h.t) {
+	case KEK_NIL:
+		assert(0 && "only in cost tbl");
+		break;
+	case KEK_INT:
+		break;
+	case KEK_STR:
+		break;
+	case KEK_SYM:
+		break;
+	case KEK_ARR: {
+		kek_array_objs_t *arr_objs;
+		int i;
+
+		vm_debug(DBG_OLD, "KEK_ARR obj=%p obj->k_arr.elems=%p\n", //
+				obj, obj->k_arr.elems);
+
+		vm_assert(obj->k_arr.elems != NULL,
+				"arr=%p is copied into the " "old space, but its elems are NULL\n",
+				obj);
+
+		arr_objs = KEK_ARR_OBJS(obj);
+		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
+
+		/* this will copy the structure with the pointers to the objs */
+		gc_os_add_item((kek_obj_t **) &arr_objs);
+
+		/* update elems ptr */
+		obj->k_arr.elems = &(arr_objs->elems[0]);
+
+		/* now recursive copy the elems */
+		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
+			if (IS_PTR(obj->k_arr_objs.elems[i])) {
+				gc_os_rec_cpy_neighbors(&obj->k_arr_objs.elems[i]);
+			}
+		}
+
+		break;
+	}
+	case KEK_ARR_OBJS:
+		vm_error("gc_os_rec_cpy_neighbors should NOT copy KEK_ARR_OBJS. "
+				"This should be done when copying KEK_ARR.");
+		break;
+	case KEK_EXINFO:
+		assert(0 && "only in const tbl");
+		break;
+	case KEK_EXPT: {
+		/* copy union _kek_obj * msg; */
+		kek_obj_t * msg = obj->k_expt.msg;
+		if (msg != NULL && IS_PTR(msg)) {
+			gc_os_add_item(&(obj->k_expt.msg));
+		}
+		break;
+	}
+	case KEK_FILE:
+		break;
+	case KEK_TERM:
+		// assert(0 && "this should  be in oldspace");
+		/* todo: bude v oldspace (vsechno  co je v sys) */
+		break;
+	case KEK_UDO: {
+		int i;
+		bool verbose = false;
+		int total_size = obj->h.cls->total_syms_instance_cnt
+				+ obj->h.cls->syms_instance_offset;
+		if (!strcmp(obj->h.cls->name, "Reader")) {
+			cp_reader: //
+			verbose = true;
+		}
+		for (i = 0; i < total_size; i++) {
+			kek_obj_t * var = obj->k_udo.inst_var[i];
+			if (var != NULL && IS_PTR(var)) {
+				if (verbose) {
+					vm_debug(DBG_BC,
+							"Copying inst_var[%d], type = %d, ptr = %p, ", i,
+							var->h.t, var);
+				}
+
+				gc_os_rec_cpy_neighbors(&(obj->k_udo.inst_var[i]));
+
+				if (verbose) {
+					vm_debug(DBG_BC, "new_ptr = %p.\n", obj->k_udo.inst_var[i]);
+				}
+			}
+		}
+	}
+		break;
+	case KEK_CLASS:
+		assert(0);
+		break;
+	case KEK_COPIED:
+		assert(0);
+		break;
+	default:
+		vm_error("Unknown obj->h.t=%d in gc_cheney_copy_inner_objs\n",
+				obj->h.t);
+		break;
+	}
+}
+
+/**
+ * FIXME: we don't use ALIGNED here
+ */
+void gc_os_add_item(kek_obj_t **objptr) {
+	kek_obj_t *obj = *objptr;
+	os_item_t *os_item;
+
+	assert(IS_PTR(obj));
+	assert(OBJ_TYPE_CHECK(obj));
+	assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
+
+	os_item = malloc(sizeof(os_item_t));
+	assert(os_item);
+
+	os_item->next = NULL;
+	os_item->obj = malloc(vm_obj_size(obj));
+	assert(os_item->obj);
+
+	/* the obj is a pointer in from space */
+	(void) memcpy(os_item->obj, obj, vm_obj_size(obj));
+
+	obj->h.state = OBJ_OLD_WHITE;
+
+	/* add the os_item to the global LL */
+	if (gc_os_items_g == NULL) {
+		gc_os_items_g = os_item;
+	} else {
+		assert(gc_os_items_g->next == NULL);
+		gc_os_items_g->next = os_item;
+	}
+
+	/* recursive copy all its neighbors */
+//	gc_os_rec_cpy_neighbors(&os_item->obj);
+	*objptr = os_item->obj;
+}
+
+bool gc_os_is_in(kek_obj_t *obj) {
+	switch (obj->h.state) {
+	case OBJ_OLD_WHITE:
+	case OBJ_OLD_GRAY:
+	case OBJ_OLD_BLACK:
+		return (true);
+	case OBJ_1ST_GEN_YOUNG:
+	case OBJ_NEW_IN_YOUNG:
+		return (false);
+	default:
+		vm_error("gc_os_is_in: invalid state %d\n", obj->h.state);
+		return (false);
+	}
+}
+
+/******************************************************************************/
