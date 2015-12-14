@@ -477,6 +477,26 @@ class scmNumEqF : scmBFunction {
 	}
 }
 
+class scmGreaterF : scmBFunction {
+	scmGreaterF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		if (args[0].tag != Tag.INTEGER) {
+			throw new EvalError("Expected integer as first argument", args[0])
+		}
+		if (args[1].tag != Tag.INTEGER) {
+			throw new EvalError("Expected integer as second argument", args[1])
+		}
+		if (args[0].val > args[1].val) {
+			return G.scmTrue
+		}
+		return G.scmFalse
+	}
+}
+
 class scmStringEqF : scmBFunction {
 	scmStringEqF() {
 		super(2)
@@ -694,6 +714,23 @@ class scmPrintF : scmBFunction {
 	eval(args) {
 		super.eval(args)
 		args[0].print(Scheme.out)
+		return G.scmVoid
+	}
+}
+
+class scmDisplayF : scmBFunction {
+	scmDisplayF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		if (args[0].tag == Tag.STRING) {
+			Scheme.out.writeln(args[0].str)
+		}
+		else {
+			args[0].print(Scheme.out)
+		}
 		return G.scmVoid
 	}
 }

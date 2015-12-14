@@ -76,12 +76,35 @@
 (define (satisfied-clauses-num fn vals)
   (length (filter (lambda (x) (equal? x #t)) (apply fn vals))))
 
-(define (solve form varnum)
+(define (binary b)
+  (if b 1 0))
+
+(define (print-solution vals vars)
+  (display "Satisfiable with: ")
+  (map
+    (lambda (x)
+	   (print (car x))
+		(display " = ")
+		(print (binary (cadr x)))
+		(display "  "))
+	 (zip vars vals))
+  (newline)
+  (newline))
+
+(define (best-flip fn vals varnum)
+  (randvals varnum)) ; TODO: find the best flip
+
+(define (try-assignment fn vals vars varnum clnum) ; TODO: limit max number of tries
+  (let ((satnum (satisfied-clauses-num fn vals)))
+    (if (= satnum clnum)
+	   (print-solution vals vars)
+		(try-assignment fn (best-flip fn vals varnum) vars varnum clnum))))
+
+(define (solve form vars varnum clnum)
   (let ((fn (eval form)))
 	 (print form)
     (newline)
-    (print (satisfied-clauses-num fn (randvals varnum)))
-    (newline)))
+	 (try-assignment fn (randvals varnum) vars varnum clnum)))
 
 (define (read-input f)
   (let ((ln (read-line f)))
@@ -91,7 +114,7 @@
           (sep-keywords ln operators))))
 		  (let ((formlst (read-formula tokens))
 				  (vars (remove-duplicates (map string->symbol (filter var? tokens)))))
-			 (solve (list 'lambda vars formlst) (length vars))
+			 (solve (list 'lambda vars formlst) vars (length vars) (length (cdr formlst)))
         (read-input f))))))
 
 ;------------------------------------------------------------

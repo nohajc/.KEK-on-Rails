@@ -6,6 +6,20 @@
 (define (length a) (if (null? a) 0 (+ 1 (length (cdr a)))))
 (define (append a b) (if (null? a) b (cons (car a) (append (cdr a) b))))
 
+(define (zip a b)
+  (if (or (null? a) (null? b))
+    null
+	 (cons (list (car a) (car b)) (zip (cdr a) (cdr b)))))
+
+(define (max_r l m)
+  (if (null? l)
+    m
+    (if (> (car l) m)
+      (max_r (cdr l) (car l))
+	   (max_r (cdr l) m))))
+
+(define (max l) (max_r (cdr l) (car l)))
+
 (define (filter pred lst)
   (if (null? lst)
 	 null
