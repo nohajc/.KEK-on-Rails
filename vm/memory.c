@@ -1266,8 +1266,6 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
 	}
 
-	gc_os_add_item(objptr);
-
 	switch (obj->h.t) {
 	case KEK_NIL:
 		assert(0 && "only in cost tbl");
@@ -1366,6 +1364,8 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 				obj->h.t);
 		break;
 	}
+
+	gc_os_add_item(objptr);
 }
 
 /**
