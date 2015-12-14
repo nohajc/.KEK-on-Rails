@@ -177,6 +177,11 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 
 			/* RETURN */
 			return;
+		case OBJ_OLD_WHITE:
+		case OBJ_OLD_GRAY:
+		case OBJ_OLD_BLACK:
+			// Object is in old space, nothing to do
+			return;
 		default:
 			vm_error("Invalid obj state=%d\n", obj->h.state);
 			break;
@@ -209,6 +214,12 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 
 	if (vm_is_const(obj)) {
 		vm_debug(DBG_GC, "gc_cheney_copy_neighbor_inner: obj=%p is const!\n",
+				(void *) obj);
+		return;
+	}
+
+	if (gc_os_is_in_old(obj)) {
+		vm_debug(DBG_GC, "gc_cheney_copy_neighbor_inner: obj=%p is old!\n",
 				(void *) obj);
 		return;
 	}
@@ -348,25 +359,12 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 		break;
 	case KEK_UDO: {
 		int i;
-		bool verbose = false;
 		int total_size = obj->h.cls->total_syms_instance_cnt
 				+ obj->h.cls->syms_instance_offset;
-		if (!strcmp(obj->h.cls->name, "Reader")) {
-			cp_reader: //
-			verbose = true;
-		}
 		for (i = 0; i < total_size; i++) {
 			kek_obj_t * var = obj->k_udo.inst_var[i];
 			if (var != NULL && IS_PTR(var)) {
-				if (verbose) {
-					vm_debug(DBG_BC,
-							"Copying inst_var[%d], type = %d, ptr = %p, ", i,
-							var->h.t, var);
-				}
 				gc_cheney_copy_neighbor_inner(&(obj->k_udo.inst_var[i]));
-				if (verbose) {
-					vm_debug(DBG_BC, "new_ptr = %p.\n", obj->k_udo.inst_var[i]);
-				}
 			}
 		}
 	}
@@ -1256,7 +1254,10 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 
 	assert(IS_PTR(obj));
-	assert(OBJ_TYPE_CHECK(obj));
+
+	if (vm_is_const(obj)) {
+		return;
+	}
 
 	if (obj->h.t == KEK_COPIED) {
 		vm_debug(DBG_OLD, "gc_os_rec_cpy_neighbors: it's a copy, skip\n");
@@ -1282,7 +1283,6 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		break;
 	case KEK_ARR: {
 		kek_array_objs_t *arr_objs;
-		int i;
 
 		vm_debug(DBG_OLD, "KEK_ARR obj=%p obj->k_arr.elems=%p\n", //
 				obj, obj->k_arr.elems);
@@ -1292,27 +1292,21 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 				obj);
 
 		arr_objs = KEK_ARR_OBJS(obj);
-		assert(arr_objs->h.h.t == KEK_ARR_OBJS);
-
-		/* this will copy the structure with the pointers to the objs */
-		gc_os_add_item((kek_obj_t **) &arr_objs);
-
+		gc_os_rec_cpy_neighbors((kek_obj_t**)&arr_objs);
 		/* update elems ptr */
 		obj->k_arr.elems = &(arr_objs->elems[0]);
-
+		break;
+	}
+	case KEK_ARR_OBJS: {
+		int i;
 		/* now recursive copy the elems */
 		for (i = 0; i < obj->k_arr_objs.h.length; i++) {
 			if (IS_PTR(obj->k_arr_objs.elems[i])) {
 				gc_os_rec_cpy_neighbors(&obj->k_arr_objs.elems[i]);
 			}
 		}
-
 		break;
 	}
-	case KEK_ARR_OBJS:
-		vm_error("gc_os_rec_cpy_neighbors should NOT copy KEK_ARR_OBJS. "
-				"This should be done when copying KEK_ARR.");
-		break;
 	case KEK_EXINFO:
 		assert(0 && "only in const tbl");
 		break;
@@ -1320,7 +1314,7 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		/* copy union _kek_obj * msg; */
 		kek_obj_t * msg = obj->k_expt.msg;
 		if (msg != NULL && IS_PTR(msg)) {
-			gc_os_add_item(&(obj->k_expt.msg));
+			gc_os_rec_cpy_neighbors(&(obj->k_expt.msg));
 		}
 		break;
 	}
@@ -1332,27 +1326,12 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		break;
 	case KEK_UDO: {
 		int i;
-		bool verbose = false;
 		int total_size = obj->h.cls->total_syms_instance_cnt
 				+ obj->h.cls->syms_instance_offset;
-		if (!strcmp(obj->h.cls->name, "Reader")) {
-			cp_reader: //
-			verbose = true;
-		}
 		for (i = 0; i < total_size; i++) {
 			kek_obj_t * var = obj->k_udo.inst_var[i];
 			if (var != NULL && IS_PTR(var)) {
-				if (verbose) {
-					vm_debug(DBG_BC,
-							"Copying inst_var[%d], type = %d, ptr = %p, ", i,
-							var->h.t, var);
-				}
-
 				gc_os_rec_cpy_neighbors(&(obj->k_udo.inst_var[i]));
-
-				if (verbose) {
-					vm_debug(DBG_BC, "new_ptr = %p.\n", obj->k_udo.inst_var[i]);
-				}
 			}
 		}
 	}
@@ -1391,15 +1370,11 @@ kek_obj_t *gc_os_add_item(kek_obj_t **objptr) {
 	/* the obj is a pointer in from space */
 	(void) memcpy(os_item->obj, obj, vm_obj_size(obj));
 
-	obj->h.state = OBJ_OLD_WHITE;
+	os_item->obj->h.state = OBJ_OLD_WHITE;
 
 	/* add the os_item to the global LL */
-	if (gc_os_items_g == NULL) {
-		gc_os_items_g = os_item;
-	} else {
-		os_item->next = gc_os_items_g;
-		gc_os_items_g = os_item;
-	}
+	os_item->next = gc_os_items_g;
+	gc_os_items_g = os_item;
 
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) os_item->obj;

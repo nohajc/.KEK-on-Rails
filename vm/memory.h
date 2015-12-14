@@ -134,8 +134,8 @@ typedef enum _gc_type {
 
 //#define JUST_USE_MALLOC
 
-#define GC_TYPE_DEFAULT GC_NEW
-//#define GC_TYPE_DEFAULT GC_NONE
+//#define GC_TYPE_DEFAULT GC_NEW
+#define GC_TYPE_DEFAULT GC_GEN
 extern gc_type_t gc_type_g;
 
 typedef struct _gc_obj {
