@@ -1,0 +1,139 @@
+//KEK_TEST_RUNS 2
+//KEK_TEST_ARGS_0 23 8
+//KEK_TEST_ARGS_1 1000 10
+
+class MyObj {
+  var v
+  var str
+  
+  MyObj(av) {
+    v = av;
+    str = "12345 abcdefghijklmnopqrstuvwxyz 67890"
+  }
+  
+  val() {
+    return v
+  }
+}
+
+class OldObj {
+  var oo_int
+  var oo_str
+  var oo_udo
+  var oo_old_int
+  var oo_old_str
+  var oo_old_udo
+  var oo_has_old
+  
+  OldObj(j) {
+    oo_int = j
+    oo_str = String.fromInt(j) + " example string"
+    oo_udo = new MyObj(j)
+    oo_has_old = 0
+  }
+  
+  set_old(j) {
+    oo_old_int = j
+    oo_old_str = String.fromInt(j) + " example string"
+    oo_old_udo = new MyObj(j)
+    oo_has_old = 1
+  }
+  
+  has_old() {
+    return oo_has_old
+  }
+  
+  get_int() {
+    return oo_int
+  }
+  
+  get_str() {
+    return oo_str
+  }
+  
+  get_udo() {
+    return oo_udo
+  }
+  
+  get_old_int() {
+    return oo_old_int
+  }
+  
+  get_old_str() {
+    return oo_old_str
+  }
+  
+  get_old_udo() {
+    return oo_old_udo
+  }
+} /* OldObj */
+
+class Main {
+  static main(args) {
+    var i
+    var j
+    
+    var r
+    var arr
+    var ticks
+    var old_objects = []
+    var tmp = [] // temporary objects that will get removed by cheney
+    
+    var how_many_ticks_will_obj_live = 200 //args[1].toInt()
+    var max_ticks = 1000 //args[2].toInt()
+    var how_many_old_objs = 20 //args[3].toInt()
+    var create_rs = 50 //args[4].toInt()
+    var cnt = 300
+    
+    var have_tmp_objs = args[1].toInt() /* 0 or 1 */
+    
+    for (ticks = 0; ticks < max_ticks; ticks++) {
+      write "ticks="; write ticks
+      
+      if ((ticks % how_many_ticks_will_obj_live) == 0) {
+        for (j = 0; j < how_many_old_objs; j++) {
+          old_objects[j] = new OldObj(j)
+        }
+      }
+      
+      if (have_tmp_objs) {
+        for (i = 0; i < cnt; i++) {
+          tmp[i] = new MyObj(i)
+        }
+      }
+      
+      if ((ticks % create_rs) == 0) {
+        write "\n\n\n===== CREATING NEW OBJS IN OLD OBJS =====\n\n\n"
+        for (j = 0; j < how_many_old_objs; j++) {
+          old_objects[j].set_old(j)
+        }
+      }
+      
+     for (j = 0; j < how_many_old_objs; j++) {
+        //THIS WILL FAIL WITH: "Object "MyObj" has no method has_old."
+        if (old_objects[j].get_int() != j) {
+          write "fail old\n"
+          return
+        }
+        
+        if (old_objects[j].has_old() == 1) {
+          if (old_objects[j].get_old_int() != j) {
+            write "fail old old\n"
+            return
+          }
+        }
+      } 
+    }
+    
+    if (have_tmp_objs) {
+      for (i = 0; i < cnt; i++) {
+        if (tmp[i].val() != i) {
+          write "fail 3\n"
+          return
+        }
+      }
+    }
+    
+    write "=== OK ===\n"
+  } // main
+} // Main
