@@ -228,7 +228,7 @@ void gc_os_free();
 void gc_os_rec_cpy_neighbors(kek_obj_t **);
 
 /* move the object to the old space with all its neighbors */
-void gc_os_add_item(kek_obj_t **);
+kek_obj_t *gc_os_add_item(kek_obj_t **);
 
 /* return true, if the object is in the old/new space */
 bool gc_os_is_in_old(kek_obj_t *);

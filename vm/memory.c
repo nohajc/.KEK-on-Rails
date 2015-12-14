@@ -1028,6 +1028,7 @@ void gc_init() {
 	case GC_GEN:
 		gc_rootset_init();
 		gc_cheney_init();
+		gc_os_init();
 		break;
 	default:
 		assert(0 && "unknown gc_type");
@@ -1053,6 +1054,7 @@ void gc_free() {
 	case GC_GEN:
 		gc_rootset_free();
 		gc_cheney_free();
+		gc_os_free();
 		break;
 	default:
 		assert(0 && "unknown gc_type");
@@ -1266,6 +1268,8 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
 	}
 
+	obj = gc_os_add_item(objptr);
+
 	switch (obj->h.t) {
 	case KEK_NIL:
 		assert(0 && "only in cost tbl");
@@ -1364,14 +1368,12 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 				obj->h.t);
 		break;
 	}
-
-	gc_os_add_item(objptr);
 }
 
 /**
  * FIXME: we don't use ALIGNED here
  */
-void gc_os_add_item(kek_obj_t **objptr) {
+kek_obj_t *gc_os_add_item(kek_obj_t **objptr) {
 	kek_obj_t *obj = *objptr;
 	os_item_t *os_item;
 
@@ -1395,14 +1397,15 @@ void gc_os_add_item(kek_obj_t **objptr) {
 	if (gc_os_items_g == NULL) {
 		gc_os_items_g = os_item;
 	} else {
-		assert(gc_os_items_g->next == NULL);
-		gc_os_items_g->next = os_item;
+		os_item->next = gc_os_items_g;
+		gc_os_items_g = os_item;
 	}
 
 	obj->h.t = KEK_COPIED;
 	obj->h.cls = (struct _class *) os_item->obj;
 
 	*objptr = os_item->obj;
+	return (os_item->obj);
 }
 
 bool gc_os_is_in_old(kek_obj_t *obj) {
