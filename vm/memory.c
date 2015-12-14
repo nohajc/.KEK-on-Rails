@@ -315,25 +315,26 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 			vm_assert(el != NULL, "el %d is NULL\n", i);
 			if (IS_PTR(el)) {
 
-				if (obj->k_arr_objs.elems[i]->h.t == KEK_UDO) {
-					vm_debug(DBG_GC, "XXX\narr obj is udo of %s\n",
-							obj->k_arr_objs.elems[i]->k_udo.h.cls->name);
-
-					uint32_t x;
-					for (x = 0;
-							x < //
-									obj->k_arr_objs.elems[i]->k_udo.h.cls->syms_instance_cnt;
-							x++) {
-						if (IS_INT(
-								obj->k_arr_objs.elems[i]->k_udo.inst_var[x])) {
-							vm_debug(DBG_GC, "inst val=%d\n",
-									obj->k_arr_objs.elems[i]->k_udo.inst_var[x]);
-						} else {
-							vm_debug(DBG_GC, "inst val=?\n");
-						}
-					}
-
-				}
+				// comment out debugging info
+//				if (obj->k_arr_objs.elems[i]->h.t == KEK_UDO) {
+//					vm_debug(DBG_GC, "XXX\narr obj is udo of %s\n",
+//							obj->k_arr_objs.elems[i]->k_udo.h.cls->name);
+//
+//					uint32_t x;
+//					for (x = 0;
+//							x < //
+//									obj->k_arr_objs.elems[i]->k_udo.h.cls->syms_instance_cnt;
+//							x++) {
+//						if (IS_INT(
+//								obj->k_arr_objs.elems[i]->k_udo.inst_var[x])) {
+//							vm_debug(DBG_GC, "inst val=%d\n",
+//									obj->k_arr_objs.elems[i]->k_udo.inst_var[x]);
+//						} else {
+//							vm_debug(DBG_GC, "inst val=?\n");
+//						}
+//					}
+//
+//				}
 
 				gc_cheney_copy_neighbor_inner(&(obj->k_arr_objs.elems[i]));
 			}
