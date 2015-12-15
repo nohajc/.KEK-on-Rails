@@ -739,8 +739,9 @@ void vm_execute_bc(void) {
 			}
 #endif
 
-			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj),
-					((ptruint_t) addr & ~0x3), kek_obj_print(obj));
+			vm_debug(DBG_BC, "*(%s + %d) = ", kek_obj_print(dst_obj),
+					((ptruint_t) addr & ~0x3));
+			vm_debug(DBG_BC, "%s\n", kek_obj_print(obj));
 
 			*DPTR_VAL(dst_obj, addr) = obj;
 

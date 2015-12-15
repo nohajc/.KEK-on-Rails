@@ -1011,6 +1011,11 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 			assert(gc_os_is_in_new(*(rsptr->new_obj)));
 			*/
 
+			/* TODO */
+//			if (gc_os_is_in_old(*(rsptr->new_obj))) {
+//				/* remove rsptr */
+//			}
+
 			(*fn)(rsptr->new_obj);
 		}
 	}
