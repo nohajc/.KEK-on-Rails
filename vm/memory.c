@@ -158,6 +158,8 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 	}
 
 	if (gc_cheney_ptr_in_to_space(obj, sizeof(header_t))) {
+		vm_error("obj=%p type=%d state=%d id=%d\n", obj, obj->h.t, obj->h.state,
+				obj->h.id);
 		return;
 	}
 
@@ -228,6 +230,8 @@ void gc_cheney_copy_neighbor_inner(kek_obj_t **objptr) {
 	if (from->h.t == KEK_COPIED) {
 		to = (kek_obj_t *) from->h.cls;
 	} else if (gc_cheney_ptr_in_to_space(obj, sizeof(header_t))) {
+		vm_error("obj=%p type=%d state=%d id=%d\n", obj, obj->h.t, obj->h.state,
+				obj->h.id);
 		return;
 	} else {
 		to = gc_cheney_copy_obj_to_space_free(from);
@@ -1015,6 +1019,12 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 //			if (gc_os_is_in_old(*(rsptr->new_obj))) {
 //				/* remove rsptr */
 //			}
+			vm_assert(
+					gc_cheney_ptr_in_from_space(*(rsptr->new_obj),
+							vm_obj_size(*(rsptr->new_obj))),			//
+					"obj=%p objt=%d\n", *(rsptr->new_obj),
+					(*(rsptr->new_obj))->h.t);
+
 			(*fn)(rsptr->new_obj);
 		}
 	}
@@ -1073,7 +1083,7 @@ void gc_free() {
 		break;
 	}
 
-	// Free constant array list
+// Free constant array list
 	cal = gc_carrlist_root_g;
 	while (cal != NULL) {
 		gc_carrlist_t *next = cal->next;
@@ -1440,7 +1450,6 @@ bool gc_os_is_in_new(kek_obj_t *obj) {
 void gc_os_write_barrier(kek_obj_t *dst_obj, kek_obj_t **dst_addr) {
 	os_remember_set_t *rs_on; /* remember set: old->new */
 //	os_remember_set_t *rs_bw; /* remember set: black->white */
-
 	/* this happens when dst_obj is not in the old space neither in
 	 * the new space */
 	if (dst_obj == NULL) {
