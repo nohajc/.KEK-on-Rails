@@ -387,6 +387,17 @@ void gc_cheney_copy_neighbor(kek_obj_t **objptr) {
 	}
 }
 
+//void gc_cheney_scavenge_debug_check(kek_obj_t **objptr) {
+//	kek_obj_t *obj = *objptr;
+//
+//	assert(obj != NULL);
+//	assert(IS_PTR(obj));
+//	assert(OBJ_TYPE_CHECK(obj));
+//
+//	vm_assert(gc_cheney_ptr_in_to_space(obj, vm_obj_size(obj)), "obj=%p\n",
+//			obj);
+//}
+
 void gc_cheney_scavenge() {
 	segment_t *swap_ptr;
 	kek_obj_t *obj;
@@ -435,6 +446,30 @@ void gc_cheney_scavenge() {
 
 	vm_debug(DBG_GC, "gc_cheney_scavenge() end "
 			"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
+
+	/* check, if all pointers point into the to-space */
+//	gc_rootset(gc_cheney_scavenge_debug_check);
+
+	/* check remember set */
+	if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
+			os_remember_set_t *rsptr;
+
+			for (rsptr = gc_os_remember_set_g; rsptr; rsptr = rsptr->next) {
+				assert(IS_PTR(*(rsptr->new_obj)));
+				assert(OBJ_TYPE_CHECK(*(rsptr->new_obj)));
+
+				vm_assert(
+						gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
+								vm_obj_size(*(rsptr->new_obj))),			//
+						"obj=%p objt=%d\n", *(rsptr->new_obj),
+						(*(rsptr->new_obj))->h.t);
+			}
+		}
+
+	/* clear from space */
+#if FORCE_CALLOC == 1
+	memset(segments_from_space_g, 0, NEW_SEGMENT_SIZE);
+#endif /* FORCE_CALLOC */
 }
 
 void gc_cheney_init() {
