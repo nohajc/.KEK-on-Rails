@@ -88,7 +88,7 @@ class Main {
     var cnt = 300
     
     for (ticks = 0; ticks < max_ticks; ticks++) {
-      write "ticks="; write ticks
+      //write "ticks="; write ticks
       
       if ((ticks % how_many_ticks_will_obj_live) == 0) {
         for (j = 0; j < how_many_old_objs; j++) {
@@ -110,7 +110,7 @@ class Main {
       }
       
       if ((ticks % create_rs) == 0) {
-        write "\n\n\n===== CREATING REMEMBER SET =====\n\n\n"
+        //write "\n\n\n===== CREATING REMEMBER SET =====\n\n\n"
         for (j = 0; j < how_many_old_objs; j++) {
           old_objects[j].set_old(j)
         }

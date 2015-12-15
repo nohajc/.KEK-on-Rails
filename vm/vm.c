@@ -188,7 +188,10 @@ static char *vm_debug_flag(uint32_t flag) {
 		return ("fc");
 	case DBG_OLD:
 		return ("old");
+	case DBG_MAS:
+		return ("mas");
 	default:
+		vm_error("Unknown debug flag=%x\n", flag);
 		return ("unknown");
 	}
 }
@@ -741,7 +744,7 @@ void vm_execute_bc(void) {
 
 			*DPTR_VAL(dst_obj, addr) = obj;
 
-			if (gc_type_g == GC_GEN && IS_PTR(obj)) {
+			if ((gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) && IS_PTR(obj)) {
 				gc_os_write_barrier(dst_obj, DPTR_VAL(dst_obj, addr));
 			}
 

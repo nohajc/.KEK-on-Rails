@@ -161,7 +161,7 @@ void gc_cheney_copy_root_obj(kek_obj_t **objptr) {
 		return;
 	}
 
-	if (gc_type_g == GC_GEN) {
+	if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
 		switch (obj->h.state) {
 		case OBJ_1ST_GEN_YOUNG:
 			obj->h.state = OBJ_2ND_GEN_YOUNG;
@@ -997,7 +997,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 
 	/* pointers in the old space that points to the new space are stored
 	 * in the remember set */
-	if (gc_type_g == GC_GEN) {
+	if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
 		os_remember_set_t *rsptr;
 
 		for (rsptr = gc_os_remember_set_g; rsptr; rsptr = rsptr->next) {
@@ -1021,6 +1021,8 @@ void gc() {
 	vm_debug(DBG_GC_STATS, "%6lu, used %.2lf %%, newgc=%u old=%d, rs=%d\n",
 			ticks_g, gc_remaining() * 100, gc_cheney_iteration_t,
 			gc_os_items_cnt(), gc_os_rs_items_cnt());
+
+	gc_os_inc_mas();
 }
 
 void gc_init() {
@@ -1030,6 +1032,7 @@ void gc_init() {
 		break;
 	case GC_NEW:
 	case GC_GEN:
+	case GC_GENMAS:
 		gc_rootset_init();
 		gc_cheney_init();
 		gc_os_init();
@@ -1056,6 +1059,7 @@ void gc_free() {
 		break;
 	case GC_NEW:
 	case GC_GEN:
+	case GC_GENMAS:
 		gc_rootset_free();
 		gc_cheney_free();
 		gc_os_free();
@@ -1085,6 +1089,7 @@ void *gc_obj_malloc(type_t type, class_t *cls, size_t size) {
 		break;
 	case GC_NEW:
 	case GC_GEN:
+	case GC_GENMAS:
 		ptr = gc_cheney_malloc(type, cls, size);
 		break;
 	default:
@@ -1475,6 +1480,19 @@ int gc_os_rs_items_cnt(void) {
 		;
 
 	return (cnt);
+}
+
+/******************************************************************************/
+/* incremental m&s */
+
+void gc_os_inc_mas(void) {
+
+	if (gc_type_g != GC_GENMAS) {
+		return;
+	}
+
+	vm_debug(DBG_MAS, "gc_os_inc_mas, tick=%u\n", ticks_g);
+
 }
 
 /******************************************************************************/

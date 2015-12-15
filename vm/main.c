@@ -44,7 +44,7 @@ void free_globals() {
 static void debug_add(char *type) {
 	if (strcmp(type, "s") == 0 || strcmp(type, "stack") == 0) {
 		debug_level_g |= DBG_STACK;
-	} else if (strcmp(type, "sf") == 0 || strcmp(type, "stack_full") == 0) {
+	} else if (strcmp(type, "S") == 0 || strcmp(type, "stack_full") == 0) {
 		debug_level_g |= DBG_STACK_FULL;
 	} else if (strcmp(type, "l") == 0 || strcmp(type, "loading") == 0) {
 		debug_level_g |= DBG_LOADING;
@@ -66,6 +66,8 @@ static void debug_add(char *type) {
 		debug_level_g |= DBG_FC;
 	} else if (strcmp(type, "O") == 0 || strcmp(type, "old") == 0) {
 		debug_level_g |= DBG_OLD;
+	} else if (strcmp(type, "M") == 0 || strcmp(type, "mas") == 0) {
+		debug_level_g |= DBG_MAS;
 	} else {
 		fprintf(stderr, "Unknown debug level \"%s\"\n", type);
 		exit(1);
@@ -79,6 +81,8 @@ static void set_gc(char *type) {
 		gc_type_g = GC_NEW;
 	} else if (strcmp(type, "g") == 0 || strcmp(type, "gen") == 0) {
 		gc_type_g = GC_GEN;
+	} else if (strcmp(type, "G") == 0 || strcmp(type, "genmas") == 0) {
+		gc_type_g = GC_GENMAS;
 	} else {
 		fprintf(stderr, "Unknown gc type \"%s\" (use none, new or gen)\n",
 				type);

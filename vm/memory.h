@@ -129,7 +129,8 @@ uint32_t obj_table_regptr(kek_obj_t **);
 typedef enum _gc_type {
 	GC_NONE, //
 	GC_NEW, // just new space (cheney only)
-	GC_GEN // generational GC. new and old space
+	GC_GEN, // generational GC. new and old space
+	GC_GENMAS // generational GC + incremental mark and sweep in old space
 } gc_type_t;
 
 //#define JUST_USE_MALLOC
@@ -241,5 +242,11 @@ int gc_os_items_cnt(void);
 int gc_os_rs_items_cnt(void);
 
 /******************************************************************************/
+/* incremental m&s */
+
+void gc_os_inc_mas(void);
+
+/******************************************************************************/
+
 
 #endif
