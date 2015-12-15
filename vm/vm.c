@@ -729,6 +729,13 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
+#ifdef DO_STUPID_THINGS
+			if (IS_PTR(obj) && !OBJ_TYPE_CHECK(obj)) {
+				vm_debug(DBG_OLD, "not storing invalid obj=%p type=%d\n");
+				break;
+			}
+#endif
+
 			vm_debug(DBG_BC, "*(%s + %d) = %s\n", kek_obj_print(dst_obj),
 					((ptruint_t) addr & ~0x3), kek_obj_print(obj));
 
