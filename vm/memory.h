@@ -240,6 +240,7 @@ void gc_os_write_barrier(kek_obj_t *dst_obj, kek_obj_t **dst_addr);
 
 int gc_os_items_cnt(void);
 int gc_os_rs_items_cnt(void);
+void gc_os_remove_dups_in_rs(void);
 
 /******************************************************************************/
 /* incremental m&s */

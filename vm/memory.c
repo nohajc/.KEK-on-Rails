@@ -425,6 +425,10 @@ void gc_cheney_scavenge() {
 	memset(segments_to_space_g, 0, NEW_SEGMENT_SIZE);
 #endif /* FORCE_CALLOC */
 
+	if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
+		gc_os_remove_dups_in_rs();
+	}
+
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots BEGIN\n");
 	gc_rootset(gc_cheney_copy_root_obj);
 	vm_debug(DBG_GC, "gc_cheney_scavenge() copy roots END\n");
@@ -449,22 +453,21 @@ void gc_cheney_scavenge() {
 
 	/* check, if all pointers point into the to-space */
 //	gc_rootset(gc_cheney_scavenge_debug_check);
-
 	/* check remember set */
 	/*if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
-			os_remember_set_t *rsptr;
+	 os_remember_set_t *rsptr;
 
-			for (rsptr = gc_os_remember_set_g; rsptr; rsptr = rsptr->next) {
-				assert(IS_PTR(*(rsptr->new_obj)));
-				assert(OBJ_TYPE_CHECK(*(rsptr->new_obj)));
+	 for (rsptr = gc_os_remember_set_g; rsptr; rsptr = rsptr->next) {
+	 assert(IS_PTR(*(rsptr->new_obj)));
+	 assert(OBJ_TYPE_CHECK(*(rsptr->new_obj)));
 
-				vm_assert(gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
-						sizeof(header_t))
-						|| gc_os_is_in_old(*(rsptr->new_obj)),
-						"obj=%p objt=%d\n", *(rsptr->new_obj),
-						(*(rsptr->new_obj))->h.t);
-			}
-		}*/
+	 vm_assert(gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
+	 sizeof(header_t))
+	 || gc_os_is_in_old(*(rsptr->new_obj)),
+	 "obj=%p objt=%d\n", *(rsptr->new_obj),
+	 (*(rsptr->new_obj))->h.t);
+	 }
+	 }*/
 
 	/* clear from space */
 #if FORCE_CALLOC == 1
@@ -1055,7 +1058,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 //				/* remove rsptr */
 //			}
 			if (!gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
-							sizeof(header_t))) {
+					sizeof(header_t))) {
 				(*fn)(rsptr->new_obj);
 			} // If it is in to space, we have a duplicate pointer
 		}
@@ -1472,6 +1475,8 @@ bool gc_os_is_in_new(kek_obj_t *obj) {
 		return (false);
 	case OBJ_2ND_GEN_YOUNG:
 	case OBJ_1ST_GEN_YOUNG:
+		vm_assert(gc_cheney_ptr_in_to_space(obj, vm_obj_size(obj)),
+				"obj=%p is new but not in new space", obj);
 		return (true);
 	default:
 		vm_error("gc_os_is_in_new: invalid state %d\n", obj->h.state);
@@ -1522,6 +1527,38 @@ int gc_os_rs_items_cnt(void) {
 		;
 
 	return (cnt);
+}
+
+/*
+ http://www.geeksforgeeks.org/remove-duplicates-from-an-unsorted-linked-list/
+ */
+void gc_os_remove_dups_in_rs(void) {
+
+	os_remember_set_t *ptr1;
+	os_remember_set_t *ptr2;
+	os_remember_set_t *dup;
+
+	ptr1 = gc_os_remember_set_g;
+
+	while (ptr1 != NULL && ptr1->next != NULL) {
+		ptr2 = ptr1;
+
+		while (ptr2->next != NULL) {
+			if (ptr1->new_obj == ptr2->next->new_obj) {
+
+				vm_assert(ptr1->old_obj == ptr2->next->old_obj,
+						"you lied to me :D %d\n", 0);
+
+				dup = ptr2->next;
+				ptr2->next = ptr2->next->next;
+				free(dup);
+			} else {
+				ptr2 = ptr2->next;
+			}
+		}
+
+		ptr1 = ptr1->next;
+	}
 }
 
 /******************************************************************************/
