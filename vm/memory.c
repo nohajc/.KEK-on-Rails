@@ -1055,7 +1055,7 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 //				/* remove rsptr */
 //			}
 			vm_assert(
-					gc_cheney_ptr_in_from_space(*(rsptr->new_obj),
+					!gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
 							vm_obj_size(*(rsptr->new_obj))),			//
 					"obj=%p objt=%d\n", *(rsptr->new_obj),
 					(*(rsptr->new_obj))->h.t);
