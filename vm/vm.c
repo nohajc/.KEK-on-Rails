@@ -732,7 +732,7 @@ void vm_execute_bc(void) {
 			assert(obj != NULL);
 			assert(addr != NULL);
 
-#ifdef DO_STUPID_THINGS
+#if DO_STUPID_THINGS
 			if (IS_PTR(obj) && !OBJ_TYPE_CHECK(obj)) {
 				vm_debug(DBG_OLD, "not storing invalid obj=%p type=%d\n");
 				break;

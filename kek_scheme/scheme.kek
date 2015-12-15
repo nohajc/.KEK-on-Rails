@@ -61,7 +61,8 @@ class Scheme {
 		}
 		env = new Environment()
 		Environment.initBuiltinFunctions(env)
-		Sys.srand(Sys.time())
+		//Sys.srand(Sys.time())
+		Sys.srand(42)
 
 		// Load init.scm
 		try {

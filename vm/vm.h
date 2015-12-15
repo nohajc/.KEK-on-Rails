@@ -40,7 +40,7 @@ enum Scope {
 #define BRUTAL_KILL 1 /* valgrind tell us stack trace on error */
 
 #define FORCE_CALLOC 0
-#define DO_STUPID_THINGS 1
+#define DO_STUPID_THINGS 0
 
 /******************************************************************************/
 /* debugging */
