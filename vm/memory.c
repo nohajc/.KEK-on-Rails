@@ -1493,6 +1493,7 @@ void gc_os_write_barrier(kek_obj_t *dst_obj, kek_obj_t **dst_addr) {
 
 	/* old -> new */
 	if (gc_os_is_in_old(dst_obj) && gc_os_is_in_new(*dst_addr)) {
+		assert(gc_cheney_ptr_in_to_space(*dst_addr, sizeof(header_t)));
 		rs_on = malloc(sizeof(os_remember_set_t));
 		assert(rs_on);
 
