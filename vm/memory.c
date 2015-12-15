@@ -451,20 +451,20 @@ void gc_cheney_scavenge() {
 //	gc_rootset(gc_cheney_scavenge_debug_check);
 
 	/* check remember set */
-	if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
+	/*if (gc_type_g == GC_GEN || gc_type_g == GC_GENMAS) {
 			os_remember_set_t *rsptr;
 
 			for (rsptr = gc_os_remember_set_g; rsptr; rsptr = rsptr->next) {
 				assert(IS_PTR(*(rsptr->new_obj)));
 				assert(OBJ_TYPE_CHECK(*(rsptr->new_obj)));
 
-				vm_assert(
-						gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
-								vm_obj_size(*(rsptr->new_obj))),			//
+				vm_assert(gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
+						sizeof(header_t))
+						|| gc_os_is_in_old(*(rsptr->new_obj)),
 						"obj=%p objt=%d\n", *(rsptr->new_obj),
 						(*(rsptr->new_obj))->h.t);
 			}
-		}
+		}*/
 
 	/* clear from space */
 #if FORCE_CALLOC == 1
@@ -1054,13 +1054,10 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 //			if (gc_os_is_in_old(*(rsptr->new_obj))) {
 //				/* remove rsptr */
 //			}
-			vm_assert(
-					!gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
-							vm_obj_size(*(rsptr->new_obj))),			//
-					"obj=%p objt=%d\n", *(rsptr->new_obj),
-					(*(rsptr->new_obj))->h.t);
-
-			(*fn)(rsptr->new_obj);
+			if (!gc_cheney_ptr_in_to_space(*(rsptr->new_obj),
+							sizeof(header_t))) {
+				(*fn)(rsptr->new_obj);
+			} // If it is in to space, we have a duplicate pointer
 		}
 	}
 }
