@@ -1007,15 +1007,14 @@ void gc_rootset(void (*fn)(kek_obj_t **)) {
 			// TODO: These asserts are valid.
 			// We just need to implement correct removal from remember set.
 			/*
-			assert(!gc_os_is_in_old(*(rsptr->new_obj)));
-			assert(gc_os_is_in_new(*(rsptr->new_obj)));
-			*/
+			 assert(!gc_os_is_in_old(*(rsptr->new_obj)));
+			 assert(gc_os_is_in_new(*(rsptr->new_obj)));
+			 */
 
 			/* TODO */
 //			if (gc_os_is_in_old(*(rsptr->new_obj))) {
 //				/* remove rsptr */
 //			}
-
 			(*fn)(rsptr->new_obj);
 		}
 	}
@@ -1279,10 +1278,6 @@ void gc_os_rec_cpy_neighbors(kek_obj_t **objptr) {
 		vm_debug(DBG_OLD, "gc_os_rec_cpy_neighbors: it's a copy, skip\n");
 		*objptr = (kek_obj_t *) obj->h.cls;
 		return;
-	}
-
-	if (!gc_os_is_in_old(obj)) {
-		assert(gc_cheney_ptr_in_from_space(obj, vm_obj_size(obj)));
 	}
 
 	obj = gc_os_add_item(objptr);
