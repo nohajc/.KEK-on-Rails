@@ -32,6 +32,15 @@ If you're testing something and it doesn't work, it's a good idea to turn off gc
  - **-gG** or **-g genmas** generational gc with mark-and-sweep algorithm in old space. state: **not yet implemented**
  - **-gM** or **-g genmasmac** generational gc with mark-and-sweep and mark-and-compact algorithm in old space. state: **not yet implemented**
 
+# TODO
+- generational gc with mark-and-sweep and mark-and-copy
+- one classfile per class
+- native class wrapping SDL
+- lambda functions
+- closures
+- continuations
+- JIT
+
 # Debugging
 Life is hard, but it's even harder when you program in C. Programming in reality is really different than what we can see in movies. We used Valgrind and GDB.
 
@@ -49,11 +58,4 @@ some breakpoints we've used:
  - -ex "break vm.c:616 if tick == 10450"
  - -ex "watch *0x7ffff6da51d0"
 
-# Todo
-- generational gc with mark-and-sweep and mark-and-copy
-- one classfile per class
-- native class wrapping SDL
-- lambda functions
-- closures
-- continuations
-- JIT
+
