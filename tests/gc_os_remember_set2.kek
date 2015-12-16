@@ -88,7 +88,7 @@ class Main {
     var have_tmp_objs = args[1].toInt() /* 0 or 1 */
     
     for (ticks = 0; ticks < max_ticks; ticks++) {
-      write "ticks="; write ticks
+      //write "ticks="; write ticks
       
       if ((ticks % how_many_ticks_will_obj_live) == 0) {
         for (j = 0; j < how_many_old_objs; j++) {
@@ -103,7 +103,7 @@ class Main {
       }
       
       if ((ticks % create_rs) == 0) {
-        write "\n\n\n===== CREATING NEW OBJS IN OLD OBJS =====\n\n\n"
+        //write "\n\n\n===== CREATING NEW OBJS IN OLD OBJS =====\n\n\n"
         for (j = 0; j < how_many_old_objs; j++) {
           old_objects[j].set_old(j)
         }

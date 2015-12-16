@@ -64,6 +64,7 @@ kek_parseopts() {
 
 	if [[ $VM_VALGRIND == 1 ]]; then
 		VM_VALGRIND_CMD="$VALGRIND_CMD"
+		echo "PLEASE NOTE: the tests are very slow with valgrind. to turn it off, rerun this test with: -V 0"
 	else
 		VM_VALGRIND_CMD=""
 	fi
@@ -255,13 +256,13 @@ main() {
 	make -C ../vm  >/dev/null 2>&1
 	
 	echo "scheme (fact 10)"
-  valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ../vm/kek ../tests/kexes/scheme.kexe <(echo "(fact 10)") >f10.out 2>&1
+  $VM_VALGRIND_CMD ../vm/kek ../tests/kexes/scheme.kexe <(echo "(fact 10)") >f10.out 2>&1
 	echo "valgdrind \$?=$?"
 	diff <(cat f10.out | grep -v ==) <(echo 3628800)
 	echo "diff \$?=$?"
 	
 	echo "scheme sat:"
-	valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ../vm/kek ../tests/kexes/scheme.kexe sat.scm sat_in.txt 2>/dev/null
+	$VM_VALGRIND_CMD ../vm/kek ../tests/kexes/scheme.kexe sat.scm sat_in.txt 2>/dev/null
 	echo "valgdrind \$?=$?"
 	
   cd ..

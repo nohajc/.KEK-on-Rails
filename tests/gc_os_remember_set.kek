@@ -81,9 +81,9 @@ class Main {
     var oldtmp = []
     oldtmp[0] = -1
     
-    var how_many_ticks_will_obj_live = 100 //args[1].toInt()
-    var max_ticks = 1000 //args[2].toInt()
-    var how_many_old_objs = 20 //args[3].toInt()
+    var how_many_ticks_will_obj_live = 20 //args[1].toInt()
+    var max_ticks = 100 //args[2].toInt()
+    var how_many_old_objs = 10 //args[3].toInt()
     var create_rs = 50 //args[4].toInt()
     var cnt = 300
     
