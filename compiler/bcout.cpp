@@ -340,14 +340,16 @@ uint32_t bco_str(bcout_t *bco, const char *str) {
 	return ((uint8_t *) cs - bco->const_table);
 }
 
-uint32_t bco_sym(bcout_t *bco, const char *str) {
+uint32_t bco_sym(bcout_t *bco, const char *str, bool force_new) {
 	constant_string_t *cs;
 	size_t len;
 	int found;
 
-	found = bco_find_sym(bco, str);
-	if (-1 < found) {
-		return (found);
+	if (!force_new) {
+		found = bco_find_sym(bco, str);
+		if (-1 < found) {
+			return (found);
+		}
 	}
 
 	len = strlen(str);

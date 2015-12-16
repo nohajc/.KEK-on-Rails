@@ -668,6 +668,21 @@ class scmOpenInputFileF : scmBFunction {
 	}
 }
 
+class scmOpenOutputFileF : scmBFunction {
+	scmOpenOutputFileF() {
+		super(1)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var name = args[0]
+		if (name.tag != Tag.STRING) {
+			throw new EvalError("Expected string as argument", name)
+		}
+		return new scmFilePort(name.str, "w")
+	}
+}
+
 class scmCloseFileF : scmBFunction {
 	scmCloseFileF() {
 		super(1)
@@ -703,6 +718,39 @@ class scmReadLineF : scmBFunction {
 			ret[i] = ln[i]
 		}
 		return new scmString(String.fromArray(ret))
+	}
+}
+
+class scmWriteF: scmBFunction {
+	scmWriteF() {
+		super(2)
+	}
+
+	eval(args) {
+		super.eval(args)
+		var ln = args[0]
+		if (ln.tag != Tag.STRING) {
+			throw new EvalError("Expected string as first argument", ln)
+		}
+		var port = args[1]
+		if (port.tag != Tag.PORT) {
+			throw new EvalError("Expected file port as second argument", port)
+		}
+		port.handle.writeln(ln.str)
+		return G.scmVoid
+	}
+}
+
+class scmWritelnF : scmWriteF {
+	scmWritelnF() {
+		super()
+	}
+
+	eval(args) {
+		var ret = super.eval(args)
+		var port = args[1]
+		port.handle.writeln("\n")
+		return ret
 	}
 }
 

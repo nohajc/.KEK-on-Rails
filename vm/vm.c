@@ -315,7 +315,14 @@ void vm_init_const_table_elems(void) {
 			ptr += sizeof(kek_string_t) + obj->k_str.length;
 			break;
 		case KEK_SYM:
-			obj->h.cls = vm_find_class(obj->k_sym.symbol);
+			if (obj->h.cls != NULL) {
+				// Parent class name index stored in cls pointer
+				assert(IS_SYM((kek_obj_t*) CONST((ptruint_t)obj->h.cls)));
+				obj->h.cls = vm_find_class(CONST((ptruint_t)obj->h.cls)->k_sym.symbol);
+			}
+			else {
+				obj->h.cls = vm_find_class(obj->k_sym.symbol);
+			}
 			ptr += sizeof(kek_symbol_t) + obj->k_sym.length;
 			break;
 		case KEK_ARR:
@@ -973,7 +980,8 @@ void vm_execute_bc(void) {
 			}
 
 			if (call_type == S) {
-				cls = cls->parent;
+				// Parent class ptr is stored in the method name symbol
+				cls = sym->h.cls;
 			}
 
 			assert(cls);

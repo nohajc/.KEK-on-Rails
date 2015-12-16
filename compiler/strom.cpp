@@ -99,7 +99,10 @@ ObjRef::~ObjRef() {
 }
 
 SelfRef::SelfRef(bool rv) : Var("this", rv) {}
-ParentRef::ParentRef(bool rv, Expr * t) : Var("super", rv) {
+
+ParentRef::ParentRef(bool rv, char * pn, Expr * t) : Var("super", rv) {
+	parName = new char[strlen(pn) + 1];
+	strcpy(parName, pn);
 	target = t;
 }
 
@@ -686,13 +689,25 @@ uint32_t ArgList::Translate() {
 uint32_t Call::Translate() {
 	uint32_t mth_idx;
 	int arg_count = args ? args->Count() : 0;
+	ParentRef * parRef;
 
 	if (args) {
 		args->Translate(); // Puts arguments on the stack
 	}
 	mth_idx = method->Translate(); // Puts classref, objref (for CALLE) or nothing on the stack
 
-	if (dynamic_cast<ParentRef*>(method)) {
+	if ((parRef = dynamic_cast<ParentRef*>(method))) {
+		constant_string_t * mth_sym = (constant_string_t*) (bcout_g->const_table + mth_idx);
+		if (mth_sym->h.cls) {
+			constant_string_t * saved_parName = (constant_string_t*) (bcout_g->const_table + mth_sym->h.cls);
+			if (strcmp(saved_parName->string, parRef->parName)) {
+				mth_idx = bco_sym(bcout_g, mth_sym->string, true);
+				mth_sym = (constant_string_t*)(bcout_g->const_table + mth_idx);
+			}
+		}
+
+		mth_sym->h.cls = bco_sym(bcout_g, parRef->parName);
+
 		bco_ww2(bcout_g, CALLS, (uint16_t)mth_idx, (uint16_t)arg_count);
 	}
 	else if (external) {

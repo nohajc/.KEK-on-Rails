@@ -103,7 +103,8 @@ public:
 class ParentRef: public Var {
 	Expr * target;
 public:
-	ParentRef(bool, Expr *);
+	char * parName;
+	ParentRef(bool, char *, Expr *);
 	virtual uint32_t Translate();
 	virtual Node *Optimize();
 	virtual void Print(int);

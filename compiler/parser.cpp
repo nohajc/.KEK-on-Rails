@@ -553,7 +553,7 @@ Expr * ZbIdent(Env env, Env rootEnv, bool rvalue, bool & external) {
 		if (Symb.type == DOT) {
 			Symb = readLexem();
 			env.clsEnv = env.clsEnv->parent;
-			return new ParentRef(true, ZbIdent(env, rootEnv, rvalue, external));
+			return new ParentRef(true, env.clsEnv->className, ZbIdent(env, rootEnv, rvalue, external));
 		}
 		if (Symb.type == LPAR) {
 			external = !env.self;
