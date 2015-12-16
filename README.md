@@ -14,7 +14,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|
 - Q: i've clonned .kek but i can't find it plshelp
 - A: git clone https://github.com/nohajc/.KEK-on-Rails dotKEK-on-Rails
 
-# FEATURES
+# Features
 - Object oriented language with inheritance and dynamic dispatch
 - Dynamic type system
 - Exception handling
