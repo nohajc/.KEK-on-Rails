@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <assert.h>
 
 #include "loader.h"
 #include "memory.h"
@@ -86,7 +87,6 @@ static void set_gc(char *type) {
 		gc_type_g = GC_GENMAS;
 	} else if (strcmp(type, "M") == 0 || strcmp(type, "genmasmac") == 0) {
 		assert(0 && "not yet implemented");
-		break;
 	} else {
 		fprintf(stderr, "Unknown gc type \"%s\" (use none, new or gen)\n",
 				type);
