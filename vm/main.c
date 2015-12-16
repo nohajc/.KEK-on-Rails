@@ -75,7 +75,8 @@ static void debug_add(char *type) {
 }
 
 static void set_gc(char *type) {
-	if (strcmp(type, "x") == 0 || strcmp(type, "none") == 0) {
+	if (strcmp(type, "x") == 0 || strcmp(type, "N") == 0
+			|| strcmp(type, "none") == 0) {
 		gc_type_g = GC_NONE;
 	} else if (strcmp(type, "n") == 0 || strcmp(type, "new") == 0) {
 		gc_type_g = GC_NEW;
@@ -83,6 +84,9 @@ static void set_gc(char *type) {
 		gc_type_g = GC_GEN;
 	} else if (strcmp(type, "G") == 0 || strcmp(type, "genmas") == 0) {
 		gc_type_g = GC_GENMAS;
+	} else if (strcmp(type, "M") == 0 || strcmp(type, "genmasmac") == 0) {
+		assert(0 && "not yet implemented");
+		break;
 	} else {
 		fprintf(stderr, "Unknown gc type \"%s\" (use none, new or gen)\n",
 				type);
