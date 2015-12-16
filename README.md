@@ -23,3 +23,11 @@ _|"""""|_|"""""|_|"""""|_|"""""|
 - Tagged integers and chars
 - Inline cache
 - Cheney's copying GC
+
+# Garbage collector flags
+If you're testing something and it doesn't work, it's a good idea to turn off gc completely. Because there may be a bug in gc. There is a list of available options:
+ - **-gN** or **-g none** no gc at all. The virtual machine will use just malloc underneath. All memory is stored in a global LL and free'd at the end of the vm. state: **working without any known bugs**
+ - **-gn** or **-g new** only new space. All objects are created in to-space. When there is no space for an obj we want to allocate, the Cheney's copying GC swaps to- and from- space, and copy live object back to the to- space. state: **working without any known bugs**
+ - **-gg** or **-g gen** generational gc. It's almost the same as the previous mehthod, but if an obj survives in new space for two Cheney's copying, the object is moved into the old space. state: **there are some rare bugs**
+ - **-gG** or **-g genmas** generational gc with mark-and-sweep algorithm in old space. state: **not yet implemented**
+ - **-gM** or **-g genmasmac** generational gc with mark-and-sweep and mark-and-compact algorithm in old space. state: **not yet implemented**
