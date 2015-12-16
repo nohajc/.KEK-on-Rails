@@ -48,3 +48,12 @@ If you're lazy to write GDB command over and over, here are some one-liners;
 some breakpoints we've used:
  - -ex "break vm.c:616 if tick == 10450"
  - -ex "watch *0x7ffff6da51d0"
+
+# Todo
+- generational gc with mark-and-sweep and mark-and-copy
+- one classfile per class
+- native class wrapping SDL
+- lambda functions
+- closures
+- continuations
+- JIT
