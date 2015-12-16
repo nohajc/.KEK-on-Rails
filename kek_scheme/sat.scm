@@ -91,20 +91,29 @@
   (newline)
   (newline))
 
+(define (print-nosolution)
+  (display "No solution found.")
+  (newline)
+  (newline))
+
 (define (best-flip fn vals varnum)
   (randvals varnum)) ; TODO: find the best flip
 
-(define (try-assignment fn vals vars varnum clnum) ; TODO: limit max number of tries
-  (let ((satnum (satisfied-clauses-num fn vals)))
-    (if (= satnum clnum)
-	   (print-solution vals vars)
-		(try-assignment fn (best-flip fn vals varnum) vars varnum clnum))))
+(define max_tries 100)
+
+(define (try-assignment fn vals vars varnum clnum num_tries)
+  (if (zero? num_tries)
+    (print-nosolution)
+    (let ((satnum (satisfied-clauses-num fn vals)))
+      (if (= satnum clnum)
+        (print-solution vals vars)
+        (try-assignment fn (best-flip fn vals varnum) vars varnum clnum (- num_tries 1))))))
 
 (define (solve form vars varnum clnum)
   (let ((fn (eval form)))
 	 (print form)
     (newline)
-	 (try-assignment fn (randvals varnum) vars varnum clnum)))
+	 (try-assignment fn (randvals varnum) vars varnum clnum max_tries)))
 
 (define (read-input f)
   (let ((ln (read-line f)))
