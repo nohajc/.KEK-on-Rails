@@ -31,3 +31,20 @@ If you're testing something and it doesn't work, it's a good idea to turn off gc
  - **-gg** or **-g gen** generational gc. It's almost the same as the previous mehthod, but if an obj survives in new space for two Cheney's copying, the object is moved into the old space. state: **there are some rare bugs**
  - **-gG** or **-g genmas** generational gc with mark-and-sweep algorithm in old space. state: **not yet implemented**
  - **-gM** or **-g genmasmac** generational gc with mark-and-sweep and mark-and-compact algorithm in old space. state: **not yet implemented**
+
+# Debugging
+Life is hard, but it's even harder when you program in C. Programming in reality is really different than what we can see in movies. We used Valgrind and GDB.
+
+## Valgdrind
+Example of running scheme from the root directory of the repository:
+
+          make -C ../compiler && ../compiler/kekc scheme.kek ../tests/kexes/scheme.kexe && make -C ../vm && valgrind --show-leak-kinds=all --leak-check=full --track-origins=yes ../vm/kek ../tests/kexes/scheme.kexe
+
+## GDB
+If you're lazy to write GDB command over and over, here are some one-liners;
+
+          make -C ../vm && gdb -ex "set confirm off" -ex "file ../vm/kek" [INSERT BREAKPOINT HERE] -ex "set args ../tests/kexes/scheme.kexe sat.scm sat_in.txt" -ex "r"
+
+some breakpoints we've used:
+ - -ex "break vm.c:616 if tick == 10450"
+ - -ex "watch *0x7ffff6da51d0"
