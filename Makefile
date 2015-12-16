@@ -4,7 +4,7 @@ all:
 	make -C kek_scheme
 	
 run:
-	vm/kek kek_scheme/scheme.kexe
+	(cd kek_scheme && ../vm/kek.exe scheme.kexe)
 
 clean:
 	make -C compiler clean
